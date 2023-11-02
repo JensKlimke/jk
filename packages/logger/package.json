@@ -1,0 +1,24 @@
+{
+  "name": "logger",
+  "version": "0.1.0",
+  "description": "The logger lib",
+  "author": "Jens Klimke <jens.klimke@rwth-aachen.de>",
+  "homepage": "",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "files": [
+    "lib"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "loglevel": "^1.8.1"
+  }
+}
