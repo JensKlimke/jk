@@ -2,7 +2,7 @@ import "./assets/styles/bootstrap.min.css"
 import "./assets/styles/index.scss"
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import {Auth, AuthProvider, ErrorBoundary, withAuth} from "@sdk/dashboard";
+import {AuthProvider, ErrorBoundary, withAuth} from "@sdk/dashboard";
 import {BrowserRouter, Route, Routes} from "react-router-dom";
 import App from "./App";
 import Page404 from "./pages/_defaults/404";

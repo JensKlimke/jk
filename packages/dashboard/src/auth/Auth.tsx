@@ -1,6 +1,6 @@
 import React, {useCallback} from "react";
 import {useAuth} from "./AuthContext";
-import {API_URL, apiUrl, useApiData} from "../api";
+import {API_URL, useApiData} from "../api";
 import LoginWindow from "./LoginWindow";
 
 export const ENV = process.env.REACT_APP_ENV || 'prod';

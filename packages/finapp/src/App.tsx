@@ -9,7 +9,7 @@ import Nav from "./Nav";
 export default function App({children} : {children : React.ReactNode}) {
   // data
   const [topNavOpen, setTopNavOpen] = useState(false);
-  const {logout, session} = useAuth();
+  const {logout} = useAuth();
   // render
   return (
     <div className='App'>
