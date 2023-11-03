@@ -1,0 +1,13 @@
+@import "Variables";
+
+.Footer {
+  height: $footer-height;
+  width: 100%;
+
+  border-top: $footer-line-width solid $footer-line-color;
+
+  text-align: center;
+  line-height: $footer-height;
+
+  font-size: 0.75rem;
+}

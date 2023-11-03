@@ -1,0 +1,31 @@
+@import "Variables";
+
+.Main {
+  position: absolute;
+
+  left: $sidebar-width;
+  right: 0;
+  top: $topbar-height;
+  bottom: 0;
+
+  overflow-y: scroll;
+}
+
+.Content {
+  width: 100%;
+  min-height: calc(100% - $footer-height);
+  padding: 2rem 1rem 0.1px;
+  margin: 0;
+}
+
+@include media-breakpoint-down(lg) {
+  .Main {
+    left: $sidebar-width-md;
+  }
+}
+
+@include media-breakpoint-down(sm) {
+  .Main {
+    left: 0;
+  }
+}

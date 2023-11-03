@@ -1,0 +1,30 @@
+$footer-height: 2.5rem;
+
+$sidebar-width: 15rem;
+$sidebar-width-md: 5rem;
+
+$sidebar-bg-color: var(--bs-body-bg);
+$sidebar-line-color: #1d1f1f;
+$sidebar-line-width: 1px;
+
+$topbar-height: 4rem;
+$topbar-bg-color: var(--bs-primary);
+$topbar-shadow-color: #171818;
+$topbar-shadow-width: 15px;
+
+$footer-line-color: #232525;
+$footer-line-width: 0;
+
+$topbar-nav-primary-color: #969696;
+$topbar-nav-hover-color: var(--bs-primary);
+$topbar-nav-active-color: #e8e8e8;
+$topbar-nav-hover-bg-color: var(--bs-secondary);
+
+$nav-primary-color: #969696;
+$nav-hover-color: #e8e8e8;
+$nav-active-color: #e8e8e8;
+$nav-hover-bg-color: var(--bs-primary);
+
+@import "~bootstrap/scss/_functions.scss";
+@import "~bootstrap/scss/_variables.scss";
+@import "~bootstrap/scss/mixins/_breakpoints.scss";

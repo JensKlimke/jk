@@ -16,6 +16,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "watch": "watch 'npm run build' ./src"
   }
 }

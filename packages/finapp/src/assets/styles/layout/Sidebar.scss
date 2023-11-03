@@ -1,0 +1,59 @@
+@import "Variables";
+
+.Sidebar {
+  display: block;
+  position: absolute;
+
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: $sidebar-width;
+
+  background-color: $sidebar-bg-color;
+  border-right: $sidebar-line-width solid $sidebar-line-color;
+
+  z-index: 999;
+}
+
+.Sidebar .Logo {
+  height: $topbar-height;
+  text-align: center;
+  padding: 1em 0 0;
+  margin-bottom: 2em;
+  color: #d5833e;
+  font-weight: bold;
+}
+
+.Sidebar .Logo > img {
+  height: 100%;
+}
+
+.Sidebar .Logo.small {
+  display: none;
+  padding: 1.5em 0.5em 0;
+  margin: 0;
+}
+
+.Sidebar .Logo.small > img {
+  height: auto;
+  width: 100%;
+}
+
+@include media-breakpoint-down(lg) {
+  .Sidebar {
+    display: block;
+    width: $sidebar-width-md;
+  }
+  .Sidebar .Logo {
+    display: none;
+  }
+  .Sidebar .Logo.small {
+    display: block;
+  }
+}
+
+@include media-breakpoint-down(sm) {
+  .Sidebar {
+    display: none;
+  }
+}

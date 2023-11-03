@@ -6,6 +6,8 @@
       <excludeFolder url="file://$MODULE_DIR$/packages/version/lib" />
       <excludeFolder url="file://$MODULE_DIR$/temp" />
       <excludeFolder url="file://$MODULE_DIR$/tmp" />
+      <excludeFolder url="file://$MODULE_DIR$/packages/api/build" />
+      <excludeFolder url="file://$MODULE_DIR$/packages/dashboard/lib" />
       <excludeFolder url="file://$MODULE_DIR$/packages/finapp/build" />
       <excludeFolder url="file://$MODULE_DIR$/packages/logger/lib" />
     </content>

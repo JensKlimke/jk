@@ -1,0 +1,42 @@
+@import "Variables";
+
+.Topbar {
+  position: absolute;
+
+  top: 0;
+  left: $sidebar-width;
+  height: $topbar-height;
+  right: 0;
+
+  padding: 0 1em;
+
+  background-color: $topbar-bg-color;
+  box-shadow: 0 0 $topbar-shadow-width $topbar-shadow-color;
+}
+
+.Topbar .Title {
+  display: inline-block;
+  line-height: $topbar-height;
+  margin: 0 0.5em;
+}
+
+.toggle-button {
+  display: inline-block;
+  position: relative;
+  top: calc($topbar-height / 2 - 21px);
+  font-size: 24pt;
+  line-height: 1em;
+  padding: 0 10px 4px;
+}
+
+@include media-breakpoint-down(lg) {
+  .Topbar {
+    left: $sidebar-width-md;
+  }
+}
+
+@include media-breakpoint-down(sm) {
+  .Topbar {
+    left: 0;
+  }
+}

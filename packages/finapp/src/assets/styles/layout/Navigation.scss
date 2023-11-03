@@ -1,0 +1,101 @@
+@import "Variables";
+
+ul.Nav, ul.Nav ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+
+ul.Nav {
+  font-size: $font-size-lg;
+  overflow: hidden;
+}
+
+ul.Nav h1 {
+  font-size: $font-size-base;
+  text-transform: uppercase;
+  color: $text-muted;
+  padding: 0 0.5em;
+  margin: 0 0 1em;
+  line-height: 1em;
+  white-space: nowrap;
+}
+
+ul.Nav li {
+  padding: 1em;
+}
+
+ul.Nav li:hover {
+  background-color: $nav-hover-bg-color;
+}
+
+ul.Nav a {
+  color: $nav-primary-color;
+  text-decoration: none;
+}
+
+ul.Nav a:hover {
+  color: $nav-hover-color;
+}
+
+ul.Nav .active ul {
+  color: $nav-active-color;
+}
+
+ul.Nav ul {
+  display: none;
+}
+
+ul.Nav .active ul {
+  display: block;
+}
+
+ul.Nav li svg {
+  position: relative;
+  top: -0.2em;
+}
+
+
+ul.Nav li .icon {
+  margin-right: 0.5em;
+}
+
+.TopNav {
+  position: absolute;
+
+  top: $topbar-height;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  overflow-y: scroll;
+
+  z-index: 999;
+  background-color: $topbar-bg-color;
+}
+
+.Topbar ul.Nav li:hover {
+  background-color: $topbar-nav-hover-bg-color;
+}
+
+.Topbar ul.Nav a:hover {
+  color: $topbar-nav-hover-color;
+}
+
+.Topbar ul.Nav .active {
+  color: $topbar-nav-active-color;
+}
+
+@include media-breakpoint-down(lg) {
+
+  .Sidebar ul.Nav li .icon {
+    width: 100%;
+    font-size: 1.5em;
+  }
+  .Sidebar ul.Nav li .text {
+    display: none;
+  }
+  .Sidebar ul.Nav h1 {
+    display: none;
+  }
+}

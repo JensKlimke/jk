@@ -1,5 +1,5 @@
 {
-  "name": "logger",
+  "name": "@sdk/logger",
   "version": "0.1.0",
   "description": "The logger lib",
   "author": "Jens Klimke <jens.klimke@rwth-aachen.de>",
@@ -19,6 +19,7 @@
     "build": "tsc"
   },
   "dependencies": {
+    "@sdk/version": "^0.1.0",
     "loglevel": "^1.8.1"
   }
 }
