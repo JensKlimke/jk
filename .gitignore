@@ -2,3 +2,5 @@ node_modules/
 
 packages/*/lib
 packages/*/build
+
+.idea
