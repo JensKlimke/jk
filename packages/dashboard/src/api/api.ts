@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {logger} from "@sdk/logger";
+
 import {useAuth} from "../auth";
+import {logger} from "@sdk/utils/lib/logger";
 
 export const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3003';
 export const API_VERSION = process.env.REACT_APP_API_VERSION || 'v1';

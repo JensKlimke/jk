@@ -11,6 +11,10 @@ ul.Nav {
   overflow: hidden;
 }
 
+a.active + ul.Nav {
+  padding-left: 1em;
+}
+
 ul.Nav h1 {
   font-size: $font-size-base;
   text-transform: uppercase;
@@ -22,43 +26,41 @@ ul.Nav h1 {
 }
 
 ul.Nav li {
+  margin: 0;
+  padding: 0;
+}
+
+.Nav a {
   padding: 1em;
-}
-
-ul.Nav li:hover {
-  background-color: $nav-hover-bg-color;
-}
-
-ul.Nav a {
+  display: inline-block;
+  width: 100%;
   color: $nav-primary-color;
   text-decoration: none;
 }
 
-ul.Nav a:hover {
+.Nav a:hover {
+  background-color: $nav-hover-bg-color;
   color: $nav-hover-color;
 }
 
-ul.Nav .active ul {
+.Nav a.active {
   color: $nav-active-color;
 }
 
-ul.Nav ul {
+.Nav a + ul {
   display: none;
 }
 
-ul.Nav .active ul {
+.Nav a.active + ul {
   display: block;
 }
 
-ul.Nav li svg {
+.Nav a .icon {
   position: relative;
   top: -0.2em;
-}
-
-
-ul.Nav li .icon {
   margin-right: 0.5em;
 }
+
 
 .TopNav {
   position: absolute;
@@ -74,28 +76,26 @@ ul.Nav li .icon {
   background-color: $topbar-bg-color;
 }
 
-.Topbar ul.Nav li:hover {
-  background-color: $topbar-nav-hover-bg-color;
-}
 
-.Topbar ul.Nav a:hover {
+.Topbar .Nav a:hover {
+  background-color: $topbar-nav-hover-bg-color;
   color: $topbar-nav-hover-color;
 }
 
-.Topbar ul.Nav .active {
+.Topbar a.active {
   color: $topbar-nav-active-color;
 }
 
 @include media-breakpoint-down(lg) {
 
-  .Sidebar ul.Nav li .icon {
+  .Sidebar .Nav .icon {
     width: 100%;
     font-size: 1.5em;
   }
-  .Sidebar ul.Nav li .text {
+  .Sidebar .Nav .text {
     display: none;
   }
-  .Sidebar ul.Nav h1 {
+  .Sidebar .Nav h1 {
     display: none;
   }
 }

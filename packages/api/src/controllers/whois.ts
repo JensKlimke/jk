@@ -1,18 +1,19 @@
 import {catchAsync} from "../utils/catchAsync";
 import {Request, Response} from "express";
-import {authClient} from "../config/redis";
-import {WHO_IS_DB_KEY} from "../config/whois";
 import {v4} from "uuid";
+import {dbItems} from "../middlewares/database";
 
 const generateId = catchAsync(async (req: Request, res: Response) => {
-  // get id
-  let id = await authClient.hGet(WHO_IS_DB_KEY, 'id');
-  // check id
+  // get client
+  const client = dbItems.meta;
+  // get ID from database
+  let id = (await client.findOne({key: 'whois'}))?.value || undefined;
+    // check id
   if (!id) {
     // generate id
     id = v4();
     // save id
-    await authClient.hSet(WHO_IS_DB_KEY, 'id', id);
+    await client.insertOne({key: 'whois', value: id});
   }
   // send users
   res.send(id);

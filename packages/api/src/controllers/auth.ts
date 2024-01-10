@@ -1,180 +1,86 @@
-import {Request, Response} from "express";
-import jwt from "jsonwebtoken";
+import {NextFunction, Request, Response} from "express";
 import HttpStatusCode from "../utils/HttpStatusCode";
-import httpStatusCode from "../utils/HttpStatusCode";
-import {v4} from "uuid";
-import {catchAsync} from "../utils/catchAsync";
-import {checkToken, loadUserData} from "../utils/auth";
-import {authClient} from "../config/redis";
-import {
-  AUTH_DB_KEY,
-  AUTH_PATH,
-  GITHUB_AUTHORIZE_URL,
-  GITHUB_CLIENT_ID,
-  GITHUB_CLIENT_SECRET,
-  GITHUB_TOKEN_URL,
-  HOST_URL,
-  SESSION_SECRET,
-  STATE_SECRET,
-  SUPER_ADMIN_ID,
-  USER_DB_KEY
-} from "../config/env";
-import {UserData} from "../types/session";
+import {AUTH_URL, GITHUB_AUTHORIZE_URL, GITHUB_CLIENT_ID, STATE_SECRET, SUPER_ADMIN_ID} from "../config/env";
+import jwt from "jsonwebtoken";
+import {dbItems} from "../middlewares/database";
+import {users} from "../config/fake";
+import {checkToken, createSession, getAccessToken, getUserData, resolveSession, updateUserData} from "../utils/auth";
 
 
-/**
- * Logout: Destroys the current session
- * @param req Express request
- * @param res Express response
- */
-const logout = catchAsync(async (req: Request, res: Response) => {
-  // check
-  if (!req.auth.clientToken)
-    return res.sendStatus(httpStatusCode.UNAUTHORIZED);
-  // unset
-  await authClient.hDel('auth', req.auth.clientToken);
-  // send status code
-  res.sendStatus(httpStatusCode.OK);
-});
+const user = (req : Request, res : Response) => {
+  // check if user is set
+  if (!req.auth.user)
+    return res.sendStatus(HttpStatusCode.UNAUTHORIZED);
+  // send user
+  res.send(req.auth.user);
+}
 
-
-/**
- * Login: Redirects the user to the GitHub auth page
- * @param req Express request
- * @param res Express response
- */
-const login = (req: Request, res: Response) => {
-  // get redirect
-  const origin = req?.query?.redirect || '';
-  const redirect = HOST_URL + AUTH_PATH;
-  // generate state
-  const state = jwt.sign(origin, STATE_SECRET);
+const login = (req : Request, res : Response) => {
   // generate url
   const url = new URL(GITHUB_AUTHORIZE_URL);
   url.searchParams.append('client_id', GITHUB_CLIENT_ID);
-  url.searchParams.append('redirect_uri', redirect);
-  url.searchParams.append('state', state);
+  url.searchParams.append('redirect_uri', AUTH_URL);
+  url.searchParams.append('state', jwt.sign((req?.query?.redirect?.toString() || ''), STATE_SECRET));
   // redirect
   res.redirect(url.toString());
 }
 
+const logout = async (req: Request, res: Response) => {
+  // check
+  if (!req.auth.clientToken)
+    return res.sendStatus(HttpStatusCode.UNAUTHORIZED);
+  // unset
+  await dbItems.auth.deleteMany({clientKey: req.auth.clientToken});
+  // send status code
+  res.sendStatus(HttpStatusCode.OK);
+}
 
-const fakeSession = async (req: Request, res: Response) => {
-  // get redirect url and data
-  const redirect = req?.query?.redirect || '';
-  const type = req?.query?.type || 'user';
-  // set user data
-  let user: UserData;
-  if (type === 'admin') {
-    user = {
-      id: '0',
-      name: 'Fake Admin',
-      email: 'admin@example.com',
-      role: 'admin'
-    }
-  } else {
-    user = {
-      id: '1',
-      name: 'Fake User',
-      email: 'user@example.com',
-      role: 'user'
-    }
-  }
-  await authClient.hSet(USER_DB_KEY, user.id, JSON.stringify(user));
-  // create data to store
-  const authData = {
-    accessToken: '',
-    user: user.id,
-  }
-  // save access token to database
-  const clientKey = v4();
-  const clientToken = jwt.sign(clientKey, SESSION_SECRET);
-  // save session
-  await authClient.hSet(AUTH_DB_KEY, clientKey, JSON.stringify(authData));
-  // check url
-  if (redirect) {
-    // create uri
-    const redirectUri = new URL(redirect.toString());
-    redirectUri.searchParams.set('token', clientToken);
-    // redirect to url
-    res.redirect(redirectUri.toString());
-  } else {
-    // send status
-    res.status(200).send({'token': clientToken});
+const code = async (req: Request, res: Response, next : NextFunction) => {
+  // get state
+  const state = req?.query?.state?.toString() || '';
+  // verify state
+  const redirect = checkToken(state, STATE_SECRET);
+  if (!redirect) return res.sendStatus(HttpStatusCode.BAD_REQUEST);
+  // get and check code
+  const code = req?.query?.code?.toString();
+  if (!code) return res.sendStatus(HttpStatusCode.NOT_FOUND);
+  try {
+    // get access token
+    const accessToken = await getAccessToken(req?.query?.code?.toString());
+    // get user data
+    const userData = await getUserData(accessToken);
+    // check super admin role
+    if (userData.email === SUPER_ADMIN_ID)
+      userData.role = 'super_admin';
+    // update user
+    const {user, mode} = await updateUserData(userData, userData.role === 'super_admin');
+    // check mode (user must be available)
+    if (mode === 'not_found') return res.sendStatus(HttpStatusCode.NOT_FOUND);
+    // generate and save token
+    const token = await createSession(user.id);
+    // create and resolve session
+    resolveSession(res, redirect, token, mode);
+  } catch(e) {
+    // next with error
+    next(e);
   }
 }
 
-
-/**
- * Requests the access token with the given code
- * @param req Express request
- * @param res Express response
- */
-const code = (req: Request, res: Response) => {
-  // get parameters
-  const code = (req?.query?.code || '').toString();
-  const state = req?.query?.state || '';
-  // verify state
-  const redirect = checkToken(state.toString(), STATE_SECRET);
-  if (!state || !redirect) {
-    res.send(HttpStatusCode.BAD_REQUEST);
-    return;
-  }
-  // variables
-  const client_id = GITHUB_CLIENT_ID;
-  const client_secret = GITHUB_CLIENT_SECRET;
-  // create uri
-  const redirectUri = new URL(redirect.toString());
-  // fetch token
-  fetch(GITHUB_TOKEN_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: JSON.stringify({client_id, client_secret, code})
-  })
-    .then(r => r.json())
-    .then(async (accessToken : any) => {
-      if (accessToken.error) {
-        console.error(accessToken);
-        res.sendStatus(HttpStatusCode.UNAUTHORIZED);
-        return;
-      }
-      // update user data
-      const user = await loadUserData(accessToken.access_token);
-      // update role
-      user.role = (user.email !== null && user.email.toString() === SUPER_ADMIN_ID) ? 'super_admin' : user.role;
-      // log
-      if (user.role === 'super_admin')
-        console.log(`${user.name} logged in with super_admin role`);
-      // save user
-      await authClient.hSet(USER_DB_KEY, user.id.toString(), JSON.stringify(user));
-      // create data to store
-      const authData = {
-        accessToken: accessToken.access_token,
-        user: user.id,
-      }
-      // save access token to database
-      const clientKey = v4();
-      const clientToken = jwt.sign(clientKey, SESSION_SECRET);
-      return authClient.hSet(AUTH_DB_KEY, clientKey, JSON.stringify(authData))
-        .then(() => clientToken);
-    })
-    .then(token => {
-      redirectUri.searchParams.set('token', token || '');
-      res.redirect(redirectUri.toString());
-    })
-    .catch(e => {
-      console.error(e);
-      res.status(HttpStatusCode.INTERNAL_SERVER_ERROR);
-      res.redirect(redirectUri.toString());
-    });
+const fake = async (req: Request, res: Response) => {
+  // get redirect url and data
+  const type = req?.query?.type?.toString() || 'user';
+  // set user data and store
+  const {user, mode} = await updateUserData(users[type], true);
+  // generate and save token
+  const token = await createSession(user.id);
+  // create and resolve session
+  resolveSession(res, req?.query?.redirect?.toString(), token, mode);
 }
 
 export const authController = {
-  login,
-  logout,
-  code,
-  fakeSession
+  user,   // (A)
+  login,  // (B)
+  logout, // (I)
+  code,   // (C)->(D)->(E)->(F)
+  fake    // (H)->(F)
 };

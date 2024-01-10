@@ -10,8 +10,13 @@ export const errorHandler = (err: Error, req: Request, res: Response, _: NextFun
     error = new ApiError(HttpStatusCode.INTERNAL_SERVER_ERROR, 'Unknown issue');
   } else
     error = err;
-  // respond
-  res
-    .status(error.statusCode)
-    .send({status: error.statusCode, message: err.message});
+  if (error.message === '') {
+    // just the error code
+    res.sendStatus(error.statusCode);
+  } else {
+    // specific error
+    res
+      .status(error.statusCode)
+      .send({status: error.statusCode, message: err.message});
+  }
 }

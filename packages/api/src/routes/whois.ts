@@ -5,8 +5,7 @@ import {whoIsController} from "../controllers/whois";
 
 const router = express.Router();
 
-router.route('/')
-  .get(validate(whoisValidation), whoIsController.generateId)
+router.route('/').get(validate(whoisValidation), whoIsController.generateId)
 
 // export
 export {

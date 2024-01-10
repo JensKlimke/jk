@@ -1,5 +1,4 @@
 import Joi from 'joi'
-import {validation} from "../utils/validation";
 
 // define stock body
 const body = Joi.object().keys({
@@ -8,5 +7,13 @@ const body = Joi.object().keys({
   messages: Joi.array().items(Joi.string()).required()
 })
 
+const query = Joi.object().keys({
+  loggerName: Joi.string().required(),
+  date: Joi.string().required()
+})
+
 // generate contract validation
-export const logsValidation = validation(body);
+export const logsValidation = {
+  post: {body},
+  get: {query}
+};

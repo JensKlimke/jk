@@ -8,7 +8,8 @@ dotenv.config();
 // port, host and paths
 export const PORT = process.env.PORT || 3003;
 export const HOST_URL = process.env.API_URL || `http://localhost:${PORT}`;
-export const AUTH_PATH = process.env.AUTH_PATH || '/v1/auth/auth'
+export const CODE_KEY = process.env.CODE_KEY || 'code';
+export const AUTH_URL = process.env.AUTH_URL || `${HOST_URL}/v1/auth/${CODE_KEY}`
 
 
 // secrets
@@ -23,7 +24,7 @@ export const REDIS_PORT = process.env.REDIS_PORT || '6379';
 
 // get github constants
 export const GITHUB_AUTHORIZE_URL = process.env.AUTH_GITHUB_AUTHORIZE_URL || 'https://github.com/login/oauth/authorize';
-export const GITHUB_TOKEN_URL = process.env.AUTH_GITHUB_AUTHORIZE_URL || 'https://github.com/login/oauth/access_token';
+export const GITHUB_TOKEN_URL = process.env.AUTH_GITHUB_TOKEN_URL || 'https://github.com/login/oauth/access_token';
 export const GITHUB_USER_URL = process.env.AUTH_GITHUB_USER_URL || 'https://api.github.com/user';
 export const GITHUB_CLIENT_ID = process.env.AUTH_GITHUB_CLIENT_ID || '';
 export const GITHUB_CLIENT_SECRET = process.env.AUTH_GITHUB_CLIENT_SECRET || '';
@@ -46,3 +47,5 @@ export const API_ENV = process.env.API_ENV || 'prod';
 
 
 export const LOG_DIR = process.env.LOG_DIR || '/tmp/log';
+
+export const MONGO_URL = process.env.MONGO_URL || 'mongodb://localhost:27017';

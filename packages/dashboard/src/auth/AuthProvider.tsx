@@ -1,10 +1,10 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {useLocation, useNavigate} from "react-router-dom";
 import secureLocalStorage from "react-secure-storage";
 import {AuthContextType, SessionType} from "./types";
 import {AuthContext} from "./AuthContext";
-import {logger} from "@sdk/logger";
 import {apiUrl} from "../api";
+import {logger} from "@sdk/utils/lib/logger";
 
 // TODO: session with atomWithStorage
 

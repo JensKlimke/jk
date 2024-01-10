@@ -9,7 +9,10 @@
     "start": "lerna run start",
     "start:api": "lerna run start --scope=api",
     "start:finapp": "lerna run start --scope=finapp",
-    "watch": "lerna run --parallel watch"
+    "prod:api": "lerna run prod --scope=api",
+    "prod:finapp": "lerna run prod --scope=finapp",
+    "watch": "lerna run --parallel watch",
+    "test": "lerna run test"
   },
   "devDependencies": {
     "@types/node": "^20.8.10",

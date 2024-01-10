@@ -1,12 +1,12 @@
 import express from "express";
 import {authRoute} from "./auth";
-import {router as userRouter} from "./user";
-import {databaseRouter} from "./database";
+import {router as userRouter} from "./users";
+import {itemsRouter} from "./items";
 
 const router = express.Router();
 
 router.use('/auth', authRoute);
-router.use('/user', userRouter);
-router.use('/database', databaseRouter);
+router.use('/users', userRouter);
+router.use('/items', itemsRouter);
 
 export const routes = router;

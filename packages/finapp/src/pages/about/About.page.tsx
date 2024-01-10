@@ -7,7 +7,7 @@ export default function AboutPage() {
     <Container>
       <Row className='justify-content-center align-content-center'>
         <Col className='text-center' lg={6}>
-          <h1>FINAPP v1.0</h1>
+          <h1>RoboControl v1.0</h1>
           <p>&copy; 2022-2023 <a href='mailto://jens.klimke@rwth-aachen.de'>Jens Klimke</a></p>
           <hr/>
           <h2>MIT License</h2>
