@@ -242,7 +242,7 @@ describe('Database Modules', () => {
   });
 
 
-  test('Add and link items, delete parent', async () => {
+  test('Add and link items, update and delete parent', async () => {
     // add item
     const insParent = await client._addItem({'type': 'parent'});
     const insChild = await client._addItem({'type': 'child'});
@@ -322,7 +322,7 @@ describe('Database Modules', () => {
   });
 
 
-  test('GetHeadDocument', async () => {
+  test('Get head document by item ID', async () => {
     // add items
     const insParent = await client._addItem({'type': 'parent'});
     const insChild = await client._addItem({'type': 'child'});
@@ -339,5 +339,79 @@ describe('Database Modules', () => {
       type: "parent"
     });
   });
+
+
+  test('Get all head documents', async () => {
+    // add items
+    const insParent = await client._addItem({'type': 'parent'});
+    const insChild = await client._addItem({'type': 'child'});
+    // link items
+    const link = await client._createLink(insParent._item, insChild._item, 'owns');
+    // check target document to be created document (doesn't change, since no back link)
+    expect(link._target.toString()).toEqual(insChild._document.toString());
+    // get head document from parents
+    let res = await client._getAllHeadDocuments();
+    // check
+    expect(res).toEqual([{
+        _id: link._source,
+        _item: insParent._item,
+        _commit: link._commit,
+        _links: [{ target: insChild._item, type: 'owns' }],
+        type: "parent"
+      }, {
+        _id: insChild._document,
+        _item: insChild._item,
+        _commit: insChild._commit,
+        _links: [],
+        type: "child"
+    }]);
+    // get head document from parents
+    res = await client._getAllByCommit(insChild._commit);
+    // check
+    expect(res).toEqual([{
+      _id: insParent._document,
+      _item: insParent._item,
+      _commit: insParent._commit,
+      _links: [],
+      type: "parent"
+    }, {
+      _id: insChild._document,
+      _item: insChild._item,
+      _commit: insChild._commit,
+      _links: [],
+      type: "child"
+    }]);
+  });
+
+
+  test('Update item', async () => {
+    // add item
+    const insParent = await client._addItem({'type': 'parent'});
+    const insChild = await client._addItem({'type': 'child'});
+    // link items
+    const link = await client._createLink(insParent._item, insChild._item, 'owns');
+    // update item
+    const upd = await client._updateById(insParent._item, {'type' : 'new item'});
+    // get result
+    let res = await client._getHeadDocumentByItem(insParent._item);
+    // check
+    expect(res).toEqual({
+      _id: upd._document,
+      _item: insParent._item,
+      _commit: upd._commit,
+      _links: [{ target: insChild._item, type: 'owns' }],
+      type: 'new item',
+    });
+    // set client auth
+    client.setAuth(fakeAuthKey.toHexString());
+    // callback to execute function
+    const t = async () => {
+      await client._updateById(insParent._item, {'type' : 'new new item'});
+    };
+    // check for error
+    await expect(t).rejects.toThrow(ApiError);
+  });
+
+
 
 });

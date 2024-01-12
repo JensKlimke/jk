@@ -1,4 +1,4 @@
-import {Collection, ObjectId} from "mongodb";
+import {Collection, Document, ObjectId} from "mongodb";
 import ApiError from "./ApiError";
 import HttpStatusCode from "./HttpStatusCode";
 import "@sdk/utils"
@@ -115,20 +115,25 @@ export class DBClient {
 
   /**
    * Returns the document corresponding to the commit filter and item filter
+   * @param returnArray Flag if array shall be returned (otherwise a single document is returned)
    * @param commitFilter Commit filter
    * @param itemFilter Item filter
    * @return The document
    */
-  async _generateDocumentRequest(commitFilter : any, itemFilter : any) {
+  async _generateDocumentRequest(returnArray : boolean, commitFilter : any, itemFilter ?: any) {
     // get previous version of document
-    const res = await DBClient.commitsCollection.aggregate([
+    let a : Document[] = [
       { $match: commitFilter },
       { $unwind: '$documents' },
       { $project: {
           document: '$documents.document',
           item: '$documents.item'
-        }},
-      { $match: itemFilter },
+        }
+      },
+    ];
+    // add item filter
+    itemFilter && a.push({ $match: itemFilter });
+    a = [...a,
       { $lookup: {
           from: ITEMS_COLLECTION_NAME,
           localField: "item",
@@ -150,10 +155,18 @@ export class DBClient {
         }},
       { $unwind: '$document' },
       { "$replaceRoot": { "newRoot": "$document" }  }
-    ]).toArray();
+    ]
+    // execute
+    const res = await DBClient.commitsCollection.aggregate(a).toArray();
     // check result
-    if (!res || res.length !== 1)
+    if (!res)
       throw new ApiError(HttpStatusCode.NOT_FOUND);
+    // check for array
+    if (returnArray)
+      return res;
+    // check if not single
+    if (res.length !== 1)
+      throw new ApiError(HttpStatusCode.INTERNAL_SERVER_ERROR);
     // return document
     return res[0];
   }
@@ -166,16 +179,36 @@ export class DBClient {
    * @return The document
    */
   async _getDocumentByItemAndCommit(commitId : ObjectId, itemId : ObjectId) {
-    return this._generateDocumentRequest({ _id: commitId }, { item: itemId });
+    return this._generateDocumentRequest(false, { _id: commitId }, { item: itemId });
+  }
+
+
+  /**
+   * Returns all documents within the commit
+   * @param commitId Commit ID
+   * @return A list of documents
+   */
+  async _getAllByCommit(commitId : ObjectId) {
+    return this._generateDocumentRequest(true, { _id: commitId });
   }
 
 
   /**
    * Returns the document corresponding to the item and the head commit
    * @param itemId Item ID
+   * @return The head document with the given item ID
    */
   async _getHeadDocumentByItem(itemId : ObjectId) {
-    return this._generateDocumentRequest({ isHead: true }, { item: itemId });
+    return this._generateDocumentRequest(false, { isHead: true }, { item: itemId });
+  }
+
+
+  /**
+   * Returns all documents corresponding to the head commit
+   * @return The head documents
+   */
+  async _getAllHeadDocuments() {
+    return this._generateDocumentRequest(true, { isHead: true });
   }
 
 
@@ -298,7 +331,8 @@ export class DBClient {
    */
   async _createLink(source : ObjectId, target : ObjectId, type : string, backType ?: string) {
     // check item to available
-    if (await this._getItemEntryById(source) === null || await this._getItemEntryById(target) === null)
+    const targetDoc = await this._getHeadDocumentByItem(target);
+    if (await this._getItemEntryById(source) === null || targetDoc === null)
       throw new ApiError(HttpStatusCode.NOT_FOUND);
     // create commit
     const commit = await DBClient._createCommit(this.authKey);
@@ -309,7 +343,7 @@ export class DBClient {
     // update commit base
     commit.base.find(d => d.item.toHexString() === source.toHexString()).document = sourceDoc.insertedId;
     // if back type is set ...
-    let targetDocId = null;
+    let targetDocId = targetDoc._id;
     if (backType) {
       // update target
       const targetDoc = await this._incrementDocument(commit.previous, commit.id, target, (document: any) => {
@@ -367,80 +401,24 @@ export class DBClient {
   }
 
 
-  async getAllLatest() {
-    return await DBClient.commitsCollection.aggregate([
-      { $match: { isHead: true }},
-      ...DBClient._generateDocumentsAggregate(),
-      { $sort: { rank: 1 }}
-    ]).toArray();
-  }
-
-  async getAllByCommit(commit : string) {
-    return await DBClient.commitsCollection.aggregate([
-      { $match: { _id: new ObjectId(commit) }},
-      ...DBClient._generateDocumentsAggregate(),
-      { $sort: { rank: 1 }}
-    ]).toArray();
-  }
-
-  async deleteById(id : string) {
-    // create commit
-    const commit = await DBClient._createCommit(this.authKey);
-    // delete item
-    const itemId = new ObjectId(id);
-    await this._markItemAsDeleted(itemId, commit.id);
-    // delete from base
-    commit.base.splice(commit.base.findIndex(d => d.item.toHexString() === id), 1);
-    await DBClient._updateCommit(commit.id, commit.base);
-    // return id
-    return {_id: itemId.toHexString(), _commit: commit.id.toHexString()};
-  }
-
-  async deleteAllLatest() {
-    // create commit
-    const commit = await DBClient._createCommit(this.authKey);
-    const commitId = commit.id;
-    // get IDs
-    const ids = await DBClient.itemsCollection
-      .find({ deletionCommit: null })
-      .map(e => e._id)
-      .toArray();
-    // delete an item, by setting the deletionCommit field
-    await DBClient.itemsCollection.updateMany({
-      deletionCommit: null
-    }, {
-      $set: {
-        deletionCommit: commitId
-      }
-    });
-    // delete many from base
-    ids.map(deleted => {
-      commit.base.splice(commit.base.findIndex(i => i.item.toHexString() === deleted.toHexString()), 1);
-    });
-    await DBClient._updateCommit(commit.id, commit.base);
-    // return IDs
-    return {_ids: ids.map(i => i.toHexString()), _commit: commitId};
-  }
-
-  async updateById(itemId : string, body : BodyType) {
-    // get item id
-    const item = new ObjectId(itemId);
+  async _updateById(itemId : ObjectId, body : BodyType) {
     // check item
-    if (await this._getItemEntryById(item) === null)
+    if (await this._getItemEntryById(itemId) === null)
       throw new ApiError(HttpStatusCode.NOT_FOUND);
     // create commit
     const commit = await DBClient._createCommit(this.authKey);
     // insert document
-    const doc = await this._insertDocumentEntry(body, item, commit.id);
+    const oldDoc = await this._getHeadDocumentByItem(itemId);
+    const doc = await this._insertDocumentEntry(body, itemId, commit.id, oldDoc._links);
     // update commit
-    commit.base.find(d => d.item.toHexString() === itemId).document = doc.insertedId;
+    commit.base.find(d => d.item.toHexString() === itemId.toHexString()).document = doc.insertedId;
     await DBClient._updateCommit(commit.id, commit.base);
     // update commit
-    return { _document: doc.insertedId.toHexString(), _commit: commit.id.toHexString() };
+    return { _document: doc.insertedId, _commit: commit.id };
   }
 
-  async patchFieldsById(itemId : string, fields : BodyType) {
-    return this._updateItem(new ObjectId(itemId), async (document : any) => {
+  async _patchFieldsById(itemId : ObjectId, fields : BodyType) {
+    return this._updateItem(itemId, async (document : any) => {
       document.fields = fields;
     });
   }

@@ -12,14 +12,14 @@ export const itemController = {
 
   getEntries : catchAsync(async (req: Request, res: Response) => {
     // get all items of latest commit
-    res.status(HttpStatusCode.OK)
-      .send(await req.db.documents.getAllLatest());
+    // res.status(HttpStatusCode.OK)
+    //   .send(await req.db.documents.getAllLatest());
   }),
 
   getCommit : catchAsync(async (req: Request, res: Response) => {
     // get all items within commit
-    res.status(HttpStatusCode.OK)
-      .send(await req.db.documents.getAllByCommit(req.params.commitId));
+    // res.status(HttpStatusCode.OK)
+    //   .send(await req.db.documents.getAllByCommit(req.params.commitId));
   }),
 
   addEntry : (async (req: Request, res: Response) => {
@@ -36,20 +36,20 @@ export const itemController = {
 
   deleteEntry : catchAsync(async (req: Request, res: Response) => {
     // delete by ID
-    res.status(HttpStatusCode.OK)
-      .send(await req.db.documents.deleteById(req.params.id));
+    // res.status(HttpStatusCode.OK)
+    //   .send(await req.db.documents.deleteById(req.params.id));
   }),
 
   deleteEntries : catchAsync(async (req: Request, res: Response) => {
     // delete all entries
-    res.status(HttpStatusCode.OK)
-      .send(await req.db.documents.deleteAllLatest());
+    // res.status(HttpStatusCode.OK)
+    //   .send(await req.db.documents.deleteAllLatest());
   }),
 
   updateEntry : catchAsync(async (req: Request, res: Response) => {
     // send result
-    res.status(HttpStatusCode.OK)
-      .send(await req.db.documents.updateById(req.params.id, req.body));
+    // res.status(HttpStatusCode.OK)
+    //   .send(await req.db.documents.updateById(req.params.id, req.body));
   }),
 
   patchFields : catchAsync(async (req: Request, res: Response) => {
