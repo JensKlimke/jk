@@ -3,7 +3,7 @@
     "workspaces": [
         "packages/*"
     ],
-    "name": "my-project",
+    "name": "jk",
     "devDependencies": {
         "typescript": "^5.0.0"
     }
