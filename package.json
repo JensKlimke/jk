@@ -1,28 +1,10 @@
 {
-  "name": "root",
-  "private": true,
-  "workspaces": [
-    "packages/*"
-  ],
-  "scripts": {
-    "build": "lerna run build",
-    "start": "lerna run start",
-    "start:api": "lerna run start --scope=api",
-    "start:finapp": "lerna run start --scope=finapp",
-    "prod:api": "lerna run prod --scope=api",
-    "prod:finapp": "lerna run prod --scope=finapp",
-    "watch": "lerna run --parallel watch",
-    "test": "lerna run test"
-  },
-  "devDependencies": {
-    "@types/node": "^20.8.10",
-    "concurrently": "^8.2.2",
-    "lerna": "^7.4.2",
-    "typescript": "^4.9.5",
-    "watch": "^1.0.2"
-  },
-  "dependencies": {
-    "@lerna/clean": "^6.6.2",
-    "react-scripts": "^5.0.1"
-  }
+    "private": true,
+    "workspaces": [
+        "packages/*"
+    ],
+    "name": "my-project",
+    "devDependencies": {
+        "typescript": "^5.0.0"
+    }
 }

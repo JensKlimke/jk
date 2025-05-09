@@ -1,7 +1,6 @@
-node_modules/
-
-packages/*/lib
-packages/*/build
-packages/*/coverage
-
 .idea
+
+.env
+
+/bin/
+/node_modules/
