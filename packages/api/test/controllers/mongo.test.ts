@@ -1,4 +1,3 @@
-import Mongo from "../../src/utils/mongo";
 import {MongoClient} from "mongodb";
 import {MONGO_URL} from "../../src/config/env";
 

@@ -1,7 +1,7 @@
 import express from "express";
 import {authController} from "../../controllers/auth";
 import {validate} from "../../middlewares/validate";
-import {API_ENV, CODE_KEY} from "../../config/env";
+import {CODE_KEY} from "../../config/env";
 import {fakeSessionScheme} from "../../validations/auth";
 import {env} from "../../middlewares/auth";
 

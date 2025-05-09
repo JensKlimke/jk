@@ -4,7 +4,7 @@ import HttpStatusCode from "../utils/HttpStatusCode";
 import {pick} from "../utils/pick";
 import {NextFunction, Request, Response} from "express";
 
-export const validate = (schema: any) => (req: Request, res: Response, next: NextFunction) => {
+export const validate = (schema: any) => (req: Request, _: Response, next: NextFunction) => {
   const validSchema = pick(schema, ['params', 'query', 'body']);
   const object = pick(req, Object.keys(validSchema));
   const {value, error} = Joi.compile(validSchema)

@@ -1,5 +1,3 @@
-import {MongoClient} from "mongodb";
-import Mongo from "../utils/mongo";
 
 export interface UserData {
   id?: string
@@ -14,5 +12,3 @@ export interface AuthData {
   clientToken ?: string
   accessToken ?: string
 }
-
-export type MongoData = {[key: string] : Mongo}

@@ -2,7 +2,6 @@ import {init, terminate} from "../../src/app";
 import {DBClient} from "../../src/utils/mongo";
 import {ObjectId} from "mongodb";
 import ApiError from "../../src/utils/ApiError";
-import exp from "node:constants";
 
 describe('Database Modules', () => {
 
@@ -341,7 +340,7 @@ describe('Database Modules', () => {
   });
 
 
-  test('Get all head documents', async () => {
+  test('Link and unlink documents', async () => {
     // add items
     const insParent = await client._addItem({'type': 'parent'});
     const insChild = await client._addItem({'type': 'child'});
@@ -381,37 +380,171 @@ describe('Database Modules', () => {
       _links: [],
       type: "child"
     }]);
+    // unlink items
+    const unlink = await client._deleteLink(insParent._item, insChild._item, 'owns');
+    // get head document from parents
+    res = await client._getAllHeadDocuments();
+    // check
+    expect(res).toEqual([{
+      _id: unlink._source,
+      _item: insParent._item,
+      _commit: unlink._commit,
+      _links: [],
+      type: "parent"
+    }, {
+      _id: insChild._document,
+      _item: insChild._item,
+      _commit: insChild._commit,
+      _links: [],
+      type: "child"
+    }]);
+  });
+
+
+  test('Link and unlink documents (bi-directional)', async () => {
+    // add items
+    const insParent = await client._addItem({'type': 'parent'});
+    const insChild = await client._addItem({'type': 'child'});
+    // link items
+    const link = await client._createLink(insParent._item, insChild._item, 'owns', 'owned_by');
+    // get head document from parents
+    let res = await client._getAllHeadDocuments();
+    // check
+    expect(res).toEqual([{
+      _id: link._source,
+      _item: insParent._item,
+      _commit: link._commit,
+      _links: [{ target: insChild._item, type: 'owns' }],
+      type: "parent"
+    }, {
+      _id: link._target,
+      _item: insChild._item,
+      _commit: link._commit,
+      _links: [{ target: insParent._item, type: 'owned_by' }],
+      type: "child"
+    }]);
+    // unlink items
+    const unlink = await client._deleteLink(insParent._item, insChild._item, 'owns', 'owned_by');
+    // get head document from parents
+    res = await client._getAllHeadDocuments();
+    // check
+    expect(res).toEqual([{
+      _id: unlink._source,
+      _item: insParent._item,
+      _commit: unlink._commit,
+      _links: [],
+      type: "parent"
+    }, {
+      _id: unlink._target,
+      _item: insChild._item,
+      _commit: unlink._commit,
+      _links: [],
+      type: "child"
+    }]);
   });
 
 
   test('Update item', async () => {
     // add item
-    const insParent = await client._addItem({'type': 'parent'});
-    const insChild = await client._addItem({'type': 'child'});
-    // link items
-    const link = await client._createLink(insParent._item, insChild._item, 'owns');
+    const ins = await client._addItem({'field1': 'A', 'field2': 'B'});
     // update item
-    const upd = await client._updateById(insParent._item, {'type' : 'new item'});
+    let upd = await client._updateDocumentById(ins._item, {'field1': 'C', 'field2': 'D'});
     // get result
-    let res = await client._getHeadDocumentByItem(insParent._item);
+    let res = await client._getHeadDocumentByItem(ins._item);
     // check
     expect(res).toEqual({
       _id: upd._document,
-      _item: insParent._item,
+      _item: ins._item,
       _commit: upd._commit,
-      _links: [{ target: insChild._item, type: 'owns' }],
-      type: 'new item',
+      _links: [],
+      field1: 'C',
+      field2: 'D'
+    });
+    // update item
+    upd = await client._patchFieldsById(ins._item, {'field1' : 'F', 'field3': 'G'});
+    // get result
+    res = await client._getHeadDocumentByItem(ins._item);
+    // check
+    expect(res).toEqual({
+      _id: upd._document,
+      _item: ins._item,
+      _commit: upd._commit,
+      _links: [],
+      field1: 'F',
+      field2: 'D',
+      field3: 'G'
     });
     // set client auth
     client.setAuth(fakeAuthKey.toHexString());
     // callback to execute function
     const t = async () => {
-      await client._updateById(insParent._item, {'type' : 'new new item'});
+      await client._updateDocumentById(ins._item, {'type' : 'new new item'});
     };
     // check for error
     await expect(t).rejects.toThrow(ApiError);
   });
 
 
+  test('Manage head', async () => {
+    // add item
+    const ins = await client._addItem({'field1': 'A'});
+    // update item
+    const c1 = await client._updateDocumentById(ins._item, {'field1': 'B'});
+    const c2 = await client._updateDocumentById(ins._item, {'field1': 'C'});
+    const c3 = await client._updateDocumentById(ins._item, {'field1': 'D'});
+    // set head to second change
+    await client._resetHead(c1._commit);
+    // get head element
+    let res = await client._getAllHeadDocuments();
+    // check
+    expect(res.length).toEqual(1);
+    expect(res[0]).toEqual({
+      _commit: c1._commit,
+      _id: c1._document,
+      _item: ins._item,
+      _links: [],
+      field1: 'B'
+    });
+    // set head to third change
+    await client._resetHead(c2._commit);
+    // get head element
+    res = await client._getAllHeadDocuments();
+    // check
+    expect(res.length).toEqual(1);
+    expect(res[0]).toEqual({
+      _commit: c2._commit,
+      _id: c2._document,
+      _item: ins._item,
+      _links: [],
+      field1: 'C'
+    });
+    // set head to third change
+    await client._resetHead();
+    // get head element
+    res = await client._getAllHeadDocuments();
+    // check
+    expect(res.length).toEqual(1);
+    expect(res[0]).toEqual({
+      _commit: c3._commit,
+      _id: c3._document,
+      _item: ins._item,
+      _links: [],
+      field1: 'D'
+    });
+    // callback to execute function
+    const t = async () => {
+      await client._resetHead(new ObjectId(0));
+    };
+    // check for error
+    await expect(t).rejects.toThrow(ApiError);
+  });
+
+
+  test('Complex', async () => {
+    // add item
+    let insA = await client._addItem({'field1': 'A'});
+    let insB = await client._addItem({'field1': 'B'});
+    let insC = await client._addItem({'field1': 'C'});
+  });
 
 });

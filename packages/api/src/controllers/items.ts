@@ -54,8 +54,8 @@ export const itemController = {
 
   patchFields : catchAsync(async (req: Request, res: Response) => {
     // send result
-    res.status(HttpStatusCode.OK)
-      .send(await req.db.documents.patchFieldsById(req.params.id, req.body));
+    // res.status(HttpStatusCode.OK)
+    //   .send(await req.db.documents.patchFieldsById(req.params.id, req.body));
   }),
 
   linkEntry : catchAsync(async (req: Request, res: Response) => {

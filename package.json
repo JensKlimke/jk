@@ -15,7 +15,6 @@
     "test": "lerna run test"
   },
   "devDependencies": {
-    "@types/node": "^20.8.10",
     "concurrently": "^8.2.2",
     "lerna": "^7.4.2",
     "typescript": "^4.9.5",

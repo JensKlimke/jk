@@ -321,6 +321,19 @@ export class DBClient {
     );
   }
 
+  /**
+   * Removes the link from the document
+   * @param document Document to be updated
+   * @param target Target item to be unlinked
+   * @param type Type of the link
+   */
+  async _removeLinkFromDocument(document : any, target : ObjectId, type : string) {
+    // add link uniquely
+    (document._links as LinkType[]).remove(
+        a => (a.target.toString() === target.toHexString() && a.type === type)
+    );
+  }
+
 
   /**
    * Creates a link between the source and the target item and backwards, when backType is set.
@@ -348,6 +361,45 @@ export class DBClient {
       // update target
       const targetDoc = await this._incrementDocument(commit.previous, commit.id, target, (document: any) => {
         this._writeLinkIntoDocument(document, source, backType);
+      });
+      // set target doc id
+      targetDocId = targetDoc.insertedId;
+      // update target base
+      commit.base.find(d => d.item.toHexString() === target.toHexString()).document = targetDocId;
+    }
+    // update commit
+    await DBClient._updateCommit(commit.id, commit.base);
+    // return docs and commit
+    return { _source: sourceDoc.insertedId, _target: targetDocId, _commit: commit.id };
+  }
+
+
+  /**
+   * Deletes the link
+   * @param source
+   * @param target
+   * @param type
+   * @param backType
+   */
+  async _deleteLink(source : ObjectId, target : ObjectId, type : string, backType ?: string) {
+    // check item to available
+    const targetDoc = await this._getHeadDocumentByItem(target);
+    if (await this._getItemEntryById(source) === null || targetDoc === null)
+      throw new ApiError(HttpStatusCode.NOT_FOUND);
+    // create commit
+    const commit = await DBClient._createCommit(this.authKey);
+    // update source
+    const sourceDoc = await this._incrementDocument(commit.previous, commit.id, source, (document : any) => {
+      this._removeLinkFromDocument(document, target, type);
+    });
+    // update commit base
+    commit.base.find(d => d.item.toHexString() === source.toHexString()).document = sourceDoc.insertedId;
+    // if back type is set ...
+    let targetDocId = targetDoc._id;
+    if (backType) {
+      // update target
+      const targetDoc = await this._incrementDocument(commit.previous, commit.id, target, (document: any) => {
+        this._removeLinkFromDocument(document, source, backType);
       });
       // set target doc id
       targetDocId = targetDoc.insertedId;
@@ -401,14 +453,14 @@ export class DBClient {
   }
 
 
-  async _updateById(itemId : ObjectId, body : BodyType) {
+  async _updateDocumentById(itemId : ObjectId, body : BodyType) {
     // check item
     if (await this._getItemEntryById(itemId) === null)
       throw new ApiError(HttpStatusCode.NOT_FOUND);
     // create commit
     const commit = await DBClient._createCommit(this.authKey);
     // insert document
-    const oldDoc = await this._getHeadDocumentByItem(itemId);
+    const oldDoc = await this._getDocumentByItemAndCommit(commit.previous, itemId);
     const doc = await this._insertDocumentEntry(body, itemId, commit.id, oldDoc._links);
     // update commit
     commit.base.find(d => d.item.toHexString() === itemId.toHexString()).document = doc.insertedId;
@@ -418,25 +470,33 @@ export class DBClient {
   }
 
   async _patchFieldsById(itemId : ObjectId, fields : BodyType) {
-    return this._updateItem(itemId, async (document : any) => {
-      document.fields = fields;
-    });
+    // check item
+    if (await this._getItemEntryById(itemId) === null)
+      throw new ApiError(HttpStatusCode.NOT_FOUND);
+    // create commit
+    const commit = await DBClient._createCommit(this.authKey);
+    // insert document
+    const oldDoc = await this._getDocumentByItemAndCommit(commit.previous, itemId);
+    // update body
+    const body = {...oldDoc, ...fields};
+    // write document
+    const doc = await this._insertDocumentEntry(
+        DBClient._cleanDataObject(body), itemId, commit.id, oldDoc._links
+    );
+    // update commit
+    commit.base.find(d => d.item.toHexString() === itemId.toHexString()).document = doc.insertedId;
+    await DBClient._updateCommit(commit.id, commit.base);
+    // update commit
+    return { _document: doc.insertedId, _commit: commit.id };
   }
 
-  async deleteLink(id : string, target : string, type : string, backType : string | undefined) {
-    // update, TODO: test to added twice (should be added once)
-    return this._updateItem(new ObjectId(id), async (document : any) => {
-      // TODO
-    })
-  }
-
-  async resetHead(commitId : string | undefined) {
+  async _resetHead(commitId ?: ObjectId) {
     // get commit
     let commit : any;
     if (commitId)
-      commit = await DBClient.commitsCollection.findOne({_id: new ObjectId(commitId)});
+      commit = await DBClient.commitsCollection.findOne({_id : commitId});
     else
-      commit = (await DBClient.commitsCollection.find({}).sort({_id:-1}).limit(1).toArray())[0];
+      commit = (await DBClient.commitsCollection.find({}).sort({_id : -1}).limit(1).toArray())[0];
     // check commit
     if (!commit)
       throw new ApiError(HttpStatusCode.NOT_FOUND);
@@ -469,60 +529,5 @@ export class DBClient {
     // save documents
     await this.commitsCollection.updateOne({_id: commitId}, { $set: { documents : documents } });
   }
-
-  protected static _generateDocumentsAggregate () {
-    return [
-      { $unwind: '$documents' },
-      { $lookup: {
-          from: DOCUMENTS_COLLECTION_NAME,
-          localField: "documents.document",
-          foreignField: "_id",
-          as: "document"
-        }},
-      { $unwind: '$document' },
-      { $lookup: {
-          from: ITEMS_COLLECTION_NAME,
-          localField: "documents.item",
-          foreignField: "_id",
-          as: "item"
-        }},
-      { $unwind: '$item' },
-      { $lookup: {
-          from: COMMITS_COLLECTION_NAME,
-          localField: "item.creationCommit",
-          foreignField: "_id",
-          as: "creationCommit"
-        }},
-      { $unwind: '$creationCommit' },
-      { $lookup: {
-          from: COMMITS_COLLECTION_NAME,
-          localField: "document._commit",
-          foreignField: "_id",
-          as: "updateCommit"
-        }},
-      { $unwind: '$updateCommit' },
-      { $project: {
-          _id: '$documents.item',
-          project: "$document.project",
-          title: "$document.title",
-          labels: "$document.labels",
-          rank: "$document.rank",
-          links: "$document.links",
-          tags: "$document.tags",
-          fields: "$document.fields",
-          changed: {
-            date: "$updateCommit.date",
-            author: "$updateCommit.author",
-            commit: "$updateCommit._id",
-          },
-          created: {
-            date: "$creationCommit.date",
-            author: "$creationCommit.author",
-            commit: "$creationCommit._id",
-          }
-        }},
-    ]
-  }
-
 
 }
