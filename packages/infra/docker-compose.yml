@@ -15,6 +15,10 @@ services:
       - html:/usr/share/nginx/html
       - certs:/etc/nginx/certs:ro
       - /var/run/docker.sock:/tmp/docker.sock:ro
+      # Add custom nginx configurations
+      - ./nginx-custom:/etc/nginx/custom.d
+    environment:
+      - NGINX_CUSTOM_CONF_DIR=/etc/nginx/custom.d
     networks:
       - jk-net
 
@@ -34,14 +38,41 @@ services:
     networks:
       - jk-net
 
+  # OAuth2 Proxy for Authentication
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:latest
+    container_name: oauth2-proxy
+    command:
+      - --provider=github
+      - --email-domain=*
+      - --upstream=http://127.0.0.1:8080/
+      - --http-address=0.0.0.0:4180
+      - --cookie-secret=${OAUTH2_PROXY_COOKIE_SECRET}
+      - --cookie-secure=true
+      - --cookie-refresh=1h
+      - --cookie-expire=4h
+      - --skip-auth-route=^/public/.*$
+    environment:
+      - VIRTUAL_HOST=auth.${DOMAIN}
+      - LETSENCRYPT_HOST=auth.${DOMAIN}
+      - VIRTUAL_PORT=4180
+      - OAUTH2_PROXY_CLIENT_ID=${OAUTH2_PROXY_CLIENT_ID}
+      - OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_PROXY_CLIENT_SECRET}
+      - OAUTH2_PROXY_REDIRECT_URL=https://auth.${DOMAIN}/oauth2/callback
+    restart: always
+    networks:
+      - jk-net
 
-  # WHO AM I
+
+  # WHO AM I (Protected with OAuth2)
   whoami:
     image: jwilder/whoami
     container_name: whoami
     environment:
       - VIRTUAL_HOST=whoami.${DOMAIN}
       - LETSENCRYPT_HOST=whoami.${DOMAIN}
+      # Add custom vhost configuration for authentication
+      - NGINX_PROXY_CUSTOM_VHOST_CONFIG=location / { auth_request /oauth2/auth; error_page 401 = /oauth2/sign_in; auth_request_set $$user $$upstream_http_x_auth_request_user; auth_request_set $$email $$upstream_http_x_auth_request_email; proxy_set_header X-User $$user; proxy_set_header X-Email $$email; }
     restart: always
     networks:
       - jk-net
