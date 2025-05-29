@@ -1,0 +1,77 @@
+version: '3'
+
+services:
+
+  # NGINX: nginx-proxy
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy
+    container_name: nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - conf:/etc/nginx/conf.d
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - certs:/etc/nginx/certs:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - jk-net
+
+  # NGINX: certification
+  acme-companion:
+    image: nginxproxy/acme-companion
+    container_name: nginx-proxy-acme
+    environment:
+      - DEFAULT_EMAIL=${EMAIL:-admin@example.com}
+      - NGINX_PROXY_CONTAINER=nginx-proxy
+    volumes:
+      - certs:/etc/nginx/certs
+      - html:/usr/share/nginx/html
+      - vhost:/etc/nginx/vhost.d
+      - acme:/etc/acme.sh
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - jk-net
+
+  # PORTAINER
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_volume:/data
+    ports:
+      - "8000:8000"
+    environment:
+      - VIRTUAL_HOST=portainer.${DOMAIN}
+      - LETSENCRYPT_HOST=portainer.${DOMAIN}
+      - VIRTUAL_PORT=9000
+    restart: always
+    networks:
+      - jk-net
+
+  # WHO AM I
+  whoami:
+    image: jwilder/whoami
+    container_name: whoami
+    environment:
+      - VIRTUAL_HOST=whoami.${DOMAIN}
+      - LETSENCRYPT_HOST=whoami.${DOMAIN}
+    restart: always
+    networks:
+      - jk-net
+
+volumes:
+  conf:
+  vhost:
+  html:
+  certs:
+  acme:
+  portainer_volume:
+    external: true
+
+
+networks:
+  jk-net:
+    external: true
