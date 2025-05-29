@@ -10,8 +10,7 @@
 
 1. **Clone the repository**
    ```bash
-   # Replace REPOSITORY_URL with the actual repository URL
-   git clone REPOSITORY_URL /root/jk-server
+   git clone https://github.com/JensKlimke/jk /root/jk-server
    cd /root/jk-server
    ```
 
