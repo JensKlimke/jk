@@ -10,8 +10,8 @@
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/JensKlimke/jk /root/jk-server
-   cd /root/jk-server
+   git clone https://github.com/JensKlimke/jk /root/jk
+   cd /root/jk
    ```
 
 2. **Run the setup script to install Docker and Docker Compose**
@@ -30,17 +30,16 @@
 
 4. **Set up environment variables**
    ```bash
-   # Create .env file with required variables
-   cat > .env << EOF
+   # Create .env file with required variables in the infra directory
+   cat > packages/infra/.env << EOF
    DOMAIN=yourdomain.com
    EMAIL=your.email@example.com
    EOF
    ```
 
-5. **Copy configuration files**
+5. **Copy service configuration file**
    ```bash
-   # Copy the configuration files to their respective locations
-   cp packages/infra/docker-compose.yml .
+   # Copy the service configuration file to systemd
    sudo cp packages/infra/docker-compose-app.service /etc/systemd/system/
    ```
 

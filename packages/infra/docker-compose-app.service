@@ -8,7 +8,7 @@ StartLimitIntervalSec=60
 StartLimitBurst=3
 
 [Service]
-WorkingDirectory=/root/jk-server
+WorkingDirectory=/root/jk/packages/infra
 ExecStart=/usr/local/bin/docker-compose up
 ExecStop=/usr/local/bin/docker-compose down
 TimeoutStartSec=0
