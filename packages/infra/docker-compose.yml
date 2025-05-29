@@ -34,22 +34,6 @@ services:
     networks:
       - jk-net
 
-  # PORTAINER
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: portainer
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - portainer_volume:/data
-    ports:
-      - "8000:8000"
-    environment:
-      - VIRTUAL_HOST=portainer.${DOMAIN}
-      - LETSENCRYPT_HOST=portainer.${DOMAIN}
-      - VIRTUAL_PORT=9000
-    restart: always
-    networks:
-      - jk-net
 
   # WHO AM I
   whoami:
@@ -68,8 +52,6 @@ volumes:
   html:
   certs:
   acme:
-  portainer_volume:
-    external: true
 
 
 networks:

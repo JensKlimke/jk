@@ -24,10 +24,9 @@
    ./packages/infra/setup.sh
    ```
 
-3. **Create Docker network and volume**
+3. **Create Docker network**
    ```bash
    docker network create jk-net
-   docker volume create portainer_volume
    ```
 
 4. **Set up environment variables**
@@ -60,7 +59,6 @@
 
    # Test the setup by visiting:
    # - https://whoami.yourdomain.com
-   # - https://portainer.yourdomain.com
    ```
 
 ### Environment Variables
@@ -71,5 +69,4 @@
 ### Services
 
 - **nginx-proxy**: Reverse proxy with automatic SSL
-- **portainer**: Container management UI at portainer.yourdomain.com
 - **whoami**: Test service at whoami.yourdomain.com
