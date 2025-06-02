@@ -2,5 +2,9 @@
 
 .env
 
-/bin/
-/node_modules/
+node_modules/
+packages/*/coverage/
+packages/*/dist/
+
+
+.venv
