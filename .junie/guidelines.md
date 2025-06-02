@@ -9,9 +9,12 @@ JK is a monorepo containing infrastructure setup and applications for the JK pro
 ```
 jk/
 ├── packages/
-│   ├── models/         # Shared data models library (TypeScript)
-│   ├── api/            # Express API backend (TypeScript)
-│   └── app/            # React frontend application (TypeScript, Vite)
+│   ├── libs/           # Libraries
+│   │   └── models/     # Shared data models library (TypeScript)
+│   ├── apps/           # Web applications
+│   │   └── app/        # React frontend application (TypeScript, Vite)
+│   └── services/       # Server applications
+│       └── api/        # Express API backend (TypeScript)
 ├── package.json        # Root package.json with workspaces configuration
 └── tsconfig.json       # Base TypeScript configuration
 ```

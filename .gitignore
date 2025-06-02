@@ -3,8 +3,8 @@
 .env
 
 node_modules/
-packages/*/coverage/
-packages/*/dist/
+coverage/
+dist/
 
 
 .venv

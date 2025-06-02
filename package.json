@@ -2,7 +2,9 @@
     "private": true,
     "license": "MIT",
     "workspaces": [
-        "packages/*"
+        "packages/libs/*",
+        "packages/apps/*",
+        "packages/services/*"
     ],
     "name": "jk",
     "scripts": {

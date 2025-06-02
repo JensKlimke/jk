@@ -14,9 +14,12 @@ This monorepo contains infrastructure setup and applications for the JK project.
 ```
 jk/
 ├── packages/
-│   ├── models/         # Shared data models library
-│   ├── api/            # Express API backend
-│   └── app/             # React frontend application
+│   ├── libs/           # Libraries
+│   │   └── models/     # Shared data models library
+│   ├── apps/           # Web applications
+│   │   └── app/        # React frontend application
+│   └── services/       # Server applications
+│       └── api/        # Express API backend
 ├── package.json        # Root package.json with workspaces configuration
 └── tsconfig.json       # Base TypeScript configuration
 ```
@@ -99,9 +102,15 @@ This monorepo is set up to facilitate development across multiple packages. When
 
 To add a new package:
 
-1. Create a new directory in the `packages` folder
-2. Initialize it with a `package.json` file
-3. Add it to the workspaces in the root `package.json` if needed
+1. Determine the type of your package:
+   - **Libraries**: Shared code used by multiple packages (place in `packages/libs/`)
+   - **Web Applications**: Frontend applications (place in `packages/apps/`)
+   - **Services**: Backend services and APIs (place in `packages/services/`)
+   - For other types, create an appropriate category directory under `packages/`
+
+2. Create a new directory in the appropriate category folder
+3. Initialize it with a `package.json` file
+4. The workspaces in the root `package.json` are already configured for the standard categories
 
 ### Linting and Formatting
 
