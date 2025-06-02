@@ -1,5 +1,12 @@
 # JK - Infrastructure and Applications
 
+[![CI](https://github.com/JensKlimke/jk/actions/workflows/ci.yml/badge.svg)](https://github.com/JensKlimke/jk/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js Version](https://img.shields.io/badge/node-18.x-brightgreen.svg)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org/)
+[![ESLint](https://img.shields.io/badge/ESLint-8.57.0-4B32C3.svg)](https://eslint.org/)
+[![Prettier](https://img.shields.io/badge/Prettier-3.2.5-F7B93E.svg)](https://prettier.io/)
+
 This monorepo contains infrastructure setup and applications for the JK project. It's designed to support web applications, backend services, infrastructure setups, documentation, and shared libraries.
 
 ## Project Structure

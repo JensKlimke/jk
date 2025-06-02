@@ -2,6 +2,7 @@
   "name": "@jk/app",
   "version": "1.0.0",
   "description": "React frontend for JK project",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -2,6 +2,7 @@
   "name": "@jk/api",
   "version": "1.0.0",
   "description": "Express API backend for JK project",
+  "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
