@@ -1,6 +1,6 @@
 /**
  * Tests for the ExampleModel interface
- * 
+ *
  * These tests verify that objects conforming to the ExampleModel interface
  * can be created and used correctly.
  */
@@ -9,7 +9,7 @@ import { ExampleModel } from '../ExampleModel';
 describe('ExampleModel', () => {
   /**
    * Test case for creating an ExampleModel object
-   * 
+   *
    * This test verifies that an object conforming to the ExampleModel interface
    * can be created with all required properties.
    */
@@ -32,7 +32,7 @@ describe('ExampleModel', () => {
 
   /**
    * Test case for using an ExampleModel in a function
-   * 
+   *
    * This test verifies that an ExampleModel object can be used in a function
    * that expects an ExampleModel parameter.
    */
@@ -54,12 +54,14 @@ describe('ExampleModel', () => {
     const result = formatExample(example);
 
     // Verify the result
-    expect(result).toBe('Another Example: This is another test example (ID: 456, Created: 2/15/2023)');
+    expect(result).toBe(
+      'Another Example: This is another test example (ID: 456, Created: 2/15/2023)',
+    );
   });
 
   /**
    * Test case for array of ExampleModel objects
-   * 
+   *
    * This test verifies that an array of ExampleModel objects can be created
    * and manipulated correctly.
    */

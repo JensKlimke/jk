@@ -1,17 +1,18 @@
 /**
  * Functional tests for the example routes
- * 
+ *
  * These tests verify that the example API endpoints work as expected
  * by making HTTP requests and checking the responses.
  */
-import request from 'supertest';
-import app from '../../index';
 import { ExampleModel } from '@jk/models';
+import request from 'supertest';
+
+import app from '../../index';
 
 describe('Example API Routes', () => {
   /**
    * Test case for GET /api/examples
-   * 
+   *
    * This test verifies that:
    * 1. The endpoint returns a 200 OK status
    * 2. The response is a JSON array
@@ -38,7 +39,7 @@ describe('Example API Routes', () => {
 
   /**
    * Test case for GET /api/examples/:id
-   * 
+   *
    * This test verifies that:
    * 1. The endpoint returns a 200 OK status
    * 2. The response is a JSON object
@@ -64,7 +65,7 @@ describe('Example API Routes', () => {
 
     /**
      * Test for handling invalid IDs
-     * 
+     *
      * This test verifies that the API properly handles requests for non-existent resources
      * by checking that the response has the expected structure even for invalid IDs.
      */

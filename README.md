@@ -191,6 +191,14 @@ Each package contains tests in `__tests__` directories:
 - **App Package**: Tests for React components and API service functions
 - **Models Package**: Tests for data model interfaces
 
+#### Test Best Practices
+
+The test suite follows these best practices:
+
+- **Mocking External Dependencies**: All external dependencies (like API calls) are mocked to ensure tests are isolated and deterministic
+- **Suppressing Console Errors**: Console errors are suppressed during tests that intentionally trigger error conditions to keep the test output clean
+- **Testing Edge Cases**: Tests cover various scenarios including successful operations, empty data, and error handling
+
 ### Continuous Integration
 
 This project uses GitHub Actions for continuous integration to ensure code quality and prevent regressions.

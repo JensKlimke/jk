@@ -1,13 +1,15 @@
 /**
  * Tests for the App component
- * 
+ *
  * These tests verify that the App component renders correctly and handles
  * different states (loading, error, data) appropriately.
  */
+import { ExampleModel } from '@jk/models';
 import { render, screen, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
+
 import App from '../App';
 import { getExamples } from '../services/api';
-import { ExampleModel } from '@jk/models';
 
 // Mock the API service
 jest.mock('../services/api');
@@ -21,23 +23,23 @@ describe('App Component', () => {
 
   /**
    * Test case for initial loading state
-   * 
+   *
    * This test verifies that the App component shows a loading message
    * when it first renders and is fetching data.
    */
   it('should show loading state initially', () => {
     // Mock the API call to return a promise that doesn't resolve immediately
     mockedGetExamples.mockImplementation(() => new Promise(() => {}));
-    
+
     render(<App />);
-    
+
     // Check that the loading message is displayed
     expect(screen.getByText(/Loading examples/i)).toBeInTheDocument();
   });
 
   /**
    * Test case for successful data fetching
-   * 
+   *
    * This test verifies that the App component:
    * 1. Makes an API call to fetch examples
    * 2. Displays the examples when data is loaded
@@ -61,14 +63,14 @@ describe('App Component', () => {
 
     // Mock the API call to return the mock data
     mockedGetExamples.mockResolvedValue(mockExamples);
-    
+
     render(<App />);
-    
+
     // Wait for the examples to be displayed
     await waitFor(() => {
       expect(screen.getByText('Examples from API')).toBeInTheDocument();
     });
-    
+
     // Check that the examples are displayed
     expect(screen.getByText('Example 1')).toBeInTheDocument();
     expect(screen.getByText('Description 1')).toBeInTheDocument();
@@ -78,16 +80,16 @@ describe('App Component', () => {
 
   /**
    * Test case for empty data
-   * 
+   *
    * This test verifies that the App component shows an appropriate message
    * when no examples are returned from the API.
    */
   it('should display a message when no examples are found', async () => {
     // Mock empty data
     mockedGetExamples.mockResolvedValue([]);
-    
+
     render(<App />);
-    
+
     // Wait for the no examples message to be displayed
     await waitFor(() => {
       expect(screen.getByText('No examples found.')).toBeInTheDocument();
@@ -96,19 +98,26 @@ describe('App Component', () => {
 
   /**
    * Test case for error handling
-   * 
+   *
    * This test verifies that the App component shows an error message
    * when the API call fails.
    */
   it('should display an error message when API call fails', async () => {
+    // Mock console.error to prevent it from cluttering the test output
+    const originalConsoleError = console.error;
+    console.error = jest.fn();
+
     // Mock API error
     mockedGetExamples.mockRejectedValue(new Error('API Error'));
-    
+
     render(<App />);
-    
+
     // Wait for the error message to be displayed
     await waitFor(() => {
       expect(screen.getByText(/Failed to fetch examples/i)).toBeInTheDocument();
     });
+
+    // Restore console.error
+    console.error = originalConsoleError;
   });
 });

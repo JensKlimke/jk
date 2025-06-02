@@ -1,12 +1,13 @@
 /**
  * Tests for the API service
- * 
+ *
  * These tests verify that the API service functions correctly interact with the backend API
  * by making HTTP requests and handling responses.
  */
-import axios from 'axios';
-import { getExamples, getExampleById } from '../api';
 import { ExampleModel } from '@jk/models';
+import axios from 'axios';
+
+import { getExamples, getExampleById } from '../api';
 
 // Mock axios to prevent actual API calls during tests
 jest.mock('axios');
@@ -20,7 +21,7 @@ describe('API Service', () => {
 
   /**
    * Test case for getExamples function
-   * 
+   *
    * This test verifies that:
    * 1. The function makes a GET request to the correct endpoint
    * 2. The function returns the data from the response
@@ -51,7 +52,7 @@ describe('API Service', () => {
 
       // Verify axios was called with the correct URL
       expect(mockedAxios.get).toHaveBeenCalledWith('/api/examples');
-      
+
       // Verify the function returns the expected data
       expect(result).toEqual(mockExamples);
     });
@@ -63,7 +64,7 @@ describe('API Service', () => {
 
       // Call the function and expect it to throw
       await expect(getExamples()).rejects.toThrow(errorMessage);
-      
+
       // Verify axios was called with the correct URL
       expect(mockedAxios.get).toHaveBeenCalledWith('/api/examples');
     });
@@ -71,7 +72,7 @@ describe('API Service', () => {
 
   /**
    * Test case for getExampleById function
-   * 
+   *
    * This test verifies that:
    * 1. The function makes a GET request to the correct endpoint with the ID
    * 2. The function returns the data from the response
@@ -94,7 +95,7 @@ describe('API Service', () => {
 
       // Verify axios was called with the correct URL
       expect(mockedAxios.get).toHaveBeenCalledWith('/api/examples/123');
-      
+
       // Verify the function returns the expected data
       expect(result).toEqual(mockExample);
     });
@@ -106,7 +107,7 @@ describe('API Service', () => {
 
       // Call the function and expect it to throw
       await expect(getExampleById('999')).rejects.toThrow(errorMessage);
-      
+
       // Verify axios was called with the correct URL
       expect(mockedAxios.get).toHaveBeenCalledWith('/api/examples/999');
     });
