@@ -1,6 +1,4 @@
 const { execSync } = require('child_process');
-const path = require('path');
-const fs = require('fs');
 
 // Define the order of packages to build
 const buildOrder = [
