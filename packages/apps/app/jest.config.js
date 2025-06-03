@@ -12,6 +12,8 @@ export default {
   ],
   // Setup files for React testing
   setupFilesAfterEnv: ['@testing-library/jest-dom'],
+  // Setup files to run before tests
+  setupFiles: ['<rootDir>/src/__mocks__/viteMock.js'],
   // Mock CSS imports
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': '<rootDir>/src/__mocks__/styleMock.js'

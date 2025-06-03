@@ -3,10 +3,7 @@
  */
 import { ExampleModel } from '@jk/models';
 import axios from 'axios';
-
-// Default API URLs with environment variable overrides
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-const WHOIS_URL = import.meta.env.VITE_WHOIS_URL || 'http://localhost:3002/api';
+import { API_URL, WHOIS_URL } from '../utils/env';
 
 /**
  * Fetches all examples from the API
