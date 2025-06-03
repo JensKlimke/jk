@@ -1,16 +1,33 @@
 version: '3.8'
 
 services:
+  nginx:
+    container_name: nginx
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d/default.conf.template:/etc/nginx/conf.d/default.conf.template
+      - ./nginx/docker-entrypoint.sh:/docker-entrypoint.sh
+    command: /bin/sh -c "chmod +x /docker-entrypoint.sh && /docker-entrypoint.sh nginx -g 'daemon off;'"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    depends_on:
+      - app
+      - api
+      - whois
+    networks:
+      - jk-network
+
   app:
     container_name: app
     build:
       context: .
       dockerfile: packages/apps/app/Dockerfile
       args:
-        - VITE_API_URL=http://localhost:3001/api
-        - VITE_WHOIS_URL=http://localhost:3002/api
-    ports:
-      - "80:80"
+        - API_URL=http://api.${DOMAIN:-localhost}/api
+        - WHOIS_URL=http://whois.${DOMAIN:-localhost}/api
+    # No direct port exposure
     depends_on:
       - api
     networks:
@@ -21,8 +38,7 @@ services:
     build:
       context: .
       dockerfile: packages/services/api/Dockerfile
-    ports:
-      - "3001:3001"
+    # No direct port exposure
     depends_on:
       - whois
     networks:
@@ -35,8 +51,7 @@ services:
     build:
       context: .
       dockerfile: packages/services/whois/Dockerfile
-    ports:
-      - "3002:3002"
+    # No direct port exposure
     networks:
       - jk-network
     environment:

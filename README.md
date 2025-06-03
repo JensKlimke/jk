@@ -274,11 +274,28 @@ The frontend app is configured to communicate with the API and WHOIS services us
 app:
   build:
     args:
-      - VITE_API_URL=http://api:3001/api
-      - VITE_WHOIS_URL=http://whois:3002/api
+      - VITE_API_URL=http://api.${DOMAIN:-localhost}/api
+      - VITE_WHOIS_URL=http://whois.${DOMAIN:-localhost}/api
 ```
 
-You can modify these URLs to point to different service endpoints if needed. For example, if you're running the services on different hosts or ports, you can update the URLs accordingly.
+The URLs use subdomains based on the `DOMAIN` environment variable. If the `DOMAIN` variable is not set, it defaults to `localhost`.
+
+### Nginx Reverse Proxy
+
+The project includes an Nginx reverse proxy that routes requests to the appropriate service based on the subdomain. Each service is accessible through its own subdomain:
+
+- **Frontend App**: `app.${DOMAIN}`
+- **API Service**: `api.${DOMAIN}`
+- **WHOIS Service**: `whois.${DOMAIN}`
+
+The domain is configurable through the `DOMAIN` environment variable. For example:
+
+```bash
+# Run with a custom domain
+DOMAIN=example.com docker-compose up -d
+```
+
+If the `DOMAIN` environment variable is not set, it defaults to `localhost`.
 
 ### Building and Running with Docker
 
@@ -300,11 +317,29 @@ docker-compose down
 
 ### Accessing the Services
 
-Once the containers are running, you can access the services at:
+Once the containers are running, you can access the services through the Nginx reverse proxy using the configured subdomains:
 
-- **Frontend App**: http://localhost:80
-- **API Service**: http://localhost:3001
-- **WHOIS Service**: http://localhost:3002
+- **Frontend App**: http://app.${DOMAIN}
+- **API Service**: http://api.${DOMAIN}
+- **WHOIS Service**: http://whois.${DOMAIN}
+
+Where `${DOMAIN}` is the value of the DOMAIN environment variable (defaults to `localhost` if not set).
+
+For local development, you may need to add entries to your hosts file to map the subdomains to your local IP address:
+
+```
+127.0.0.1 app.localhost
+127.0.0.1 api.localhost
+127.0.0.1 whois.localhost
+```
+
+Or use a custom domain:
+
+```
+127.0.0.1 app.example.com
+127.0.0.1 api.example.com
+127.0.0.1 whois.example.com
+```
 
 ### Building Individual Services
 

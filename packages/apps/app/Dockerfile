@@ -1,13 +1,13 @@
 FROM node:18-alpine AS builder
 
 # Define build arguments for service URLs
-ARG VITE_API_URL
-ARG VITE_WHOIS_URL
+ARG API_URL
+ARG WHOIS_URL
 
 WORKDIR /app
 
 # Copy package.json files
-COPY package.json ./
+COPY package.json package-lock.json ./
 COPY packages/libs/models/package.json ./packages/libs/models/
 COPY packages/apps/app/package.json ./packages/apps/app/
 
@@ -26,7 +26,7 @@ COPY packages/apps/app ./packages/apps/app/
 # Build models first, then app
 RUN npm run build:models
 # Pass environment variables to the build process
-RUN VITE_API_URL=$VITE_API_URL VITE_WHOIS_URL=$VITE_WHOIS_URL npm run build --workspace=@jk/app
+RUN VITE_API_URL=$API_URL VITE_WHOIS_URL=$WHOIS_URL npm run build --workspace=@jk/app
 
 # Production stage
 FROM nginx:alpine
