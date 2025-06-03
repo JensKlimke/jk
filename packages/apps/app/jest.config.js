@@ -14,8 +14,10 @@ export default {
   setupFilesAfterEnv: ['@testing-library/jest-dom'],
   // Setup files to run before tests
   setupFiles: ['<rootDir>/src/__mocks__/viteMock.js'],
-  // Mock CSS imports
+  // Mock CSS imports and env.ts
   moduleNameMapper: {
-    '\\.(css|less|scss|sass)$': '<rootDir>/src/__mocks__/styleMock.js'
+    '\\.(css|less|scss|sass)$': '<rootDir>/src/__mocks__/styleMock.js',
+    '^../utils/env$': '<rootDir>/src/utils/__mocks__/env.ts',
+    '^./utils/env$': '<rootDir>/src/utils/__mocks__/env.ts'
   }
 };
