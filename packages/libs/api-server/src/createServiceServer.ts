@@ -2,8 +2,10 @@
  * Function to create and configure a service server with common setup
  */
 import { Server } from 'http';
-import { createApiServer } from './createApiServer';
+
 import { Express, Router } from 'express';
+
+import { createApiServer } from './createApiServer';
 
 /**
  * Options for creating a service server
