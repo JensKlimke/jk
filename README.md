@@ -9,304 +9,164 @@
 
 This monorepo contains infrastructure setup and applications for the JK project. It's designed to support web applications, backend services, infrastructure setups, documentation, and shared libraries.
 
+## Quick Overview
+
+The JK project consists of:
+
+- A React frontend application
+- An Express.js API backend
+- A WHOIS service
+- Shared libraries for models and API server functionality
+- Docker support for all services
+- Comprehensive testing and CI/CD setup
+
+For detailed documentation, see the [docs folder](docs/README.md).
+
 ## Project Structure
 
 ```
 jk/
+├── docs/             # Documentation
 ├── packages/
-│   ├── libs/           # Libraries
-│   │   └── models/     # Shared data models library
-│   ├── apps/           # Web applications
-│   │   └── app/        # React frontend application
-│   └── services/       # Server applications
-│       └── api/        # Express API backend
-├── package.json        # Root package.json with workspaces configuration
-└── tsconfig.json       # Base TypeScript configuration
+│   ├── libs/         # Libraries
+│   │   ├── models/   # Shared data models library
+│   │   └── api-server/ # Common API server functionality
+│   ├── apps/         # Web applications
+│   │   └── app/      # React frontend application
+│   └── services/     # Server applications
+│       ├── api/      # Express API backend
+│       └── whois/    # WHOIS service
+├── package.json      # Root package.json with workspaces configuration
+└── tsconfig.json     # Base TypeScript configuration
 ```
 
-## Packages
+## Key Features
 
-### Models (`@jk/models`)
-
-A shared library containing data models used by both the API and frontend application. This demonstrates how to share code between different packages in a monorepo.
-
-- **Technology**: TypeScript
-- **Purpose**: Define shared data structures and types
-
-### API (`@jk/api`)
-
-A basic Express server that provides API endpoints for the frontend application.
-
-- **Technology**: Express.js with TypeScript
-- **Features**:
-  - RESTful API endpoints
-  - Uses shared models from `@jk/models`
-  - CORS and security headers with Helmet
-
-### APP (`@jk/app`)
-
-A React frontend application that consumes the API.
-
-- **Technology**: React with TypeScript, Vite
-- **Features**:
-  - Fetches and displays data from the API
-  - Uses shared models from `@jk/models`
-  - Modern React with hooks
+- **Monorepo Structure**: Organized with npm workspaces for efficient dependency management
+- **TypeScript**: Used throughout the project for type safety
+- **React Frontend**: Modern React application built with Vite
+- **Express.js Backend**: RESTful API endpoints with proper error handling
+- **Docker Support**: Containerization for all services with Docker Compose
+- **Testing**: Comprehensive test suite using Jest
+- **CI/CD**: GitHub Actions workflow for continuous integration
 
 ## Getting Started
 
-### Prerequisites
+For detailed installation and setup instructions, see the [Getting Started Guide](docs/getting-started/installation.md).
 
-- Node.js (v14 or later)
-- npm or yarn
+### Quick Start
 
-### Installation
+```bash
+# Clone the repository
+git clone https://github.com/JensKlimke/jk.git
+cd jk
 
-1. Clone the repository
-2. Install dependencies:
-   ```
-   npm install
-   ```
+# Install dependencies
+npm install
 
-### Building the Packages
-
-Build all packages:
-```
+# Build all packages
 npm run build
+
+# Run in development mode
+npm run dev --workspace=@jk/api    # Start API server
+npm run dev --workspace=@jk/whois  # Start WHOIS service
+npm run dev --workspace=@jk/app    # Start frontend app
 ```
 
-Or build individual packages:
-```
-npm run build --workspace=@jk/models
-npm run build --workspace=@jk/api
-npm run build --workspace=@jk/app
-```
+### Docker Quick Start
 
-### Running the Applications
+```bash
+# Build and run all services
+docker-compose up -d
 
-#### Development Mode
-
-Start the API server:
+# Access the services
+# Frontend: http://app.localhost
+# API: http://api.localhost
+# WHOIS: http://whois.localhost
 ```
-npm run dev --workspace=@jk/api
-```
-
-Start the frontend application:
-```
-npm run dev --workspace=@jk/app
-```
-
-#### Production Mode
-
-To run the application in production mode, first build all packages:
-```
-npm run build
-```
-
-Then start the API server:
-```
-npm run start --workspace=@jk/api
-```
-
-And start the frontend application:
-```
-npm run start --workspace=@jk/app
-```
-
-The frontend application will be available at http://localhost:3000.
 
 ## Development
 
-This monorepo is set up to facilitate development across multiple packages. When making changes to shared code in the `models` package, those changes will be immediately available to the `api` and `app` packages.
+The JK project is designed to make development easy and efficient. For detailed development guidelines, see the [Development Guide](docs/development/adding-packages.md).
 
-### Adding New Packages
+### Key Development Features
 
-To add a new package:
+- **Monorepo Structure**: Changes to shared code are immediately available to dependent packages
+- **TypeScript**: Strong typing throughout the codebase
+- **Hot Reloading**: Development servers with hot reloading for faster development
+- **Code Quality Tools**: ESLint and Prettier for consistent code style
 
-1. Determine the type of your package:
-   - **Libraries**: Shared code used by multiple packages (place in `packages/libs/`)
-   - **Web Applications**: Frontend applications (place in `packages/apps/`)
-   - **Services**: Backend services and APIs (place in `packages/services/`)
-   - For other types, create an appropriate category directory under `packages/`
-
-2. Create a new directory in the appropriate category folder
-3. Initialize it with a `package.json` file
-4. The workspaces in the root `package.json` are already configured for the standard categories
-
-### Linting and Formatting
-
-This project uses ESLint for code linting and Prettier for code formatting to ensure consistent code style across all packages.
-
-#### Running Linting and Formatting
-
-From the root directory:
+### Common Commands
 
 ```bash
-# Run ESLint on all packages (executes the lint command in each package)
+# Lint all packages
 npm run lint
 
-# Run ESLint with auto-fix (executes the lint:fix command in each package)
-npm run lint:fix
-
-# Run Prettier to format all files (executes the format command in each package)
+# Format all code
 npm run format
 
-# Check if files are properly formatted (executes the format:check command in each package)
-npm run format:check
-
-# Run both lint and format
-npm run lint-format
-```
-
-You can also run these commands for individual packages:
-
-```bash
-# Run ESLint for a specific package
-npm run lint --workspace=@jk/models
-
-# Run Prettier for a specific package
-npm run format --workspace=@jk/api
-```
-
-#### Configuration
-
-- ESLint configuration is in `.eslintrc.js` with package-specific overrides in each package's directory
-- Prettier configuration is in `.prettierrc.js`
-- Ignored files are specified in `.eslintignore` and `.prettierignore`
-
-### Testing
-
-This project uses Jest for testing across all packages. Tests are organized within each package's directory structure.
-
-#### Test Configuration
-
-Jest configuration is centralized at the root level in `jest.config.js` and extended by each package:
-
-- **Root Configuration**: Defines common settings for all packages
-- **Package-Specific Configuration**: Each package extends the root configuration and adds package-specific settings
-
-This approach ensures consistency across packages while allowing for customization where needed.
-
-#### Running Tests
-
-From the root directory:
-
-```bash
-# Run tests for all packages that have test scripts defined
+# Run tests
 npm test
+
+# Clean build artifacts and reinstall dependencies
+npm run clean
 ```
 
-This command will:
-1. Build the models package first to ensure it's available to other packages
-2. Run tests for all packages that have test scripts defined
+## Testing
 
-You can also run tests for individual packages:
+The JK project has a comprehensive test suite using Jest. For detailed testing information, see the [Testing Guide](docs/testing/configuration.md).
+
+### Testing Features
+
+- **Jest Framework**: Used for all testing across the project
+- **Centralized Configuration**: Common test configuration with package-specific extensions
+- **Mocking**: Comprehensive mocking of external dependencies
+- **Coverage Reports**: Test coverage tracking for all packages
+
+### Running Tests
 
 ```bash
+# Run all tests
+npm test
+
 # Run tests for a specific package
 npm test --workspace=@jk/api
-npm test --workspace=@jk/app
-npm test --workspace=@jk/models
 ```
 
-Note: When running tests for packages that depend on the models package, you may need to build the models package first:
+For more details on running tests, see the [Running Tests Guide](docs/testing/running-tests.md).
 
-```bash
-npm run build --workspace=@jk/models
-npm test --workspace=@jk/api
-```
+## Continuous Integration
 
-#### Test Coverage
+The project uses GitHub Actions for continuous integration. For details, see the [CI/CD Guide](docs/ci-cd/github-actions.md).
 
-Test coverage reports are generated in the `coverage` directory of each package when tests are run.
+### CI Features
 
-#### Test Structure
-
-Each package contains tests in `__tests__` directories:
-
-- **API Package**: Tests for API routes and server functionality
-- **App Package**: Tests for React components and API service functions
-- **Models Package**: Tests for data model interfaces
-
-#### Test Best Practices
-
-The test suite follows these best practices:
-
-- **Mocking External Dependencies**: All external dependencies (like API calls) are mocked to ensure tests are isolated and deterministic
-- **Suppressing Console Errors**: Console errors are suppressed during tests that intentionally trigger error conditions to keep the test output clean
-- **Testing Edge Cases**: Tests cover various scenarios including successful operations, empty data, and error handling
-
-### Continuous Integration
-
-This project uses GitHub Actions for continuous integration to ensure code quality and prevent regressions.
-
-#### CI Workflow
-
-The CI workflow runs automatically on:
-- Every push to the `main` branch
-- Every pull request targeting the `main` branch
-
-The workflow currently includes the following checks:
-- **Linting**: Runs ESLint on all packages to ensure code quality and consistency
-- **Testing**: Runs tests for all packages that have test scripts defined
-
-The CI configuration can be found in the `.github/workflows/ci.yml` file.
+- **Automated Workflow**: Tests run automatically on pushes and pull requests
+- **Linting**: Code quality checks with ESLint
+- **Testing**: Automated test runs with Jest
+- **Build Verification**: Ensures all packages build correctly
 
 ## Docker
 
-This project includes Docker support for all services and applications, making it easy to build and run the entire system in containers.
+The JK project includes comprehensive Docker support for all services. For detailed Docker information, see the [Docker Setup Guide](docs/docker/setup.md).
 
-### Docker Setup
+### Docker Features
 
-Each package has its own Dockerfile:
+- **Containerized Services**: Each service runs in its own container
+- **Docker Compose**: Easy orchestration of all services
+- **Nginx Reverse Proxy**: Routes requests to the appropriate service
+- **Environment Configuration**: Configurable service URLs and domains
 
-- **Frontend App**: `packages/apps/app/Dockerfile`
-- **API Service**: `packages/services/api/Dockerfile`
-- **WHOIS Service**: `packages/services/whois/Dockerfile`
-
-A `docker-compose.yml` file is provided at the root of the project to orchestrate all services.
-
-### Configuring Service URLs
-
-The frontend app is configured to communicate with the API and WHOIS services using environment variables. These are set as build arguments in the `docker-compose.yml` file:
-
-```yaml
-app:
-  build:
-    args:
-      - VITE_API_URL=http://api.${DOMAIN:-localhost}/api
-      - VITE_WHOIS_URL=http://whois.${DOMAIN:-localhost}/api
-```
-
-The URLs use subdomains based on the `DOMAIN` environment variable. If the `DOMAIN` variable is not set, it defaults to `localhost`.
-
-### Nginx Reverse Proxy
-
-The project includes an Nginx reverse proxy that routes requests to the appropriate service based on the subdomain. Each service is accessible through its own subdomain:
-
-- **Frontend App**: `app.${DOMAIN}`
-- **API Service**: `api.${DOMAIN}`
-- **WHOIS Service**: `whois.${DOMAIN}`
-
-The domain is configurable through the `DOMAIN` environment variable. For example:
+### Docker Quick Start
 
 ```bash
-# Run with a custom domain
-DOMAIN=example.com docker-compose up -d
-```
-
-If the `DOMAIN` environment variable is not set, it defaults to `localhost`.
-
-### Building and Running with Docker
-
-To build and run all services using Docker Compose:
-
-```bash
-# Build all services
-docker-compose build
-
-# Run all services in the background
+# Build and run all services
 docker-compose up -d
+
+# Access the services
+# Frontend: http://app.localhost
+# API: http://api.localhost
+# WHOIS: http://whois.localhost
 
 # View logs
 docker-compose logs -f
@@ -315,56 +175,25 @@ docker-compose logs -f
 docker-compose down
 ```
 
-### Accessing the Services
+For more details on Docker configuration, see the [Docker Configuration Guide](docs/docker/configuration.md).
 
-Once the containers are running, you can access the services through the Nginx reverse proxy using the configured subdomains:
-
-- **Frontend App**: http://app.${DOMAIN}
-- **API Service**: http://api.${DOMAIN}
-- **WHOIS Service**: http://whois.${DOMAIN}
-
-Where `${DOMAIN}` is the value of the DOMAIN environment variable (defaults to `localhost` if not set).
-
-For local development, you may need to add entries to your hosts file to map the subdomains to your local IP address:
-
-```
-127.0.0.1 app.localhost
-127.0.0.1 api.localhost
-127.0.0.1 whois.localhost
-```
-
-Or use a custom domain:
-
-```
-127.0.0.1 app.example.com
-127.0.0.1 api.example.com
-127.0.0.1 whois.example.com
-```
-
-### Building Individual Services
-
-You can also build and run individual services:
-
-```bash
-# Build and run just the frontend app
-docker-compose up -d app
-
-# Build and run just the API service
-docker-compose up -d api
-
-# Build and run just the WHOIS service
-docker-compose up -d whois
-```
+For more details on building and running with Docker, see the [Docker Usage Guide](docs/docker/usage.md).
 
 ## Architecture
 
-The system follows a modular architecture with clear separation of concerns:
+The JK project follows a modular architecture with clear separation of concerns. For detailed architecture information, see the [Architecture Overview](docs/architecture/overview.md).
 
-- **Data Models**: Centralized in the `models` package
-- **Backend Logic**: Contained in the `api` package
-- **Frontend UI**: Implemented in the `app` package
+### Architecture Highlights
 
-This architecture allows for:
-- Code reuse through shared libraries
-- Independent development and deployment of components
-- Clear boundaries between different parts of the system
+- **Modular Design**: Clear separation between frontend, backend, and shared code
+- **Shared Libraries**: Common code extracted into reusable libraries
+- **Service-Based**: Independent services that communicate via HTTP APIs
+- **Scalable**: Components can be developed and deployed independently
+
+## Documentation
+
+For comprehensive documentation on all aspects of the JK project, see the [Documentation Index](docs/README.md).
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
