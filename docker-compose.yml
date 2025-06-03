@@ -27,7 +27,6 @@ services:
       args:
         - API_URL=http://api.${DOMAIN:-localhost}/api
         - WHOIS_URL=http://whois.${DOMAIN:-localhost}/api
-    # No direct port exposure
     depends_on:
       - api
     networks:
@@ -38,7 +37,6 @@ services:
     build:
       context: .
       dockerfile: packages/services/api/Dockerfile
-    # No direct port exposure
     depends_on:
       - whois
     networks:
@@ -51,7 +49,6 @@ services:
     build:
       context: .
       dockerfile: packages/services/whois/Dockerfile
-    # No direct port exposure
     networks:
       - jk-network
     environment:
