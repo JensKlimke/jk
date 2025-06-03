@@ -5,8 +5,8 @@ import { ExampleModel } from '@jk/models';
 import axios from 'axios';
 
 // Default API URLs with environment variable overrides
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-const WHOIS_URL = process.env.REACT_APP_WHOIS_URL || 'http://localhost:3002/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const WHOIS_URL = import.meta.env.VITE_WHOIS_URL || 'http://localhost:3002/api';
 
 /**
  * Fetches all examples from the API

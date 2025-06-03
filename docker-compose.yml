@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: app
+    build:
+      context: .
+      dockerfile: packages/apps/app/Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:3001/api
+        - VITE_WHOIS_URL=http://localhost:3002/api
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    networks:
+      - jk-network
+
+  api:
+    container_name: api
+    build:
+      context: .
+      dockerfile: packages/services/api/Dockerfile
+    ports:
+      - "3001:3001"
+    depends_on:
+      - whois
+    networks:
+      - jk-network
+    environment:
+      - NODE_ENV=production
+
+  whois:
+    container_name: whois
+    build:
+      context: .
+      dockerfile: packages/services/whois/Dockerfile
+    ports:
+      - "3002:3002"
+    networks:
+      - jk-network
+    environment:
+      - NODE_ENV=production
+
+networks:
+  jk-network:
+    driver: bridge

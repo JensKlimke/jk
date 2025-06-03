@@ -252,6 +252,75 @@ The workflow currently includes the following checks:
 
 The CI configuration can be found in the `.github/workflows/ci.yml` file.
 
+## Docker
+
+This project includes Docker support for all services and applications, making it easy to build and run the entire system in containers.
+
+### Docker Setup
+
+Each package has its own Dockerfile:
+
+- **Frontend App**: `packages/apps/app/Dockerfile`
+- **API Service**: `packages/services/api/Dockerfile`
+- **WHOIS Service**: `packages/services/whois/Dockerfile`
+
+A `docker-compose.yml` file is provided at the root of the project to orchestrate all services.
+
+### Configuring Service URLs
+
+The frontend app is configured to communicate with the API and WHOIS services using environment variables. These are set as build arguments in the `docker-compose.yml` file:
+
+```yaml
+app:
+  build:
+    args:
+      - VITE_API_URL=http://api:3001/api
+      - VITE_WHOIS_URL=http://whois:3002/api
+```
+
+You can modify these URLs to point to different service endpoints if needed. For example, if you're running the services on different hosts or ports, you can update the URLs accordingly.
+
+### Building and Running with Docker
+
+To build and run all services using Docker Compose:
+
+```bash
+# Build all services
+docker-compose build
+
+# Run all services in the background
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop all services
+docker-compose down
+```
+
+### Accessing the Services
+
+Once the containers are running, you can access the services at:
+
+- **Frontend App**: http://localhost:80
+- **API Service**: http://localhost:3001
+- **WHOIS Service**: http://localhost:3002
+
+### Building Individual Services
+
+You can also build and run individual services:
+
+```bash
+# Build and run just the frontend app
+docker-compose up -d app
+
+# Build and run just the API service
+docker-compose up -d api
+
+# Build and run just the WHOIS service
+docker-compose up -d whois
+```
+
 ## Architecture
 
 The system follows a modular architecture with clear separation of concerns:
