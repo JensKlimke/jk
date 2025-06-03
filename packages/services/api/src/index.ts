@@ -10,7 +10,7 @@ const { app, startServer } = createServiceServer({
   port: Number(process.env.PORT || 3001),
   basePath: '/api/examples',
   router: exampleRouter,
-  serviceName: 'API'
+  serviceName: 'API',
 });
 
 // Only start the server if this file is run directly

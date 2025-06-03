@@ -15,17 +15,17 @@ export interface ServiceServerOptions {
    * Port to listen on
    */
   port: number;
-  
+
   /**
    * Base path for API routes
    */
   basePath: string;
-  
+
   /**
    * Router to use for the service
    */
   router: Router;
-  
+
   /**
    * Service name for logging
    */
@@ -37,18 +37,18 @@ export interface ServiceServerOptions {
  * @param options Options for creating the service server
  * @returns The Express app and a function to start the server
  */
-export function createServiceServer(options: ServiceServerOptions): { 
-  app: Express; 
+export function createServiceServer(options: ServiceServerOptions): {
+  app: Express;
   startServer: () => Server;
 } {
   const { port, basePath, router, serviceName } = options;
-  
+
   // Create API server
   const { app } = createApiServer({ port });
-  
+
   // Register routes
   app.use(basePath, router);
-  
+
   // Function to start the server with proper signal handling
   const startServer = (): Server => {
     // Only start the server if this file is run directly
@@ -59,12 +59,12 @@ export function createServiceServer(options: ServiceServerOptions): {
     // Graceful shutdown function
     const gracefulShutdown = () => {
       console.info('SIGTERM/SIGINT received, shutting down gracefully');
-      
+
       server.close(() => {
         console.info('Server closed');
         process.exit(0);
       });
-      
+
       // Force close after timeout
       setTimeout(() => {
         console.error('Could not close connections in time, forcefully shutting down');
@@ -75,9 +75,9 @@ export function createServiceServer(options: ServiceServerOptions): {
     // Handle signals
     process.on('SIGTERM', gracefulShutdown);
     process.on('SIGINT', gracefulShutdown);
-    
+
     return server;
   };
-  
+
   return { app, startServer };
 }

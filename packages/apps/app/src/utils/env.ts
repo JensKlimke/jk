@@ -1,6 +1,6 @@
 /**
  * Environment variables for the application
- * 
+ *
  * These are loaded from Vite's import.meta.env
  * with fallback to default values for local development
  */

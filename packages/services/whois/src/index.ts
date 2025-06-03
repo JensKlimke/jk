@@ -10,7 +10,7 @@ const { app, startServer } = createServiceServer({
   port: Number(process.env.PORT || 3002),
   basePath: '/api/whois',
   router: whoisRouter,
-  serviceName: 'WHOIS'
+  serviceName: 'WHOIS',
 });
 
 // Only start the server if this file is run directly
