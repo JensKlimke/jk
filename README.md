@@ -155,6 +155,7 @@ The JK project includes comprehensive Docker support for all services. For detai
 - **Containerized Services**: Each service runs in its own container
 - **Docker Compose**: Easy orchestration of all services
 - **Nginx Reverse Proxy**: Routes requests to the appropriate service
+- **HTTPS Support**: Automatic HTTPS with Let's Encrypt certificates
 - **Environment Configuration**: Configurable service URLs and domains
 
 ### Docker Quick Start
@@ -163,10 +164,13 @@ The JK project includes comprehensive Docker support for all services. For detai
 # Build and run all services
 docker-compose up -d
 
-# Access the services
-# Frontend: http://app.localhost
-# API: http://api.localhost
-# WHOIS: http://whois.localhost
+# Access the services (HTTP redirects to HTTPS)
+# Frontend: https://app.localhost
+# API: https://api.localhost
+# WHOIS: https://whois.localhost
+
+# For production with a real domain
+DOMAIN=example.com EMAIL=admin@example.com CERTBOT_STAGING= docker-compose up -d
 
 # View logs
 docker-compose logs -f
@@ -174,6 +178,8 @@ docker-compose logs -f
 # Stop all services
 docker-compose down
 ```
+
+For more details on HTTPS configuration, see the [HTTPS Setup Guide](docs/docker/https.md).
 
 For more details on Docker configuration, see the [Docker Configuration Guide](docs/docker/configuration.md).
 

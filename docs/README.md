@@ -23,6 +23,7 @@ Welcome to the JK Project documentation. This documentation provides comprehensi
 
 ### Docker
 - [Docker Setup](docker/setup.md)
+- [HTTPS Setup with Let's Encrypt](docker/https.md)
 - [Configuring Service URLs](docker/configuration.md)
 - [Building and Running with Docker](docker/usage.md)
 
