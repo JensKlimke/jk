@@ -84,6 +84,8 @@ npm run build --workspace=@jk/app
 
 ### Running the Applications
 
+#### Development Mode
+
 Start the API server:
 ```
 npm run dev --workspace=@jk/api
@@ -93,6 +95,25 @@ Start the frontend application:
 ```
 npm run dev --workspace=@jk/app
 ```
+
+#### Production Mode
+
+To run the application in production mode, first build all packages:
+```
+npm run build
+```
+
+Then start the API server:
+```
+npm run start --workspace=@jk/api
+```
+
+And start the frontend application:
+```
+npm run start --workspace=@jk/app
+```
+
+The frontend application will be available at http://localhost:3000.
 
 ## Development
 

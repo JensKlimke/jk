@@ -4,7 +4,7 @@
 import { ExampleModel } from '@jk/models';
 import { useState, useEffect } from 'react';
 
-import { getExamples } from './services/api';
+import { getExamples, getWhoisInfo, WhoisResponse } from './services/api';
 import './App.css';
 
 /**
@@ -14,6 +14,7 @@ function App() {
   const [examples, setExamples] = useState<ExampleModel[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [whoisInfo, setWhoisInfo] = useState<WhoisResponse | null>(null);
 
   useEffect(() => {
     const fetchExamples = async () => {
@@ -29,6 +30,19 @@ function App() {
     };
 
     fetchExamples();
+  }, []);
+
+  useEffect(() => {
+    const fetchWhoisInfo = async () => {
+      try {
+        const data = await getWhoisInfo();
+        setWhoisInfo(data);
+      } catch (err) {
+        console.error('Error fetching whois info:', err);
+      }
+    };
+
+    fetchWhoisInfo();
   }, []);
 
   return (
@@ -57,6 +71,8 @@ function App() {
           )}
         </div>
       )}
+
+      <footer className="footer">{whoisInfo && <p>ID: {whoisInfo.id}</p>}</footer>
     </div>
   );
 }

@@ -9,11 +9,12 @@ import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import App from '../App';
-import { getExamples } from '../services/api';
+import { getExamples, getWhoisInfo, WhoisResponse } from '../services/api';
 
 // Mock the API service
 jest.mock('../services/api');
 const mockedGetExamples = getExamples as jest.MockedFunction<typeof getExamples>;
+const mockedGetWhoisInfo = getWhoisInfo as jest.MockedFunction<typeof getWhoisInfo>;
 
 describe('App Component', () => {
   // Reset mocks before each test
@@ -27,9 +28,12 @@ describe('App Component', () => {
    * This test verifies that the App component shows a loading message
    * when it first renders and is fetching data.
    */
-  it('should show loading state initially', () => {
-    // Mock the API call to return a promise that doesn't resolve immediately
+  it('should show loading state initially', async () => {
+    // Mock the API calls to return a promise that doesn't resolve immediately
     mockedGetExamples.mockImplementation(() => new Promise(() => {}));
+
+    // Mock whois info - use a promise that doesn't resolve to prevent state updates
+    mockedGetWhoisInfo.mockImplementation(() => new Promise(() => {}));
 
     render(<App />);
 
@@ -64,11 +68,20 @@ describe('App Component', () => {
     // Mock the API call to return the mock data
     mockedGetExamples.mockResolvedValue(mockExamples);
 
+    // Mock whois info
+    const mockWhoisInfo: WhoisResponse = {
+      id: 'test-id-123',
+      timestamp: new Date().toISOString(),
+      message: 'Test message',
+    };
+    mockedGetWhoisInfo.mockResolvedValue(mockWhoisInfo);
+
     render(<App />);
 
-    // Wait for the examples to be displayed
+    // Wait for both the examples and whois info to be displayed
     await waitFor(() => {
       expect(screen.getByText('Examples from API')).toBeInTheDocument();
+      expect(screen.getByText(`ID: ${mockWhoisInfo.id}`)).toBeInTheDocument();
     });
 
     // Check that the examples are displayed
@@ -88,11 +101,20 @@ describe('App Component', () => {
     // Mock empty data
     mockedGetExamples.mockResolvedValue([]);
 
+    // Mock whois info
+    const mockWhoisInfo: WhoisResponse = {
+      id: 'test-id-123',
+      timestamp: new Date().toISOString(),
+      message: 'Test message',
+    };
+    mockedGetWhoisInfo.mockResolvedValue(mockWhoisInfo);
+
     render(<App />);
 
-    // Wait for the no examples message to be displayed
+    // Wait for both the no examples message and whois info to be displayed
     await waitFor(() => {
       expect(screen.getByText('No examples found.')).toBeInTheDocument();
+      expect(screen.getByText(`ID: ${mockWhoisInfo.id}`)).toBeInTheDocument();
     });
   });
 
@@ -110,11 +132,20 @@ describe('App Component', () => {
     // Mock API error
     mockedGetExamples.mockRejectedValue(new Error('API Error'));
 
+    // Mock whois info
+    const mockWhoisInfo: WhoisResponse = {
+      id: 'test-id-123',
+      timestamp: new Date().toISOString(),
+      message: 'Test message',
+    };
+    mockedGetWhoisInfo.mockResolvedValue(mockWhoisInfo);
+
     render(<App />);
 
-    // Wait for the error message to be displayed
+    // Wait for both the error message and whois info to be displayed
     await waitFor(() => {
       expect(screen.getByText(/Failed to fetch examples/i)).toBeInTheDocument();
+      expect(screen.getByText(`ID: ${mockWhoisInfo.id}`)).toBeInTheDocument();
     });
 
     // Restore console.error

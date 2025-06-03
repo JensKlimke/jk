@@ -4,7 +4,9 @@
 import { ExampleModel } from '@jk/models';
 import axios from 'axios';
 
-const API_URL = '/api';
+// Default API URLs with environment variable overrides
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const WHOIS_URL = process.env.REACT_APP_WHOIS_URL || 'http://localhost:3002/api';
 
 /**
  * Fetches all examples from the API
@@ -22,5 +24,23 @@ export const getExamples = async (): Promise<ExampleModel[]> => {
  */
 export const getExampleById = async (id: string): Promise<ExampleModel> => {
   const response = await axios.get<ExampleModel>(`${API_URL}/examples/${id}`);
+  return response.data;
+};
+
+/**
+ * Interface for the whois response
+ */
+export interface WhoisResponse {
+  id: string;
+  timestamp: string;
+  message: string;
+}
+
+/**
+ * Fetches whois information from the API
+ * @returns Promise with WhoisResponse object
+ */
+export const getWhoisInfo = async (): Promise<WhoisResponse> => {
+  const response = await axios.get<WhoisResponse>(`${WHOIS_URL}/whois`);
   return response.data;
 };

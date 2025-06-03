@@ -5,7 +5,7 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 
-import {ApiServer, ApiServerOptions} from './types';
+import { ApiServer, ApiServerOptions } from './types';
 
 /**
  * Create an API server with the specified options

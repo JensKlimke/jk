@@ -7,7 +7,7 @@
 import { ExampleModel } from '@jk/models';
 import axios from 'axios';
 
-import { getExamples, getExampleById } from '../api';
+import { getExamples, getExampleById, getWhoisInfo, WhoisResponse } from '../api';
 
 // Mock axios to prevent actual API calls during tests
 jest.mock('axios');
@@ -51,7 +51,7 @@ describe('API Service', () => {
       const result = await getExamples();
 
       // Verify axios was called with the correct URL
-      expect(mockedAxios.get).toHaveBeenCalledWith('/api/examples');
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:3001/api/examples');
 
       // Verify the function returns the expected data
       expect(result).toEqual(mockExamples);
@@ -66,7 +66,7 @@ describe('API Service', () => {
       await expect(getExamples()).rejects.toThrow(errorMessage);
 
       // Verify axios was called with the correct URL
-      expect(mockedAxios.get).toHaveBeenCalledWith('/api/examples');
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:3001/api/examples');
     });
   });
 
@@ -94,7 +94,7 @@ describe('API Service', () => {
       const result = await getExampleById('123');
 
       // Verify axios was called with the correct URL
-      expect(mockedAxios.get).toHaveBeenCalledWith('/api/examples/123');
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:3001/api/examples/123');
 
       // Verify the function returns the expected data
       expect(result).toEqual(mockExample);
@@ -109,7 +109,49 @@ describe('API Service', () => {
       await expect(getExampleById('999')).rejects.toThrow(errorMessage);
 
       // Verify axios was called with the correct URL
-      expect(mockedAxios.get).toHaveBeenCalledWith('/api/examples/999');
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:3001/api/examples/999');
+    });
+  });
+
+  /**
+   * Test case for getWhoisInfo function
+   *
+   * This test verifies that:
+   * 1. The function makes a GET request to the correct endpoint
+   * 2. The function returns the data from the response
+   */
+  describe('getWhoisInfo', () => {
+    it('should fetch whois information from the API', async () => {
+      // Mock data
+      const mockWhoisInfo: WhoisResponse = {
+        id: 'test-id-123',
+        timestamp: new Date().toISOString(),
+        message: 'Test message',
+      };
+
+      // Setup mock response
+      mockedAxios.get.mockResolvedValueOnce({ data: mockWhoisInfo });
+
+      // Call the function
+      const result = await getWhoisInfo();
+
+      // Verify axios was called with the correct URL
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:3002/api/whois');
+
+      // Verify the function returns the expected data
+      expect(result).toEqual(mockWhoisInfo);
+    });
+
+    it('should propagate errors from the API', async () => {
+      // Setup mock error
+      const errorMessage = 'Service Unavailable';
+      mockedAxios.get.mockRejectedValueOnce(new Error(errorMessage));
+
+      // Call the function and expect it to throw
+      await expect(getWhoisInfo()).rejects.toThrow(errorMessage);
+
+      // Verify axios was called with the correct URL
+      expect(mockedAxios.get).toHaveBeenCalledWith('http://localhost:3002/api/whois');
     });
   });
 });
