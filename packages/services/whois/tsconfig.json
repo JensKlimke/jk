@@ -9,7 +9,6 @@
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"],
   "references": [
-    { "path": "../../libs/models" },
     { "path": "../../libs/api-server" }
   ]
 }

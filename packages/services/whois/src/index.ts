@@ -1,21 +1,21 @@
 /**
- * Express API server entry point
+ * WHOIS API server entry point
  */
 import { createApiServer } from '@jk/api-server';
 
-import { exampleRouter } from './routes/example';
+import { whoisRouter } from './routes/whois';
 
 // Create API server
 const { app } = createApiServer();
 
 // Register routes
-app.use('/api/examples', exampleRouter);
+app.use('/api/whois', whoisRouter);
 
 // Only start the server if this file is run directly
 if (require.main === module) {
-  const port = process.env.PORT || 3001;
+  const port = process.env.PORT || 3002;
   app.listen(port, () => {
-    console.info(`API server running at http://localhost:${port}`);
+    console.info(`WHOIS API server running at http://localhost:${port}`);
   });
 }
 

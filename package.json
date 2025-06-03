@@ -14,7 +14,8 @@
         "format:check": "npm run format:check --workspaces",
         "lint-format": "npm run lint && npm run format",
         "build:models": "npm run build --workspace=@jk/models",
-        "test": "npm run build:models && npm run test --workspaces --if-present"
+        "build:api-server": "npm run build --workspace=@jk/api-server",
+        "test": "npm run build:models && npm run build:api-server && npm run test --workspaces --if-present"
     },
     "devDependencies": {
         "@typescript-eslint/eslint-plugin": "^7.4.0",

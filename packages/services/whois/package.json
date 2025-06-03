@@ -1,7 +1,7 @@
 {
-  "name": "@jk/api",
+  "name": "@jk/whois",
   "version": "1.0.0",
-  "description": "Express API backend for JK project",
+  "description": "WHOIS API service for JK project",
   "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
@@ -17,11 +17,9 @@
     "test:watch": "jest --watch"
   },
   "dependencies": {
-    "@jk/api-server": "1.0.0",
-    "@jk/models": "1.0.0"
+    "@jk/api-server": "1.0.0"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.12.12",
