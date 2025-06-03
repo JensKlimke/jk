@@ -2,15 +2,14 @@
 module.exports = {
   // Extend the root configuration
   ...require('../../../jest.config'),
-  // Override settings specific to the API package
+  // Override settings specific to the WHOIS package
   testEnvironment: 'node',
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
   ],
-  // Module name mapper for resolving @jk/models and @jk/api-server
+  // Module name mapper for resolving @jk/api-server
   moduleNameMapper: {
-    '^@jk/models$': '<rootDir>/../../libs/models/dist',
     '^@jk/api-server$': '<rootDir>/../../libs/api-server/dist'
   },
   // Configure ts-jest
