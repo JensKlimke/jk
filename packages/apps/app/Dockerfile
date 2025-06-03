@@ -17,7 +17,7 @@ COPY packages/libs/models/tsconfig.json ./packages/libs/models/
 COPY packages/apps/app/tsconfig.json ./packages/apps/app/
 
 # Install dependencies
-RUN npm install
+RUN npm ci
 
 # Copy source code
 COPY packages/libs/models ./packages/libs/models/
