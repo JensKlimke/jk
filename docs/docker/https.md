@@ -41,10 +41,11 @@ DOMAIN=example.com EMAIL=admin@example.com CERTBOT_STAGING= docker-compose up -d
 
 ## How It Works
 
-1. When the stack starts, Nginx creates self-signed certificates for initial startup
-2. Certbot obtains Let's Encrypt certificates using the webroot method
-3. Nginx serves the services over HTTPS using the Let's Encrypt certificates
-4. Certbot renews the certificates automatically every 12 hours if needed
+1. When the stack starts, the nginx container automatically installs openssl if needed
+2. Nginx creates self-signed certificates for initial startup using openssl
+3. Certbot obtains Let's Encrypt certificates using the webroot method
+4. Nginx serves the services over HTTPS using the Let's Encrypt certificates
+5. Certbot renews the certificates automatically every 12 hours if needed
 
 ## Troubleshooting
 
