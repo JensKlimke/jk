@@ -6,8 +6,8 @@ envsubst '${DOMAIN}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf
 
 echo "Checking certificates..."
 
-# Create a self-signed certificate for initial startup
-if [ ! -d "/etc/letsencrypt/live/${DOMAIN}" ]; then
+# Create a self-signed certificate for initial startup if either the directory or certificate files don't exist
+if [ ! -d "/etc/letsencrypt/live/${DOMAIN}" ] || [ ! -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ] || [ ! -f "/etc/letsencrypt/live/${DOMAIN}/privkey.pem" ]; then
     echo "Creating self-signed certificate for initial startup..."
     mkdir -p /etc/letsencrypt/live/${DOMAIN}
 
@@ -20,7 +20,7 @@ if [ ! -d "/etc/letsencrypt/live/${DOMAIN}" ]; then
 
     echo "Self-signed certificate created."
 else
-  echo "Found certificate folder. Starting server..."
+    echo "Found valid certificates. Starting server..."
 fi
 
 # Execute the CMD from the Dockerfile

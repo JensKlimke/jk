@@ -42,7 +42,9 @@ DOMAIN=example.com EMAIL=admin@example.com CERTBOT_STAGING= docker-compose up -d
 ## How It Works
 
 1. When the stack starts, the nginx container automatically installs openssl if needed
-2. Nginx creates self-signed certificates for initial startup using openssl
+2. Nginx checks for existing certificates and creates self-signed certificates if needed
+   - Self-signed certificates are created if the certificate directory doesn't exist
+   - Self-signed certificates are also created if the certificate files are missing
 3. Certbot obtains Let's Encrypt certificates using the webroot method
 4. Nginx serves the services over HTTPS using the Let's Encrypt certificates
 5. Certbot renews the certificates automatically every 12 hours if needed
@@ -59,6 +61,20 @@ If certificate issuance fails, check:
 
 ```bash
 docker-compose logs certbot
+```
+
+### Nginx Fails to Start
+
+If nginx fails to start with certificate-related errors:
+
+1. Make sure the openssl package is installed in the nginx container
+   - The docker-compose.yml file should include `apk add --no-cache openssl` in the command
+2. Check if the certificate directory structure exists but the certificate files are missing
+   - The system will automatically create self-signed certificates if needed
+3. Check the nginx logs for more specific error messages
+
+```bash
+docker-compose logs nginx
 ```
 
 ### Using with localhost
