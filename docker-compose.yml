@@ -18,7 +18,7 @@ services:
     image: nginxproxy/acme-companion
     container_name: nginx-proxy-acme
     environment:
-      - DEFAULT_EMAIL={EMAIL:-admin@example.com}
+      - DEFAULT_EMAIL=${EMAIL:-admin@example.com}
     volumes:
       - certs:/etc/nginx/certs:rw
       - acme:/etc/acme.sh
