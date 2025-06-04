@@ -68,7 +68,7 @@ docker-compose logs certbot
 If nginx fails to start with certificate-related errors:
 
 1. Make sure the openssl package is installed in the nginx container
-   - The docker-compose.yml file should include `apk add --no-cache openssl` in the command
+   - The entrypoint script automatically checks for and installs openssl if needed
 2. Check if the certificate directory structure exists but the certificate files are missing
    - The system will automatically create self-signed certificates if needed
 3. Check the nginx logs for more specific error messages

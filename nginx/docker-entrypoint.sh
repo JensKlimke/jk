@@ -6,6 +6,13 @@ envsubst '${DOMAIN}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf
 
 echo "Checking certificates..."
 
+# Check if openssl is installed, and install it if not
+if ! command -v openssl > /dev/null; then
+    echo "OpenSSL not found. Installing..."
+    apk add --no-cache openssl
+    echo "OpenSSL installed successfully."
+fi
+
 # Create a self-signed certificate for initial startup if either the directory or certificate files don't exist
 if [ ! -d "/etc/letsencrypt/live/${DOMAIN}" ] || [ ! -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ] || [ ! -f "/etc/letsencrypt/live/${DOMAIN}/privkey.pem" ]; then
     echo "Creating self-signed certificate for initial startup..."
