@@ -21,6 +21,7 @@ services:
       - DEFAULT_EMAIL=${EMAIL:-admin@example.com}
       - NGINX_PROXY_CONTAINER=nginx-proxy
     volumes:
+      - html:/usr/share/nginx/html
       - certs:/etc/nginx/certs:rw
       - acme:/etc/acme.sh
       - /var/run/docker.sock:/var/run/docker.sock:ro
