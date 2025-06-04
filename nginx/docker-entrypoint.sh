@@ -4,6 +4,8 @@ set -e
 # Replace environment variables in the Nginx configuration template
 envsubst '${DOMAIN}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
 
+echo "Checking certificates..."
+
 # Create a self-signed certificate for initial startup
 if [ ! -d "/etc/letsencrypt/live/${DOMAIN}" ]; then
     echo "Creating self-signed certificate for initial startup..."
@@ -17,6 +19,8 @@ if [ ! -d "/etc/letsencrypt/live/${DOMAIN}" ]; then
         -addext "subjectAltName=DNS:${DOMAIN},DNS:app.${DOMAIN},DNS:api.${DOMAIN},DNS:whois.${DOMAIN}"
 
     echo "Self-signed certificate created."
+else
+  echo "Found certificate folder. Starting server..."
 fi
 
 # Execute the CMD from the Dockerfile
