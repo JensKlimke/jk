@@ -36,20 +36,20 @@ services:
     networks:
       - jk-network
 
-#  certbot-renew:
-#    container_name: certbot-renew
-#    image: certbot/certbot
-#    volumes:
-#      - certbot-etc:/etc/letsencrypt
-#      - certbot-var:/var/lib/letsencrypt
-#      - webroot:/var/www/html
-#      - ./nginx/renew-certificates.sh:/renew-certificates.sh
-#    depends_on:
-#      - nginx
-#      - certbot
-#    entrypoint: "/bin/sh -c 'chmod +x /renew-certificates.sh && trap exit TERM; sleep 1h; while :; do /renew-certificates.sh; sleep 12h & wait $${!}; done;'"
-#    networks:
-#      - jk-network
+  certbot-renew:
+    container_name: certbot-renew
+    image: certbot/certbot
+    volumes:
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+      - webroot:/var/www/html
+      - ./nginx/renew-certificates.sh:/renew-certificates.sh
+    depends_on:
+      - nginx
+      - certbot
+    entrypoint: "/bin/sh -c 'chmod +x /renew-certificates.sh && trap exit TERM; sleep 1h; while :; do /renew-certificates.sh; sleep 12h & wait $${!}; done;'"
+    networks:
+      - jk-network
 
   app:
     container_name: app
