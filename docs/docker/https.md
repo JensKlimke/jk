@@ -68,12 +68,12 @@ docker-compose logs certbot
 If you see an error like "live directory exists for your.domain", this means:
 
 1. The certificate directory structure already exists (created by nginx for self-signed certificates)
-2. Certbot is configured to use `--keep-until-expiring` which will:
-   - Reuse existing valid certificates if they haven't expired
-   - Replace self-signed certificates with Let's Encrypt certificates
+2. Certbot is configured to use `--force-renewal` which will:
+   - Replace existing certificates with new Let's Encrypt certificates
+   - Ignore the expiration date of existing certificates
    - Handle the case where the directory exists but needs new certificates
 
-This approach ensures a smooth transition from self-signed to Let's Encrypt certificates.
+This approach ensures that self-signed certificates are always replaced with Let's Encrypt certificates.
 
 ### Nginx Fails to Start
 

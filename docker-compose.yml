@@ -32,7 +32,7 @@ services:
       - webroot:/var/www/html
     depends_on:
       - nginx
-    command: certonly --webroot --webroot-path=/var/www/html --email ${EMAIL:-admin@example.com} --agree-tos --no-eff-email --keep-until-expiring ${CERTBOT_STAGING:---staging} -d ${DOMAIN:-localhost} -d app.${DOMAIN:-localhost} -d api.${DOMAIN:-localhost} -d whois.${DOMAIN:-localhost}
+    command: certonly --webroot --webroot-path=/var/www/html --email ${EMAIL:-admin@example.com} --agree-tos --no-eff-email --force-renewal ${CERTBOT_STAGING:---staging} -d ${DOMAIN:-localhost} -d app.${DOMAIN:-localhost} -d api.${DOMAIN:-localhost} -d whois.${DOMAIN:-localhost}
     networks:
       - jk-network
 
@@ -47,7 +47,7 @@ services:
     depends_on:
       - nginx
       - certbot
-    entrypoint: "/bin/sh -c 'chmod +x /renew-certificates.sh && trap exit TERM; while :; do /renew-certificates.sh; sleep 12h & wait $${!}; done;'"
+    entrypoint: "/bin/sh -c 'chmod +x /renew-certificates.sh && trap exit TERM; sleep 1h; while :; do /renew-certificates.sh; sleep 12h & wait $${!}; done;'"
     networks:
       - jk-network
 
