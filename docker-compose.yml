@@ -94,8 +94,3 @@ volumes:
   certbot-etc:
   certbot-var:
   webroot:
-    driver: local
-    driver_opts:
-      type: none
-      device: ${PWD}/webroot/
-      o: bind
