@@ -75,6 +75,21 @@ If you see an error like "live directory exists for your.domain", this means:
 
 This approach ensures that self-signed certificates are always replaced with Let's Encrypt certificates.
 
+### Certificates with Suffixes
+
+Let's Encrypt sometimes creates certificates in directories with suffixes (e.g., `domain-0001` instead of just `domain`). The system handles this automatically:
+
+1. The nginx entrypoint script checks for certificates in any directory matching `/etc/letsencrypt/live/${DOMAIN}*`
+2. If certificates are found in a directory with a suffix (e.g., `/etc/letsencrypt/live/${DOMAIN}-0001/`), the script creates symbolic links from the expected path to the actual path
+3. This ensures that nginx can find the certificates regardless of where Let's Encrypt places them
+
+You can see this behavior in the nginx logs:
+
+```bash
+Found Let's Encrypt certificates in /etc/letsencrypt/live/example.com-0001
+Created symbolic links from /etc/letsencrypt/live/example.com/ to /etc/letsencrypt/live/example.com-0001
+```
+
 ### Nginx Fails to Start
 
 If nginx fails to start with certificate-related errors:
