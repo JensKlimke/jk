@@ -63,6 +63,18 @@ If certificate issuance fails, check:
 docker-compose logs certbot
 ```
 
+### "Live Directory Exists" Error
+
+If you see an error like "live directory exists for your.domain", this means:
+
+1. The certificate directory structure already exists (created by nginx for self-signed certificates)
+2. Certbot is configured to use `--keep-until-expiring` which will:
+   - Reuse existing valid certificates if they haven't expired
+   - Replace self-signed certificates with Let's Encrypt certificates
+   - Handle the case where the directory exists but needs new certificates
+
+This approach ensures a smooth transition from self-signed to Let's Encrypt certificates.
+
 ### Nginx Fails to Start
 
 If nginx fails to start with certificate-related errors:

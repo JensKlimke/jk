@@ -32,7 +32,7 @@ services:
       - webroot:/var/www/html
     depends_on:
       - nginx
-    command: certonly --webroot --webroot-path=/var/www/html --email ${EMAIL:-admin@example.com} --agree-tos --no-eff-email --force-renewal ${CERTBOT_STAGING:---staging} -d ${DOMAIN:-localhost} -d app.${DOMAIN:-localhost} -d api.${DOMAIN:-localhost} -d whois.${DOMAIN:-localhost}
+    command: certonly --webroot --webroot-path=/var/www/html --email ${EMAIL:-admin@example.com} --agree-tos --no-eff-email --keep-until-expiring ${CERTBOT_STAGING:---staging} -d ${DOMAIN:-localhost} -d app.${DOMAIN:-localhost} -d api.${DOMAIN:-localhost} -d whois.${DOMAIN:-localhost}
     networks:
       - jk-network
 
