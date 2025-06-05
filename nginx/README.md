@@ -131,3 +131,49 @@ The following elements could be considered for removal to simplify the configura
 3. General:
    - The docker.sock volume mount in nginx-proxy if not using container auto-discovery
    - Redundant proxy headers that aren't used by the services
+
+## Reusable OAuth2 Configuration
+
+To avoid duplicating OAuth2 configuration across multiple webapp configurations, a common `oauth2.conf` file has been created:
+
+1. **oauth2.conf**: Contains the common OAuth2 configuration that can be included in any webapp configuration
+   - Location blocks for `/oauth2/` and `/oauth2/auth`
+   - Proxy settings for the OAuth2 Proxy service
+   - CSRF cookie handling
+
+### Adding a New Protected Webapp
+
+To add a new webapp with OAuth2 authentication:
+
+1. Create a new configuration file in `nginx/conf.d/` (e.g., `myapp.conf`)
+2. Include the common OAuth2 configuration with `include /etc/nginx/conf.d/oauth2.conf;`
+3. Add the protected location block with `auth_request /oauth2/auth;`
+
+Example:
+```nginx
+server {
+    listen 80;
+    server_name myapp.localhost;
+
+    # Common proxy headers
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    # Include common OAuth2 configuration
+    include /etc/nginx/conf.d/oauth2.conf;
+
+    location / {
+        auth_request /oauth2/auth;
+        error_page 401 =403 /oauth2/sign_in;
+
+        # Cookie refresh handling
+        auth_request_set $auth_cookie $upstream_http_set_cookie;
+        add_header Set-Cookie $auth_cookie;
+
+        # Proxy to your app service
+        proxy_pass http://myapp-service:8080;
+    }
+}
+```
