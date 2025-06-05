@@ -302,8 +302,6 @@
         {{ $proto := $vpath.proto }}
         {{ $upstream := $vpath.upstream }}
         {{ $dest := $vpath.dest }}
-        {{- $auth_enabled := groupByLabel $vpath.containers "com.github.nginx-proxy.oauth2-proxy.enable" | keys | first | default "false" | parseBool }}
-        {{- if $auth_enabled }}
         {{- if eq $proto "uwsgi" }}
         include uwsgi_params;
         uwsgi_pass {{ trim $proto }}://{{ trim $upstream }};
@@ -325,25 +323,8 @@
         {{- else if eq $proto "grpcs" }}
         grpc_pass {{ trim $proto }}://{{ trim $upstream }};
         {{- else }}
-        {{- if $auth_enabled }}
-        # OAuth2 Authentication enabled
-        auth_request /oauth2/auth;
-        error_page 401 = /oauth2/sign_in;
-
-        # Pass OAuth2 headers to backend
-        auth_request_set $user $upstream_http_x_auth_request_user;
-        auth_request_set $email $upstream_http_x_auth_request_email;
-        auth_request_set $token $upstream_http_x_auth_request_access_token;
-        proxy_set_header X-User $user;
-        proxy_set_header X-Email $email;
-        proxy_set_header X-Access-Token $token;
-
         proxy_pass {{ trim $proto }}://{{ trim $upstream }}{{ trim $dest }};
         set $upstream_keepalive {{ if ne $keepalive "disabled" }}true{{ else }}false{{ end }};
-        {{- else }}
-        proxy_pass {{ trim $proto }}://{{ trim $upstream }}{{ trim $dest }};
-        set $upstream_keepalive {{ if ne $keepalive "disabled" }}true{{ else }}false{{ end }};
-        {{- end }}
         {{- end }}
 
         {{- if (exists (printf "/etc/nginx/htpasswd/%s_%s" .Host (sha1 .Path) )) }}
@@ -1060,29 +1041,6 @@ server {
     {{- if $vhost.enable_debug_endpoint }}
         {{ template "debug_location" (dict "GlobalConfig" $globals.config "Hostname" $hostname "VHost" $vhost) }}
     {{- end }}
-
-    # OAuth2 Proxy endpoints
-    location = /oauth2/auth {
-        internal;
-        proxy_pass http://oauth2-proxy:4180;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Scheme $scheme;
-        proxy_set_header X-Auth-Request-Redirect $request_uri;
-        # nginx auth_request includes headers but not body
-        proxy_set_header Content-Length "";
-        proxy_pass_request_body off;
-    }
-
-    location /oauth2/ {
-        proxy_pass http://oauth2-proxy:4180;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Scheme $scheme;
-        # nginx auth_request includes headers but not body
-        proxy_set_header Content-Length "";
-        proxy_pass_request_body off;
-    }
 
     {{- range $path, $vpath := $vhost.paths }}
         {{- template "location" (dict
