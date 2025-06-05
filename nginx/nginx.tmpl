@@ -1087,6 +1087,17 @@ server {
         # proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
     }
 
+    # OAuth2 Auth endpoint - used by the auth_request directive
+    location = /oauth2/auth {
+        proxy_pass http://oauth2-proxy:4180;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Uri $request_uri;
+        # nginx auth_request includes headers but not body
+        proxy_set_header Content-Length "";
+        proxy_pass_request_body off;
+    }
+
     {{- if $vhost.enable_debug_endpoint }}
         {{ template "debug_location" (dict "GlobalConfig" $globals.config "Hostname" $hostname "VHost" $vhost) }}
     {{- end }}
