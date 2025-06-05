@@ -8,13 +8,11 @@ The JK project is a monorepo containing multiple packages that need to be built 
 
 ## Build Order
 
-The packages are built in the following order:
+Packages are built in a specific order to ensure that dependencies are built before the packages that depend on them. The current example packages are built in this order:
 
-1. `@jk/models` - Shared data models
-2. `@jk/api-server` - API server library
-3. `@jk/api` - API service
-4. `@jk/whois` - WHOIS service
-5. `@jk/app` - Frontend application
+1. Shared libraries (e.g., `@jk/models`, `@jk/api-server`)
+2. Services (e.g., `@jk/api`)
+3. Applications (e.g., `@jk/app`)
 
 This order ensures that dependencies are built before the packages that depend on them.
 
@@ -33,39 +31,32 @@ This command uses the `build.js` script at the root of the project to build each
 You can also build individual packages:
 
 ```bash
-# Build the models package
-npm run build --workspace=@jk/models
+# Build a library package
+npm run build --workspace=@jk/[library-name]
 
-# Build the API server library
-npm run build --workspace=@jk/api-server
+# Build a service
+npm run build --workspace=@jk/[service-name]
 
-# Build the API service
-npm run build --workspace=@jk/api
-
-# Build the WHOIS service
-npm run build --workspace=@jk/whois
-
-# Build the frontend application
-npm run build --workspace=@jk/app
+# Build an application
+npm run build --workspace=@jk/[app-name]
 ```
 
-Note that when building individual packages, you need to ensure that their dependencies have been built first. For example, before building the API service, you should build the models and API server packages:
+Note that when building individual packages, you need to ensure that their dependencies have been built first. For example, before building a service that depends on shared libraries:
 
 ```bash
-npm run build --workspace=@jk/models
-npm run build --workspace=@jk/api-server
-npm run build --workspace=@jk/api
+npm run build --workspace=@jk/[library-name]
+npm run build --workspace=@jk/[service-name]
 ```
 
 ## Convenience Scripts
 
-The root `package.json` includes convenience scripts for building common dependencies:
+The root `package.json` may include convenience scripts for building common dependencies:
 
 ```bash
-# Build just the models package
+# Example: Build just the models package
 npm run build:models
 
-# Build just the API server library
+# Example: Build just the API server library
 npm run build:api-server
 ```
 

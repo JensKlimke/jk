@@ -4,45 +4,46 @@ This guide explains how to run the applications in the JK project.
 
 ## Overview
 
-The JK project consists of multiple applications that can be run in development or production mode:
+The JK project supports multiple types of applications that can be run in development or production mode:
 
-- **API Service**: An Express.js backend service
-- **WHOIS Service**: A service providing WHOIS information
-- **Frontend Application**: A React application that consumes the API services
+- **Backend Services**: Services that provide APIs or other functionality
+- **Frontend Applications**: Web applications that consume backend services
+
+The current example components demonstrate this architecture.
 
 ## Development Mode
 
 Development mode provides hot-reloading and other features that make development easier.
 
-### Running the API Service
+### Running a Backend Service
 
-To start the API service in development mode:
+To start a backend service in development mode:
 
+```bash
+npm run dev --workspace=@jk/[service-name]
+```
+
+Example:
 ```bash
 npm run dev --workspace=@jk/api
 ```
 
-The API service will be available at http://localhost:3001.
+Backend services typically run on ports in the 3000-3999 range.
 
-### Running the WHOIS Service
+### Running a Frontend Application
 
-To start the WHOIS service in development mode:
+To start a frontend application in development mode:
 
 ```bash
-npm run dev --workspace=@jk/whois
+npm run dev --workspace=@jk/[app-name]
 ```
 
-The WHOIS service will be available at http://localhost:3002.
-
-### Running the Frontend Application
-
-To start the frontend application in development mode:
-
+Example:
 ```bash
 npm run dev --workspace=@jk/app
 ```
 
-The frontend application will be available at http://localhost:5173 (the default Vite development server port).
+Frontend applications in development mode typically run on port 5173 (the default Vite development server port).
 
 ## Production Mode
 
@@ -52,35 +53,31 @@ Before running the applications in production mode, you need to build them first
 npm run build
 ```
 
-### Running the API Service
+### Running a Backend Service
 
-To start the API service in production mode:
+To start a backend service in production mode:
 
+```bash
+npm run start --workspace=@jk/[service-name]
+```
+
+Example:
 ```bash
 npm run start --workspace=@jk/api
 ```
 
-The API service will be available at http://localhost:3001.
+### Running a Frontend Application
 
-### Running the WHOIS Service
-
-To start the WHOIS service in production mode:
+To start a frontend application in production mode:
 
 ```bash
-npm run start --workspace=@jk/whois
+npm run start --workspace=@jk/[app-name]
 ```
 
-The WHOIS service will be available at http://localhost:3002.
-
-### Running the Frontend Application
-
-To start the frontend application in production mode:
-
+Example:
 ```bash
 npm run start --workspace=@jk/app
 ```
-
-The frontend application will be available at http://localhost:3000.
 
 ## Running with Docker
 
@@ -88,13 +85,11 @@ For a more production-like environment, you can run all services using Docker Co
 
 ## Accessing the Applications
 
-Once the applications are running, you can access them at:
+Once the applications are running, you can access them at their respective URLs, which are typically displayed in the console output when starting the application.
 
+In the example components:
 - Frontend Application: http://localhost:3000 (production) or http://localhost:5173 (development)
 - API Service: http://localhost:3001
-- WHOIS Service: http://localhost:3002
-
-The frontend application will automatically connect to the API and WHOIS services if they are running.
 
 ## Stopping the Applications
 

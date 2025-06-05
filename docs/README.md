@@ -1,6 +1,6 @@
 # JK Project Documentation
 
-Welcome to the JK Project documentation. This documentation provides comprehensive information about the JK project, including how to get started, development guidelines, testing procedures, and more.
+Welcome to the JK Project documentation. This documentation provides information about the JK project, focusing on system setup and component integration.
 
 ## Documentation Sections
 
@@ -30,7 +30,13 @@ Welcome to the JK Project documentation. This documentation provides comprehensi
 - [System Architecture Overview](architecture/overview.md)
 
 ### Operations
-- [Graceful Shutdown Implementation](operations/graceful-shutdown.md)
+- [Graceful Shutdown Implementation](graceful-shutdown.md)
+
+## API Libraries
+
+The JK project includes shared libraries that can be used across different components:
+
+- **API Server Library**: Located at `packages/libs/api-server`, this library provides utilities for creating and managing API servers with common middleware and graceful shutdown support. See the [API Server README](../packages/libs/api-server/README.md) for details.
 
 ## Contributing to Documentation
 
@@ -39,4 +45,5 @@ If you'd like to contribute to the documentation, please follow these guidelines
 1. Use Markdown format for all documentation files
 2. Follow the existing structure and naming conventions
 3. Include clear, concise explanations with examples where appropriate
-4. Update the main README.md file if you add new documentation sections
+4. Focus on system setup and component integration rather than specific implementations
+5. Update the main README.md file if you add new documentation sections

@@ -4,39 +4,38 @@ This document provides an overview of the JK project's architecture.
 
 ## Overview
 
-The JK project follows a modular architecture with clear separation of concerns. The system is organized as a monorepo containing multiple packages that work together to provide a complete application.
+The JK project follows a modular architecture with clear separation of concerns. The system is organized as a monorepo containing multiple packages that work together to provide a complete application framework.
 
 ## High-Level Architecture
 
-The system consists of three main components:
+The architecture consists of three main component types:
 
-1. **Frontend Application**: A React-based web application that provides the user interface
-2. **API Service**: An Express.js backend service that provides data to the frontend
-3. **WHOIS Service**: A specialized service for providing WHOIS information
+1. **Frontend Applications**: Web applications that provide user interfaces
+2. **Backend Services**: Services that provide APIs and other functionality
+3. **Shared Libraries**: Common code used by multiple components
 
-These components communicate with each other through HTTP APIs, with the frontend application consuming the APIs provided by the backend services.
+These components communicate with each other through HTTP APIs, with frontend applications consuming the APIs provided by the backend services.
 
 ## Component Diagram
 
 ```
 ┌─────────────────┐     HTTP     ┌─────────────────┐
 │                 │───────────────▶                │
-│  Frontend App   │              │    API Service  │
-│  (React + Vite) │◀───────────────                │
-│                 │     JSON     │   (Express.js)  │
+│  Frontend App   │              │  Backend Service│
+│                 │◀───────────────                │
+│                 │     JSON     │                 │
 └─────────────────┘              └─────────────────┘
-         │                               │
-         │                               │
-         │ HTTP                          │ Internal
-         │                               │ Communication
-         │                               │
-         ▼                               ▼
-┌─────────────────┐              ┌─────────────────┐
-│                 │              │                 │
-│  WHOIS Service  │              │  Shared Models  │
-│   (Express.js)  │              │  (TypeScript)   │
-│                 │              │                 │
-└─────────────────┘              └─────────────────┘
+                                        │
+                                        │
+                                        │ Uses
+                                        │
+                                        ▼
+                                ┌─────────────────┐
+                                │                 │
+                                │ Shared Libraries│
+                                │                 │
+                                │                 │
+                                └─────────────────┘
 ```
 
 ## Package Structure
@@ -47,34 +46,32 @@ The monorepo is organized into different categories of packages:
 
 Shared code used by multiple packages:
 
-- **models**: Shared data models and interfaces
+- **models**: Example shared data models and interfaces
 - **api-server**: Common API server functionality
 
 ### Web Applications (`packages/apps/`)
 
 Frontend applications:
 
-- **app**: React frontend application
+- **app**: Example React frontend application
 
 ### Services (`packages/services/`)
 
 Backend services and APIs:
 
-- **api**: Express API backend
-- **whois**: WHOIS service
+- **api**: Example Express API backend
 
 ## Data Flow
 
-1. The frontend application makes HTTP requests to the API and WHOIS services
-2. The services process these requests and return JSON responses
-3. The frontend application renders the data for the user
+1. Frontend applications make HTTP requests to backend services
+2. Services process these requests and return JSON responses
+3. Frontend applications render the data for the user
 
 ## Key Technologies
 
 - **TypeScript**: Used throughout the project for type safety
-- **React**: Used for the frontend application
-- **Express.js**: Used for the backend services
-- **Vite**: Used for building the frontend application
+- **React**: Used for frontend applications (example)
+- **Express.js**: Used for backend services (example)
 - **Jest**: Used for testing
 - **Docker**: Used for containerization
 - **Nginx**: Used as a reverse proxy
@@ -83,7 +80,7 @@ Backend services and APIs:
 
 The project uses a monorepo structure to facilitate code sharing between packages:
 
-- The `models` package defines shared data structures used by both the frontend and backend
+- Shared libraries define common data structures and functionality used by both frontend and backend components
 - The `api-server` package provides common functionality for creating API servers
 
 ## Deployment Architecture
@@ -104,7 +101,7 @@ When deployed using Docker, the system uses the following architecture:
            ▼               ▼               ▼
 ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
 │                 │ │                 │ │                 │
-│  Frontend App   │ │   API Service   │ │  WHOIS Service  │
+│  Frontend App   │ │ Backend Service │ │ Backend Service │
 │    Container    │ │    Container    │ │    Container    │
 │                 │ │                 │ │                 │
 └─────────────────┘ └─────────────────┘ └─────────────────┘
@@ -113,11 +110,11 @@ When deployed using Docker, the system uses the following architecture:
 The Nginx reverse proxy routes requests to the appropriate service based on the subdomain:
 - `app.${DOMAIN}` routes to the frontend app
 - `api.${DOMAIN}` routes to the API service
-- `whois.${DOMAIN}` routes to the WHOIS service
+- Additional services can be added with their own subdomains
 
 ## Security Considerations
 
-- The API and WHOIS services use Helmet to add security headers
+- Backend services use Helmet to add security headers
 - CORS is enabled to allow the frontend to communicate with the backend services
 - The services are isolated in separate containers
 

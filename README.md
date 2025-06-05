@@ -11,13 +11,11 @@ This monorepo contains infrastructure setup and applications for the JK project.
 
 ## Quick Overview
 
-The JK project consists of:
+The JK project provides a framework for building and deploying web applications and services with:
 
-- A React frontend application
-- An Express.js API backend
-- A WHOIS service
-- Shared libraries for models and API server functionality
-- Docker support for all services
+- Shared libraries for common functionality
+- Support for web applications and backend services
+- Docker containerization
 - Comprehensive testing and CI/CD setup
 
 For detailed documentation, see the [docs folder](docs/README.md).
@@ -29,23 +27,22 @@ jk/
 ├── docs/             # Documentation
 ├── packages/
 │   ├── libs/         # Libraries
-│   │   ├── models/   # Shared data models library
+│   │   ├── models/   # Shared data models library (example)
 │   │   └── api-server/ # Common API server functionality
 │   ├── apps/         # Web applications
-│   │   └── app/      # React frontend application
+│   │   └── app/      # Example frontend application
 │   └── services/     # Server applications
-│       ├── api/      # Express API backend
-│       └── whois/    # WHOIS service
+│       └── api/      # Example backend service
 ├── package.json      # Root package.json with workspaces configuration
 └── tsconfig.json     # Base TypeScript configuration
 ```
 
+Note: The current components (models, app, api) are examples that demonstrate the architecture. You can add your own components following the same patterns.
+
 ## Key Features
 
 - **Monorepo Structure**: Organized with npm workspaces for efficient dependency management
-- **TypeScript**: Used throughout the project for type safety
-- **React Frontend**: Modern React application built with Vite
-- **Express.js Backend**: RESTful API endpoints with proper error handling
+- **TypeScript**: Type safety throughout the codebase
 - **Docker Support**: Containerization for all services with Docker Compose
 - **Testing**: Comprehensive test suite using Jest
 - **CI/CD**: GitHub Actions workflow for continuous integration
@@ -67,10 +64,9 @@ npm install
 # Build all packages
 npm run build
 
-# Run in development mode
-npm run dev --workspace=@jk/api    # Start API server
-npm run dev --workspace=@jk/whois  # Start WHOIS service
-npm run dev --workspace=@jk/app    # Start frontend app
+# Run example components in development mode
+npm run dev --workspace=@jk/api    # Start example API server
+npm run dev --workspace=@jk/app    # Start example frontend app
 ```
 
 ### Docker Quick Start
@@ -79,10 +75,9 @@ npm run dev --workspace=@jk/app    # Start frontend app
 # Build and run all services
 docker-compose up -d
 
-# Access the services
+# Access the example services
 # Frontend: http://app.localhost
 # API: http://api.localhost
-# WHOIS: http://whois.localhost
 ```
 
 ## Development
@@ -130,7 +125,7 @@ The JK project has a comprehensive test suite using Jest. For detailed testing i
 npm test
 
 # Run tests for a specific package
-npm test --workspace=@jk/api
+npm test --workspace=@jk/[package-name]
 ```
 
 For more details on running tests, see the [Running Tests Guide](docs/testing/running-tests.md).
@@ -162,11 +157,6 @@ The JK project includes comprehensive Docker support for all services. For detai
 ```bash
 # Build and run all services
 docker-compose up -d
-
-# Access the services
-# Frontend: http://app.localhost
-# API: http://api.localhost
-# WHOIS: http://whois.localhost
 
 # View logs
 docker-compose logs -f
