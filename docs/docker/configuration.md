@@ -105,6 +105,75 @@ app:
 
 This allows you to point the frontend app to services running on different hosts or with different URL structures.
 
+## Configuring OAuth2 Authentication with GitHub
+
+The JK project uses oauth2-proxy to provide authentication for services. By default, it's configured to use GitHub as the authentication provider.
+
+### Setting Up GitHub OAuth Application
+
+To use GitHub authentication, you need to create an OAuth application in GitHub:
+
+1. Go to your GitHub account settings
+2. Navigate to "Developer settings" > "OAuth Apps" > "New OAuth App"
+3. Fill in the application details:
+   - **Application name**: JK Authentication (or any name you prefer)
+   - **Homepage URL**: https://app.${DOMAIN} (replace ${DOMAIN} with your actual domain)
+   - **Authorization callback URL**: https://auth.${DOMAIN}/oauth2/callback (replace ${DOMAIN} with your actual domain)
+4. Click "Register application"
+5. After registration, you'll see your Client ID
+6. Generate a new client secret by clicking "Generate a new client secret"
+
+### Configuring Environment Variables
+
+Once you have your GitHub OAuth application set up, you need to configure the following environment variables:
+
+```bash
+# Required variables
+OAUTH2_CLIENT_ID=your_github_client_id
+OAUTH2_CLIENT_SECRET=your_github_client_secret
+OAUTH2_COOKIE_SECRET=random_secret_string  # Generate a random string for cookie encryption
+
+# Optional variables for restricting access
+OAUTH2_GITHUB_ORG=your_github_organization  # Restrict access to members of this GitHub organization
+OAUTH2_GITHUB_TEAM=your_github_team        # Restrict access to members of this GitHub team
+```
+
+You can set these environment variables when running Docker Compose:
+
+```bash
+DOMAIN=example.com \
+OAUTH2_CLIENT_ID=your_github_client_id \
+OAUTH2_CLIENT_SECRET=your_github_client_secret \
+OAUTH2_COOKIE_SECRET=random_secret_string \
+docker-compose up -d
+```
+
+### Generating a Cookie Secret
+
+The cookie secret is used to encrypt the authentication cookie. You can generate a random string using the following command:
+
+```bash
+openssl rand -base64 32
+```
+
+### Restricting Access
+
+By default, any GitHub user can authenticate. To restrict access:
+
+- Set `OAUTH2_GITHUB_ORG` to restrict access to members of a specific GitHub organization
+- Set `OAUTH2_GITHUB_TEAM` to restrict access to members of a specific team within the organization
+
+### Protected Services
+
+Services can be protected by adding the following label in the docker-compose.yml file:
+
+```yaml
+labels:
+  - "com.github.nginx-proxy.oauth2-proxy.enable=true"
+```
+
+Currently, the frontend app service is protected with this label.
+
 ## Next Steps
 
 - Learn how to [build and run with Docker](usage.md)
