@@ -299,6 +299,17 @@
         include /etc/nginx/network_internal.conf;
         {{- end }}
 
+        # Auth request configuration - commented out by default
+        # To enable authentication for this location, uncomment the following lines
+        # auth_request /oauth2/auth;
+        # error_page 401 = $auth_request_redirect;
+
+        # Pass auth request headers to the upstream
+        # auth_request_set $user $upstream_http_x_auth_request_user;
+        # auth_request_set $email $upstream_http_x_auth_request_email;
+        # proxy_set_header X-User $user;
+        # proxy_set_header X-Email $email;
+
         {{ $proto := $vpath.proto }}
         {{ $upstream := $vpath.upstream }}
         {{ $dest := $vpath.dest }}
@@ -568,6 +579,22 @@ proxy_set_header X-Original-URI $request_uri;
 
 # Mitigate httpoxy attack (see README for details)
 proxy_set_header Proxy "";
+
+# OAuth2 Proxy Configuration
+map $http_x_forwarded_proto $oauth2_scheme {
+    default $http_x_forwarded_proto;
+    '' $scheme;
+}
+
+# Define auth_request parameters for oauth2-proxy
+map $host $auth_request_uri {
+    default "/oauth2/auth";
+}
+
+# Define auth_request redirect parameters for oauth2-proxy
+map $host $auth_request_redirect {
+    default "https://auth.{{ $globals.Env.DOMAIN | default "localhost" }}/oauth2/start?rd=$oauth2_scheme://$host$request_uri";
+}
 {{- end }}
 
 {{- /* Precompute and store some information about vhost that use VIRTUAL_HOST_MULTIPORTS. */}}
@@ -1037,6 +1064,17 @@ server {
     {{- else if (exists "/etc/nginx/vhost.d/default") }}
     include /etc/nginx/vhost.d/default;
     {{- end }}
+
+    # OAuth2 Proxy endpoints
+    location /oauth2/ {
+        proxy_pass http://oauth2-proxy:4180;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Scheme $scheme;
+        proxy_set_header X-Auth-Request-Redirect $request_uri;
+        # or, if you are handling multiple domains:
+        # proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+    }
 
     {{- if $vhost.enable_debug_endpoint }}
         {{ template "debug_location" (dict "GlobalConfig" $globals.config "Hostname" $hostname "VHost" $vhost) }}

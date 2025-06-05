@@ -46,6 +46,26 @@ services:
     networks:
       - jk-network
 
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:latest
+    container_name: oauth2-proxy
+    environment:
+      - OAUTH2_PROXY_PROVIDER=github
+      - OAUTH2_PROXY_CLIENT_ID=${OAUTH2_CLIENT_ID}
+      - OAUTH2_PROXY_CLIENT_SECRET=${OAUTH2_CLIENT_SECRET}
+      - OAUTH2_PROXY_COOKIE_SECRET=${OAUTH2_COOKIE_SECRET}
+      - OAUTH2_PROXY_EMAIL_DOMAINS=*
+      - OAUTH2_PROXY_COOKIE_SECURE=false
+      - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
+      - OAUTH2_PROXY_REDIRECT_URL=http://auth.${DOMAIN:-localhost}/oauth2/callback
+      - VIRTUAL_HOST=auth.${DOMAIN:-localhost}
+      - VIRTUAL_PORT=4180
+      - LETSENCRYPT_HOST=auth.${DOMAIN:-localhost}
+    expose:
+      - "4180"
+    networks:
+      - jk-network
+
   app:
     container_name: app
     build:
