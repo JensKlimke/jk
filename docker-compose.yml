@@ -58,7 +58,6 @@ services:
       - OAUTH2_PROXY_COOKIE_SECURE=false
       - OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
       - OAUTH2_PROXY_REDIRECT_URL=https://auth.${DOMAIN:-localhost}/oauth2/callback
-      - OAUTH2_PROXY_GITHUB_SCOPES=user:email
       - VIRTUAL_HOST=auth.${DOMAIN:-localhost}
       - VIRTUAL_PORT=4180
       - LETSENCRYPT_HOST=auth.${DOMAIN:-localhost}
@@ -79,6 +78,7 @@ services:
       - LETSENCRYPT_HOST=${DOMAIN:-localhost}
       - VIRTUAL_HOST=${DOMAIN:-localhost}
       - VIRTUAL_PORT=80
+      - REQUIRE_AUTH=true
     expose:
       - "80"
     depends_on:
