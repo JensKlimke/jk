@@ -36,7 +36,6 @@ services:
     container_name: nginx-proxy-acme
     environment:
       - DEFAULT_EMAIL=${EMAIL:-admin@example.com}
-      - NGINX_PROXY_CONTAINER=nginx-proxy
     volumes:
       - html:/usr/share/nginx/html
       - certs:/etc/nginx/certs:rw
