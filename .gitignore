@@ -7,4 +7,6 @@ coverage/
 dist/
 tsconfig.tsbuildinfo
 
+nginx-conf.d
+
 .venv
