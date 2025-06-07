@@ -1,0 +1,28 @@
+# Common OAuth2 configuration for all webapps
+# Include this file in your server block to enable OAuth2 authentication
+
+# OAuth2 endpoints
+location /oauth2/ {
+    proxy_pass http://oauth2-proxy:4180;
+    proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+    proxy_set_header X-Forwarded-Uri $request_uri;
+
+    # Important for CSRF cookie handling
+    proxy_cookie_domain auth.{{ domain }} $host;
+    proxy_cookie_path / "/; SameSite=Lax";
+}
+
+# Special handling for auth endpoint
+location = /oauth2/auth {
+    proxy_pass http://oauth2-proxy:4180;
+    proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
+    proxy_set_header X-Forwarded-Uri $request_uri;
+
+    # nginx auth_request includes headers but not body
+    proxy_set_header Content-Length "";
+    proxy_pass_request_body off;
+
+    # Important for CSRF cookie handling
+    proxy_cookie_domain auth.{{ domain }} $host;
+    proxy_cookie_path / "/; SameSite=Lax";
+}
