@@ -20,6 +20,13 @@ process_templates() {
         # Extract server_name from the file
         server_name=$(grep "server_name" "$file" | head -1 | sed -E 's/.*server_name[[:space:]]+([^;]+);.*/\1/' | sed "s/{{ domain }}/$DOMAIN/g")
 
+        # Check if this is a .sec.conf file and skip it if oauth2-proxy is not running
+        echo "Checking if oauth2-proxy service is running for $filename..."
+        if ! docker ps --format '{{.Names}}' | grep -q "oauth2-proxy"; then
+          echo "oauth2-proxy service is not running, skipping $filename"
+          continue
+        fi
+
         # Extract certificate paths and replace domain placeholder
         cert_path=$(grep "ssl_certificate " "$file" | head -1 | sed -E 's/.*ssl_certificate[[:space:]]+([^;]+);.*/\1/' | sed "s/{{ domain }}/$DOMAIN/g")
         key_path=$(grep "ssl_certificate_key" "$file" | head -1 | sed -E 's/.*ssl_certificate_key[[:space:]]+([^;]+);.*/\1/' | sed "s/{{ domain }}/$DOMAIN/g")
@@ -46,32 +53,38 @@ process_templates() {
   echo "Configuration files have been processed and placed in /etc/nginx/conf.d/"
 }
 
-# Function to reload nginx configuration
-reload_nginx() {
-  echo "Attempting to reload nginx configuration..."
-  nginx_pid=$(pgrep -f "nginx: master")
+# Function to restart nginx
+restart_nginx() {
+  echo "Attempting to restart nginx container..."
 
-  if [ -n "$nginx_pid" ]; then
-    # Send SIGHUP to nginx to reload configuration
-    if kill -0 $nginx_pid 2>/dev/null; then
-      echo "Sending SIGHUP to nginx (PID: $nginx_pid)..."
-      kill -HUP $nginx_pid
+  # Use docker command to restart the nginx-proxy container
+  if docker restart nginx-proxy; then
+    echo "Nginx container restart initiated"
 
-      # Verify reload was successful
-      sleep 2
-      if kill -0 $nginx_pid 2>/dev/null; then
-        echo "Nginx configuration reload successful"
-        return 0
-      else
-        echo "Nginx process no longer exists after reload attempt"
-        return 1
+    # Wait for nginx to be ready after restart
+    max_attempts=30
+    attempt=0
+
+    while [ $attempt -lt $max_attempts ]; do
+      attempt=$((attempt + 1))
+
+      # Check if nginx-proxy container is running
+      if docker ps --format '{{.Names}}' | grep -q "nginx-proxy"; then
+        # Check if nginx is ready to accept connections
+        if docker exec nginx-proxy nginx -t > /dev/null 2>&1; then
+          echo "Nginx container restarted successfully and configuration is valid"
+          return 0
+        fi
       fi
-    else
-      echo "Nginx process exists but cannot send signal"
-      return 1
-    fi
+
+      echo "Waiting for nginx to be ready after restart (attempt $attempt/$max_attempts)..."
+      sleep 1
+    done
+
+    echo "Nginx did not become ready after restart"
+    return 1
   else
-    echo "Nginx master process not found"
+    echo "Failed to restart nginx container"
     return 1
   fi
 }
@@ -85,13 +98,17 @@ wait_for_nginx() {
   while [ $attempt -lt $max_attempts ]; do
     attempt=$((attempt + 1))
 
-    if pgrep -f "nginx: master" > /dev/null; then
-      echo "Nginx is running"
-      return 0
-    else
-      echo "Waiting for nginx to start (attempt $attempt/$max_attempts)..."
-      sleep 1
+    # Check if nginx-proxy container is running
+    if docker ps --format '{{.Names}}' | grep -q "nginx-proxy"; then
+      # Check if nginx is ready to accept connections
+      if docker exec nginx-proxy nginx -t > /dev/null 2>&1; then
+        echo "Nginx is running and configuration is valid"
+        return 0
+      fi
     fi
+
+    echo "Waiting for nginx to start (attempt $attempt/$max_attempts)..."
+    sleep 1
   done
 
   echo "Nginx did not start after $max_attempts attempts"
@@ -108,8 +125,8 @@ wait_for_nginx
 echo "Performing initial template processing..."
 process_templates
 
-# Reload nginx configuration
-reload_nginx
+# Restart nginx
+restart_nginx
 
 # Keep the container running and monitor for changes
 echo "Template processor completed initial run. Monitoring for changes..."
@@ -118,13 +135,13 @@ echo "Template processor completed initial run. Monitoring for changes..."
 while true; do
   sleep 10
 
-  # Check if nginx is running
-  if pgrep -f "nginx: master" > /dev/null; then
-    # Check if any template files have changed
-    if [ -n "$(find /etc/nginx/conf.d.tmpl -type f -newer /etc/nginx/conf.d/)" ]; then
-      echo "Template files have changed. Reprocessing..."
+  # Check if nginx-proxy container is running
+  if docker ps --format '{{.Names}}' | grep -q "nginx-proxy"; then
+    # Check if any template files have changed or if processed files don't exist
+    if [ ! -d "/etc/nginx/conf.d" ] || [ -z "$(ls -A /etc/nginx/conf.d)" ] || [ -n "$(find /etc/nginx/conf.d.tmpl -type f -newer /etc/nginx/conf.d/)" ]; then
+      echo "Template files have changed or processed files don't exist. Processing..."
       process_templates
-      reload_nginx
+      restart_nginx
     fi
   else
     echo "Nginx is not running. Waiting..."
