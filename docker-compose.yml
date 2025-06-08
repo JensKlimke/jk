@@ -13,23 +13,26 @@ services:
       - ./test/certs:/etc/nginx/certs:ro
       - www_html:/var/www/html
 
-  nginx-template-processor:
-    image: alpine:latest
-    container_name: nginx-template-processor
+  service_controller:
+    build:
+      context: .
+      dockerfile: packages/services/service_controller/Dockerfile
+    container_name: service_controller
     restart: unless-stopped
     volumes:
       - ./.nginx-conf.d:/etc/nginx/conf.d
       - ./nginx/conf.d.tmpl:/etc/nginx/conf.d.tmpl
-      - ./nginx/template-processor.sh:/template-processor.sh
       - ./test/certs:/etc/nginx/certs:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
       - DOMAIN=${DOMAIN:-localhost}
-    command: sh -c "apk add --no-cache procps grep sed docker-cli && chmod +x /template-processor.sh && /template-processor.sh"
+      - TEMPLATE_DIR=/etc/nginx/conf.d.tmpl
+      - OUTPUT_DIR=/etc/nginx/conf.d
+      - CERTS_DIR=/etc/nginx/certs
     depends_on:
       - nginx-proxy
     healthcheck:
-      test: ["CMD", "pgrep", "-f", "template-processor.sh"]
+      test: ["CMD", "pgrep", "-f", "node"]
       interval: 30s
       timeout: 10s
       retries: 3
