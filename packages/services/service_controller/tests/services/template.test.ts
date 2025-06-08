@@ -1,7 +1,6 @@
 import { TemplateService } from '../../src/services/template';
 import { ConfigService } from '../../src/services/config';
 import * as fs from 'fs-extra';
-import * as path from 'path';
 import { exec } from 'child_process';
 
 // Mock dependencies
@@ -35,19 +34,19 @@ describe('TemplateService', () => {
   describe('processTemplates', () => {
     it('should process regular config files', async () => {
       // Mock fs.readdir to return template files
-      (fs.readdir as jest.Mock).mockResolvedValueOnce(['regular.conf', 'another.incl']);
+      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['regular.conf', 'another.incl']);
 
       // Mock fs.stat to indicate they are files
-      (fs.stat as jest.Mock).mockResolvedValue({ isFile: () => true });
+      (fs.stat as unknown as jest.Mock).mockResolvedValue({ isFile: () => true });
 
       // Mock fs.ensureDir to do nothing
       (fs.ensureDir as jest.Mock).mockResolvedValue(undefined);
 
       // Mock fs.readFile to return template content
-      (fs.readFile as jest.Mock).mockResolvedValue('server_name {{ domain }};\nsome other content');
+      (fs.readFile as unknown as jest.Mock).mockResolvedValue('server_name {{ domain }};\nsome other content');
 
       // Mock fs.writeFile to do nothing
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      (fs.writeFile as unknown as jest.Mock).mockResolvedValue(undefined);
 
       await templateService.processTemplates();
 
@@ -68,23 +67,23 @@ describe('TemplateService', () => {
 
     it('should process secure config files when oauth2-proxy is running and certificates exist', async () => {
       // Mock fs.readdir to return a secure config file
-      (fs.readdir as jest.Mock).mockResolvedValueOnce(['secure.sec.conf']);
+      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['secure.sec.conf']);
 
       // Mock fs.stat to indicate it is a file
-      (fs.stat as jest.Mock).mockResolvedValue({ isFile: () => true });
+      (fs.stat as unknown as jest.Mock).mockResolvedValue({ isFile: () => true });
 
       // Mock fs.ensureDir to do nothing
-      (fs.ensureDir as jest.Mock).mockResolvedValue(undefined);
+      (fs.ensureDir as unknown as jest.Mock).mockResolvedValue(undefined);
 
       // Mock fs.readFile to return template content with certificate paths
-      (fs.readFile as jest.Mock).mockResolvedValue(
+      (fs.readFile as unknown as jest.Mock).mockResolvedValue(
         'server_name secure.{{ domain }};\n' +
           'ssl_certificate /etc/nginx/certs/secure.{{ domain }}/fullchain.pem;\n' +
           'ssl_certificate_key /etc/nginx/certs/secure.{{ domain }}/privkey.pem;',
       );
 
       // Mock exec to indicate oauth2-proxy is running
-      (exec as jest.Mock).mockImplementation((cmd, callback) => {
+      (exec as unknown as jest.Mock).mockImplementation((cmd, callback) => {
         callback(null, { stdout: 'running\n', stderr: '' });
       });
 
@@ -92,7 +91,7 @@ describe('TemplateService', () => {
       (fs.pathExists as jest.Mock).mockResolvedValue(true);
 
       // Mock fs.writeFile to do nothing
-      (fs.writeFile as jest.Mock).mockResolvedValue(undefined);
+      (fs.writeFile as unknown as jest.Mock).mockResolvedValue(undefined);
 
       await templateService.processTemplates();
 
@@ -113,23 +112,23 @@ describe('TemplateService', () => {
 
     it('should skip secure config files when oauth2-proxy is not running', async () => {
       // Mock fs.readdir to return a secure config file
-      (fs.readdir as jest.Mock).mockResolvedValueOnce(['secure.sec.conf']);
+      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['secure.sec.conf']);
 
       // Mock fs.stat to indicate it is a file
-      (fs.stat as jest.Mock).mockResolvedValue({ isFile: () => true });
+      (fs.stat as unknown as jest.Mock).mockResolvedValue({ isFile: () => true });
 
       // Mock fs.ensureDir to do nothing
-      (fs.ensureDir as jest.Mock).mockResolvedValue(undefined);
+      (fs.ensureDir as unknown as jest.Mock).mockResolvedValue(undefined);
 
       // Mock fs.readFile to return template content
-      (fs.readFile as jest.Mock).mockResolvedValue(
+      (fs.readFile as unknown as jest.Mock).mockResolvedValue(
         'server_name secure.{{ domain }};\n' +
           'ssl_certificate /etc/nginx/certs/secure.{{ domain }}/fullchain.pem;\n' +
           'ssl_certificate_key /etc/nginx/certs/secure.{{ domain }}/privkey.pem;',
       );
 
       // Mock exec to indicate oauth2-proxy is not running
-      (exec as jest.Mock).mockImplementation((cmd, callback) => {
+      (exec as unknown as jest.Mock).mockImplementation((cmd, callback) => {
         callback(null, { stdout: 'stopped\n', stderr: '' });
       });
 
@@ -144,28 +143,28 @@ describe('TemplateService', () => {
 
     it('should skip secure config files when certificates do not exist', async () => {
       // Mock fs.readdir to return a secure config file
-      (fs.readdir as jest.Mock).mockResolvedValueOnce(['secure.sec.conf']);
+      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['secure.sec.conf']);
 
       // Mock fs.stat to indicate it is a file
-      (fs.stat as jest.Mock).mockResolvedValue({ isFile: () => true });
+      (fs.stat as unknown as jest.Mock).mockResolvedValue({ isFile: () => true });
 
       // Mock fs.ensureDir to do nothing
-      (fs.ensureDir as jest.Mock).mockResolvedValue(undefined);
+      (fs.ensureDir as unknown as jest.Mock).mockResolvedValue(undefined);
 
       // Mock fs.readFile to return template content
-      (fs.readFile as jest.Mock).mockResolvedValue(
+      (fs.readFile as unknown as jest.Mock).mockResolvedValue(
         'server_name secure.{{ domain }};\n' +
           'ssl_certificate /etc/nginx/certs/secure.{{ domain }}/fullchain.pem;\n' +
           'ssl_certificate_key /etc/nginx/certs/secure.{{ domain }}/privkey.pem;',
       );
 
       // Mock exec to indicate oauth2-proxy is running
-      (exec as jest.Mock).mockImplementation((cmd, callback) => {
+      (exec as unknown as jest.Mock).mockImplementation((cmd, callback) => {
         callback(null, { stdout: 'running\n', stderr: '' });
       });
 
       // Mock fs.pathExists to indicate certificate files do not exist
-      (fs.pathExists as jest.Mock).mockResolvedValue(false);
+      (fs.pathExists as unknown as jest.Mock).mockResolvedValue(false);
 
       await templateService.processTemplates();
 
@@ -180,7 +179,7 @@ describe('TemplateService', () => {
   describe('shouldProcessTemplates', () => {
     it('should return true when output directory does not exist', async () => {
       // Mock fs.pathExists to indicate output directory does not exist
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(false);
+      (fs.pathExists as unknown as jest.Mock).mockResolvedValueOnce(false);
 
       const result = await templateService.shouldProcessTemplates();
 
@@ -190,10 +189,10 @@ describe('TemplateService', () => {
 
     it('should return true when output directory is empty', async () => {
       // Mock fs.pathExists to indicate output directory exists
-      (fs.pathExists as jest.Mock).mockResolvedValueOnce(true);
+      (fs.pathExists as unknown as jest.Mock).mockResolvedValueOnce(true);
 
       // Mock fs.readdir to return empty array
-      (fs.readdir as jest.Mock).mockResolvedValueOnce([]);
+      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce([]);
 
       const result = await templateService.shouldProcessTemplates();
 
@@ -203,16 +202,16 @@ describe('TemplateService', () => {
 
     it('should return true when a template file is newer than output file', async () => {
       // Mock fs.pathExists to indicate output directory and file exist
-      (fs.pathExists as jest.Mock).mockResolvedValue(true);
+      (fs.pathExists as unknown as jest.Mock).mockResolvedValue(true);
 
       // Mock fs.readdir for output directory
-      (fs.readdir as jest.Mock).mockResolvedValueOnce(['file.conf']);
+      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['file.conf']);
 
       // Mock fs.readdir for template directory
-      (fs.readdir as jest.Mock).mockResolvedValueOnce(['file.conf']);
+      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['file.conf']);
 
       // Mock fs.stat to indicate template file is newer
-      (fs.stat as jest.Mock)
+      (fs.stat as unknown as jest.Mock)
         .mockResolvedValueOnce({ mtime: new Date(2023, 1, 2) }) // template file
         .mockResolvedValueOnce({ mtime: new Date(2023, 1, 1) }); // output file
 
@@ -224,16 +223,16 @@ describe('TemplateService', () => {
 
     it('should return false when all template files are older than output files', async () => {
       // Mock fs.pathExists to indicate output directory and file exist
-      (fs.pathExists as jest.Mock).mockResolvedValue(true);
+      (fs.pathExists as unknown as jest.Mock).mockResolvedValue(true);
 
       // Mock fs.readdir for output directory
-      (fs.readdir as jest.Mock).mockResolvedValueOnce(['file.conf']);
+      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['file.conf']);
 
       // Mock fs.readdir for template directory
-      (fs.readdir as jest.Mock).mockResolvedValueOnce(['file.conf']);
+      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['file.conf']);
 
       // Mock fs.stat to indicate template file is older
-      (fs.stat as jest.Mock)
+      (fs.stat as unknown as jest.Mock)
         .mockResolvedValueOnce({ mtime: new Date(2023, 1, 1) }) // template file
         .mockResolvedValueOnce({ mtime: new Date(2023, 1, 2) }); // output file
 
