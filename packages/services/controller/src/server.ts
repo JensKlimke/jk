@@ -1,0 +1,119 @@
+import express, { Request, Response, NextFunction } from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
+import path from 'path';
+import { ConfigService } from './services/config';
+import { DockerService } from './services/docker';
+import { NginxService } from './services/nginx';
+import { TemplateService } from './services/template';
+
+// Initialize services
+const configService = new ConfigService();
+const dockerService = new DockerService();
+const templateService = new TemplateService(configService);
+const nginxService = new NginxService(dockerService);
+
+// Create Express app
+const app = express();
+
+// Configure middleware
+app.use(helmet());
+app.use(cors());
+app.use(express.json());
+
+// Load OpenAPI specification
+try {
+  const swaggerDocument = YAML.load(path.join(__dirname, '../openapi.yaml'));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+} catch (error) {
+  console.warn('OpenAPI specification not found. API documentation will not be available.');
+}
+
+// Health check endpoint
+app.get('/health', (req: Request, res: Response) => {
+  res.status(200).json({ status: 'ok' });
+});
+
+// API endpoint to trigger template processing
+app.post('/api/process-templates', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Check if nginx-proxy container is running
+    if (await dockerService.isContainerRunning('nginx-proxy')) {
+      // Process templates
+      await templateService.processTemplates();
+
+      // Restart nginx
+      await nginxService.restartNginx();
+
+      res.status(200).json({ 
+        status: 'success', 
+        message: 'Templates processed and nginx restarted successfully' 
+      });
+    } else {
+      res.status(503).json({ 
+        status: 'error', 
+        message: 'Nginx is not running' 
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+// API endpoint to get all containers with filtering capability
+app.get('/api/containers', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Get the environment filter from query parameters
+    const envFilter = req.query.envFilter as string | undefined;
+
+    // Get all containers with optional filtering
+    const containers = await dockerService.getAllContainers(envFilter);
+
+    res.status(200).json({
+      status: 'success',
+      count: containers.length,
+      data: containers
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Error handling middleware
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.error('Error:', err);
+  res.status(500).json({ 
+    status: 'error', 
+    message: err.message || 'An unexpected error occurred' 
+  });
+});
+
+// Export the app for testing
+export { app };
+
+// Function to start the server
+export async function startServer(port: number = 3000): Promise<void> {
+  try {
+    // Wait for nginx to start
+    console.log('Waiting for nginx to be fully started...');
+    await nginxService.waitForNginx();
+
+    // Initial processing
+    console.log('Performing initial template processing...');
+    await templateService.processTemplates();
+
+    // Restart nginx
+    await nginxService.restartNginx();
+
+    // Start the server
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+      console.log(`API documentation available at http://localhost:${port}/api-docs`);
+    });
+  } catch (error) {
+    console.error('Error starting server:', error);
+    throw error;
+  }
+}

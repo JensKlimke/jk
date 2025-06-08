@@ -13,11 +13,11 @@ services:
       - ./test/certs:/etc/nginx/certs:ro
       - www_html:/var/www/html
 
-  service_controller:
+  controller:
     build:
       context: .
-      dockerfile: packages/services/service_controller/Dockerfile
-    container_name: service_controller
+      dockerfile: packages/services/controller/Dockerfile
+    container_name: controller
     restart: unless-stopped
     volumes:
       - ./.nginx-conf.d:/etc/nginx/conf.d
@@ -25,17 +25,10 @@ services:
       - ./test/certs:/etc/nginx/certs:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     environment:
+      - VIRTUAL_HOST=service.localhost
       - DOMAIN=${DOMAIN:-localhost}
-      - TEMPLATE_DIR=/etc/nginx/conf.d.tmpl
-      - OUTPUT_DIR=/etc/nginx/conf.d
-      - CERTS_DIR=/etc/nginx/certs
     depends_on:
       - nginx-proxy
-    healthcheck:
-      test: ["CMD", "pgrep", "-f", "node"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   whoami:
     image: jwilder/whoami

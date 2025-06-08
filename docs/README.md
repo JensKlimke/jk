@@ -12,6 +12,7 @@ Welcome to the JK Project documentation. This documentation provides information
 ### Development
 - [Adding New Packages](development/adding-packages.md)
 - [Linting and Formatting](development/linting-formatting.md)
+- [Local Self-Signed Certificates](development/local-certificates.md)
 
 ### Testing
 - [Test Configuration](testing/configuration.md)

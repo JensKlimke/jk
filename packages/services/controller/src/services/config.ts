@@ -2,10 +2,10 @@
  * Service for handling configuration settings
  */
 export class ConfigService {
-  private domain: string;
-  private templateDir: string;
-  private outputDir: string;
-  private certsDir: string;
+  private readonly domain: string;
+  private readonly templateDir: string;
+  private readonly outputDir: string;
+  private readonly certsDir: string;
 
   constructor() {
     // Get configuration from environment variables or use defaults

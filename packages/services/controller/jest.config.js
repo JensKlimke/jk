@@ -2,7 +2,7 @@
 module.exports = {
   // Extend the root configuration
   ...require('../../../jest.config'),
-  // Override settings specific to the service_controller package
+  // Override settings specific to the controller package
   testEnvironment: 'node',
   // Override testMatch to include tests in the tests directory
   testMatch: ['**/__tests__/**/*.test.ts', '**/__tests__/**/*.test.tsx', '**/tests/**/*.test.ts'],

@@ -1,0 +1,159 @@
+openapi: 3.0.0
+info:
+  title: Service Controller API
+  description: API for controlling Nginx template processing
+  version: 1.0.0
+  license:
+    name: MIT
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      description: Returns the health status of the service
+      operationId: getHealth
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+  /api/process-templates:
+    post:
+      summary: Process templates
+      description: Processes Nginx configuration templates and restarts Nginx
+      operationId: processTemplates
+      tags:
+        - Templates
+      responses:
+        '200':
+          description: Templates processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Templates processed and nginx restarted successfully
+        '503':
+          description: Nginx is not running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: Nginx is not running
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: An unexpected error occurred
+  /api/containers:
+    get:
+      summary: Get all containers
+      description: Returns information about all Docker containers with optional filtering by environment variables
+      operationId: getContainers
+      tags:
+        - Containers
+      parameters:
+        - name: envFilter
+          in: query
+          description: Regular expression pattern to filter containers by environment variables
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Container information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  count:
+                    type: integer
+                    description: Number of containers returned
+                    example: 3
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ContainerInfo'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: An unexpected error occurred
+components:
+  schemas:
+    ContainerInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Container ID
+          example: 7d9d9b9e9f9e
+        name:
+          type: string
+          description: Container name
+          example: nginx-proxy
+        image:
+          type: string
+          description: Container image
+          example: nginx:latest
+        status:
+          type: string
+          description: Container status
+          example: Up 2 hours
+        created:
+          type: string
+          description: Container creation time
+          example: 2023-06-15 10:30:45 +0000 UTC
+        ports:
+          type: string
+          description: Container port mappings
+          example: 0.0.0.0:80->80/tcp, 0.0.0.0:443->443/tcp
+        env:
+          type: object
+          description: Container environment variables
+          additionalProperties:
+            type: string
+          example:
+            NODE_ENV: production
+            PORT: 3000
