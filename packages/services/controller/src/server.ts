@@ -81,6 +81,24 @@ app.get('/api/containers', async (req: Request, res: Response, next: NextFunctio
   }
 });
 
+// API endpoint to get user information from oauth2-proxy
+app.get('/api/user', (req: Request, res: Response) => {
+  console.log('Headers received:', req.headers);
+  // Extract user information from headers set by oauth2-proxy
+  const user = {
+    user: req.headers['x-user'] || null,
+    email: req.headers['x-email'] || null,
+    groups: req.headers['x-groups'] ? String(req.headers['x-groups']).split(','): [],
+    accessToken: req.headers['x-access-token'] || null,
+    requestedWith: req.headers['x-requested-with'] || null,
+  };
+
+  res.status(200).json({
+    status: 'success',
+    data: user
+  });
+});
+
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error('Error:', err);
@@ -107,13 +125,46 @@ export async function startServer(port: number = 3000): Promise<void> {
     // Restart nginx
     await nginxService.restartNginx();
 
-    // Start the server
-    app.listen(port, () => {
+    // Start the server and store the server instance
+    const server = app.listen(port, () => {
       console.log(`Server is running on port ${port}`);
       console.log(`API documentation available at http://localhost:${port}/api-docs`);
     });
+
+    // Setup graceful shutdown
+    setupGracefulShutdown(server);
   } catch (error) {
     console.error('Error starting server:', error);
     throw error;
   }
+}
+
+/**
+ * Setup graceful shutdown handlers
+ * @param server The HTTP server instance
+ */
+function setupGracefulShutdown(server: any): void {
+  // Function to handle shutdown
+  const shutdown = async (signal: string): Promise<void> => {
+    console.log(`\n${signal} received. Starting graceful shutdown...`);
+
+    // Close the server to stop accepting new connections
+    server.close(() => {
+      console.log('HTTP server closed.');
+
+      // Exit process
+      console.log('Graceful shutdown completed.');
+      process.exit(0);
+    });
+
+    // Set a timeout for forceful shutdown if graceful shutdown takes too long
+    setTimeout(() => {
+      console.error('Graceful shutdown timed out. Forcing exit.');
+      process.exit(1);
+    }, 10000); // 10 seconds timeout
+  };
+
+  // Listen for termination signals
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('SIGINT', () => shutdown('SIGINT'));
 }

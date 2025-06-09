@@ -1,8 +1,8 @@
-import request from 'supertest';
 import { app } from '../src/server';
-import { DockerService } from '../src/services/docker';
+import {ContainerInfo, DockerService} from '../src/services/docker';
 import { TemplateService } from '../src/services/template';
 import { NginxService } from '../src/services/nginx';
+import request from "supertest";
 
 // Mock the services
 jest.mock('../src/services/docker');
@@ -89,7 +89,7 @@ describe('API Server', () => {
   describe('GET /api/containers', () => {
     it('should return all containers', async () => {
       // Mock container data
-      const mockContainers = [
+      const mockContainers : ContainerInfo[] = [
         {
           id: 'abc123',
           name: 'nginx-proxy',
@@ -194,6 +194,68 @@ describe('API Server', () => {
       expect(response.body).toEqual({
         status: 'error',
         message: 'Test error'
+      });
+    });
+  });
+
+  describe('GET /api/user', () => {
+    it('should return user information from headers', async () => {
+      // Create a request with mock oauth2-proxy headers
+      const response = await request(app)
+        .get('/api/user')
+        .set('x-user', 'johndoe')
+        .set('x-email', 'john.doe@example.com')
+        .set('x-groups', 'developers,admins')
+        .set('x-access-token', 'gho_16C7e42F292c6912E7710c838347Ae178B4a')
+        .set('x-requested-with', 'XMLHttpRequest');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        status: 'success',
+        data: {
+          user: 'johndoe',
+          email: 'john.doe@example.com',
+          groups: ['developers', 'admins'],
+          accessToken: 'gho_16C7e42F292c6912E7710c838347Ae178B4a',
+          requestedWith: 'XMLHttpRequest'
+        }
+      });
+    });
+
+    it('should handle missing headers gracefully', async () => {
+      // Create a request without oauth2-proxy headers
+      const response = await request(app).get('/api/user');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        status: 'success',
+        data: {
+          user: null,
+          email: null,
+          groups: [],
+          accessToken: null,
+          requestedWith: null
+        }
+      });
+    });
+
+    it('should handle partial headers', async () => {
+      // Create a request with only some oauth2-proxy headers
+      const response = await request(app)
+        .get('/api/user')
+        .set('x-user', 'johndoe')
+        .set('x-email', 'john.doe@example.com');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toEqual({
+        status: 'success',
+        data: {
+          user: 'johndoe',
+          email: 'john.doe@example.com',
+          groups: [],
+          accessToken: null,
+          requestedWith: null
+        }
       });
     });
   });

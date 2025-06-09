@@ -18,7 +18,6 @@ export class NginxService {
    * Wait for Nginx to start and be ready
    */
   async waitForNginx(): Promise<void> {
-    console.log('Waiting for nginx to be fully started...');
     let attempt = 0;
 
     while (attempt < this.maxAttempts) {

@@ -120,8 +120,71 @@ paths:
                   message:
                     type: string
                     example: An unexpected error occurred
+  /api/user:
+    get:
+      summary: Get user information
+      description: Returns information about the authenticated user from oauth2-proxy headers
+      operationId: getUserInfo
+      tags:
+        - User
+      responses:
+        '200':
+          description: User information retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/UserInfo'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: error
+                  message:
+                    type: string
+                    example: An unexpected error occurred
+
 components:
   schemas:
+    UserInfo:
+      type: object
+      properties:
+        user:
+          type: string
+          nullable: true
+          description: Username of the authenticated user
+          example: johndoe
+        email:
+          type: string
+          nullable: true
+          description: Email of the authenticated user
+          example: john.doe@example.com
+        groups:
+          type: array
+          description: Groups the user belongs to
+          items:
+            type: string
+          example: ["developers", "admins"]
+        accessToken:
+          type: string
+          nullable: true
+          description: OAuth2 access token
+          example: gho_16C7e42F292c6912E7710c838347Ae178B4a
+        requestedWith:
+          type: string
+          nullable: true
+          description: Value of the X-Requested-With header
+          example: XMLHttpRequest
     ContainerInfo:
       type: object
       properties:
