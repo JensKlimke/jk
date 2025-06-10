@@ -114,6 +114,9 @@ export { app };
 // Function to start the server
 export async function startServer(port: number = 3000): Promise<void> {
   try {
+    // Copy default configuration
+    templateService.copyDefaultConfigs();
+
     // Wait for nginx to start
     console.log('Waiting for nginx to be fully started...');
     await nginxService.waitForNginx();

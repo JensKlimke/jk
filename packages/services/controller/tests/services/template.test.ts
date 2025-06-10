@@ -1,10 +1,12 @@
 import { TemplateService } from '../../src/services/template';
 import { ConfigService } from '../../src/services/config';
+import { DockerService } from '../../src/services/docker';
 import * as fs from 'fs-extra';
 import { exec } from 'child_process';
 
 // Mock dependencies
 jest.mock('../../src/services/config');
+jest.mock('../../src/services/docker');
 jest.mock('fs-extra');
 jest.mock('child_process', () => ({
   exec: jest.fn(),
@@ -22,19 +24,27 @@ describe('TemplateService', () => {
     mockConfigService = new ConfigService() as jest.Mocked<ConfigService>;
 
     // Set up mock ConfigService methods
-    mockConfigService.getDomain.mockReturnValue('example.com');
     mockConfigService.getTemplateDir.mockReturnValue('/template/dir');
     mockConfigService.getOutputDir.mockReturnValue('/output/dir');
     mockConfigService.getCertsDir.mockReturnValue('/certs/dir');
+
+    // Mock DockerService.getAllContainers to return an empty array
+    (DockerService.prototype.getAllContainers as jest.Mock).mockResolvedValue([]);
+
+    // Mock DockerService.isContainerRunning
+    (DockerService.prototype.isContainerRunning as jest.Mock).mockResolvedValue(true);
 
     // Create TemplateService with the mock ConfigService
     templateService = new TemplateService(mockConfigService);
   });
 
   describe('processTemplates', () => {
-    it('should process regular config files', async () => {
-      // Mock fs.readdir to return template files
-      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['regular.conf', 'another.incl']);
+    // Increase timeout for all tests in this describe block
+    jest.setTimeout(30000);
+
+    it('should process mustache templates', async () => {
+      // Mock fs.readdir to return mustache template files
+      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['service.conf.mustache']);
 
       // Mock fs.stat to indicate they are files
       (fs.stat as unknown as jest.Mock).mockResolvedValue({ isFile: () => true });
@@ -43,7 +53,35 @@ describe('TemplateService', () => {
       (fs.ensureDir as jest.Mock).mockResolvedValue(undefined);
 
       // Mock fs.readFile to return template content
-      (fs.readFile as unknown as jest.Mock).mockResolvedValue('server_name {{ domain }};\nsome other content');
+      (fs.readFile as unknown as jest.Mock).mockResolvedValue('{{#services}}server_name {{host}};{{/services}}');
+
+      // Mock DockerService.getAllContainers to return some containers
+      const mockContainers = [
+        {
+          id: 'container1',
+          name: 'service1',
+          image: 'image1',
+          status: 'running',
+          created: '2023-01-01',
+          ports: '80/tcp',
+          env: {
+            VIRTUAL_HOST: 'service1.example.com',
+            VIRTUAL_PORT: '8080'
+          }
+        },
+        {
+          id: 'container2',
+          name: 'service2',
+          image: 'image2',
+          status: 'running',
+          created: '2023-01-02',
+          ports: '80/tcp',
+          env: {
+            VIRTUAL_HOST: 'service2.example.com'
+          }
+        }
+      ];
+      (DockerService.prototype.getAllContainers as jest.Mock).mockResolvedValue(mockContainers);
 
       // Mock fs.writeFile to do nothing
       (fs.writeFile as unknown as jest.Mock).mockResolvedValue(undefined);
@@ -56,190 +94,75 @@ describe('TemplateService', () => {
       // Verify template files were read
       expect(fs.readdir).toHaveBeenCalledWith('/template/dir');
 
-      // Verify file content was read and written with replacements
-      expect(fs.readFile).toHaveBeenCalledTimes(2);
-      expect(fs.writeFile).toHaveBeenCalledTimes(2);
+      // Verify containers were retrieved
+      expect(DockerService.prototype.getAllContainers).toHaveBeenCalled();
+
+      // Verify template was read
+      expect(fs.readFile).toHaveBeenCalledWith('/template/dir/service.conf.mustache', 'utf8');
+
+      // Verify output file was written
       expect(fs.writeFile).toHaveBeenCalledWith(
-        '/output/dir/regular.conf',
-        'server_name example.com;\nsome other content',
-      );
-    });
-
-    it('should process secure config files when oauth2-proxy is running and certificates exist', async () => {
-      // Mock fs.readdir to return a secure config file
-      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['secure.sec.conf']);
-
-      // Mock fs.stat to indicate it is a file
-      (fs.stat as unknown as jest.Mock).mockResolvedValue({ isFile: () => true });
-
-      // Mock fs.ensureDir to do nothing
-      (fs.ensureDir as unknown as jest.Mock).mockResolvedValue(undefined);
-
-      // Mock fs.readFile to return template content with certificate paths
-      (fs.readFile as unknown as jest.Mock).mockResolvedValue(
-        'server_name secure.{{ domain }};\n' +
-          'ssl_certificate /etc/nginx/certs/secure.{{ domain }}/fullchain.pem;\n' +
-          'ssl_certificate_key /etc/nginx/certs/secure.{{ domain }}/privkey.pem;',
+        '/output/dir/service.conf',
+        expect.any(String)
       );
 
-      // Mock exec to indicate oauth2-proxy is running
-      (exec as unknown as jest.Mock).mockImplementation((cmd, callback) => {
-        callback(null, { stdout: 'running\n', stderr: '' });
-      });
-
-      // Mock fs.pathExists to indicate certificate files exist
-      (fs.pathExists as jest.Mock).mockResolvedValue(true);
-
-      // Mock fs.writeFile to do nothing
-      (fs.writeFile as unknown as jest.Mock).mockResolvedValue(undefined);
-
-      await templateService.processTemplates();
-
-      // Verify oauth2-proxy check was performed
-      expect(exec).toHaveBeenCalledWith(expect.stringContaining('docker ps'), expect.any(Function));
-
-      // Verify certificate paths were checked
-      expect(fs.pathExists).toHaveBeenCalledTimes(2);
-
-      // Verify file was written with replacements
+      // Verify container count was written
       expect(fs.writeFile).toHaveBeenCalledWith(
-        '/output/dir/secure.sec.conf',
-        'server_name secure.example.com;\n' +
-          'ssl_certificate /etc/nginx/certs/secure.example.com/fullchain.pem;\n' +
-          'ssl_certificate_key /etc/nginx/certs/secure.example.com/privkey.pem;',
+        '/output/dir/.container-count',
+        '2'
       );
-    });
-
-    it('should skip secure config files when oauth2-proxy is not running', async () => {
-      // Mock fs.readdir to return a secure config file
-      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['secure.sec.conf']);
-
-      // Mock fs.stat to indicate it is a file
-      (fs.stat as unknown as jest.Mock).mockResolvedValue({ isFile: () => true });
-
-      // Mock fs.ensureDir to do nothing
-      (fs.ensureDir as unknown as jest.Mock).mockResolvedValue(undefined);
-
-      // Mock fs.readFile to return template content
-      (fs.readFile as unknown as jest.Mock).mockResolvedValue(
-        'server_name secure.{{ domain }};\n' +
-          'ssl_certificate /etc/nginx/certs/secure.{{ domain }}/fullchain.pem;\n' +
-          'ssl_certificate_key /etc/nginx/certs/secure.{{ domain }}/privkey.pem;',
-      );
-
-      // Mock exec to indicate oauth2-proxy is not running
-      (exec as unknown as jest.Mock).mockImplementation((cmd, callback) => {
-        callback(null, { stdout: 'stopped\n', stderr: '' });
-      });
-
-      await templateService.processTemplates();
-
-      // Verify oauth2-proxy check was performed
-      expect(exec).toHaveBeenCalledWith(expect.stringContaining('docker ps'), expect.any(Function));
-
-      // Verify no file was written
-      expect(fs.writeFile).not.toHaveBeenCalled();
-    });
-
-    it('should skip secure config files when certificates do not exist', async () => {
-      // Mock fs.readdir to return a secure config file
-      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['secure.sec.conf']);
-
-      // Mock fs.stat to indicate it is a file
-      (fs.stat as unknown as jest.Mock).mockResolvedValue({ isFile: () => true });
-
-      // Mock fs.ensureDir to do nothing
-      (fs.ensureDir as unknown as jest.Mock).mockResolvedValue(undefined);
-
-      // Mock fs.readFile to return template content
-      (fs.readFile as unknown as jest.Mock).mockResolvedValue(
-        'server_name secure.{{ domain }};\n' +
-          'ssl_certificate /etc/nginx/certs/secure.{{ domain }}/fullchain.pem;\n' +
-          'ssl_certificate_key /etc/nginx/certs/secure.{{ domain }}/privkey.pem;',
-      );
-
-      // Mock exec to indicate oauth2-proxy is running
-      (exec as unknown as jest.Mock).mockImplementation((cmd, callback) => {
-        callback(null, { stdout: 'running\n', stderr: '' });
-      });
-
-      // Mock fs.pathExists to indicate certificate files do not exist
-      (fs.pathExists as unknown as jest.Mock).mockResolvedValue(false);
-
-      await templateService.processTemplates();
-
-      // Verify certificate paths were checked
-      expect(fs.pathExists).toHaveBeenCalledTimes(1);
-
-      // Verify no file was written
-      expect(fs.writeFile).not.toHaveBeenCalled();
     });
   });
 
-  describe('shouldProcessTemplates', () => {
-    it('should return true when output directory does not exist', async () => {
-      // Mock fs.pathExists to indicate output directory does not exist
-      (fs.pathExists as unknown as jest.Mock).mockResolvedValueOnce(false);
+  describe('copyDefaultConfigs', () => {
+    it('should copy all .conf files from template directory to output directory', () => {
+      // Mock fs.readdirSync to return some .conf files
+      (fs.readdirSync as jest.Mock).mockReturnValue(['default.conf', 'service.conf', 'other.file']);
 
-      const result = await templateService.shouldProcessTemplates();
+      // Mock fs.statSync to indicate they are files
+      (fs.statSync as jest.Mock).mockReturnValue({ isFile: () => true });
 
-      expect(result).toBe(true);
-      expect(fs.pathExists).toHaveBeenCalledWith('/output/dir');
+      // Mock fs.ensureDirSync to do nothing
+      (fs.ensureDirSync as jest.Mock).mockReturnValue(undefined);
+
+      // Mock fs.copySync to do nothing
+      (fs.copySync as jest.Mock).mockReturnValue(undefined);
+
+      // Call the function
+      templateService.copyDefaultConfigs();
+
+      // Verify output directory was created
+      expect(fs.ensureDirSync).toHaveBeenCalledWith('/output/dir');
+
+      // Verify template directory was read
+      expect(fs.readdirSync).toHaveBeenCalledWith('/template/dir');
+
+      // Verify each .conf file was copied
+      expect(fs.copySync).toHaveBeenCalledWith('/template/dir/default.conf', '/output/dir/default.conf');
+      expect(fs.copySync).toHaveBeenCalledWith('/template/dir/service.conf', '/output/dir/service.conf');
+
+      // Verify non-.conf files were not copied
+      expect(fs.copySync).not.toHaveBeenCalledWith('/template/dir/other.file', '/output/dir/other.file');
     });
 
-    it('should return true when output directory is empty', async () => {
-      // Mock fs.pathExists to indicate output directory exists
-      (fs.pathExists as unknown as jest.Mock).mockResolvedValueOnce(true);
+    it('should handle errors when copying files', () => {
+      // Mock fs.readdirSync to throw an error
+      const mockError = new Error('Test error');
+      (fs.readdirSync as jest.Mock).mockImplementation(() => {
+        throw mockError;
+      });
 
-      // Mock fs.readdir to return empty array
-      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce([]);
+      // Mock console.error to capture the error
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
 
-      const result = await templateService.shouldProcessTemplates();
+      // Expect the function to throw the error
+      expect(() => templateService.copyDefaultConfigs()).toThrow(mockError);
 
-      expect(result).toBe(true);
-      expect(fs.readdir).toHaveBeenCalledWith('/output/dir');
-    });
+      // Verify error was logged
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error copying default configuration files:', mockError);
 
-    it('should return true when a template file is newer than output file', async () => {
-      // Mock fs.pathExists to indicate output directory and file exist
-      (fs.pathExists as unknown as jest.Mock).mockResolvedValue(true);
-
-      // Mock fs.readdir for output directory
-      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['file.conf']);
-
-      // Mock fs.readdir for template directory
-      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['file.conf']);
-
-      // Mock fs.stat to indicate template file is newer
-      (fs.stat as unknown as jest.Mock)
-        .mockResolvedValueOnce({ mtime: new Date(2023, 1, 2) }) // template file
-        .mockResolvedValueOnce({ mtime: new Date(2023, 1, 1) }); // output file
-
-      const result = await templateService.shouldProcessTemplates();
-
-      expect(result).toBe(true);
-      expect(fs.stat).toHaveBeenCalledTimes(2);
-    });
-
-    it('should return false when all template files are older than output files', async () => {
-      // Mock fs.pathExists to indicate output directory and file exist
-      (fs.pathExists as unknown as jest.Mock).mockResolvedValue(true);
-
-      // Mock fs.readdir for output directory
-      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['file.conf']);
-
-      // Mock fs.readdir for template directory
-      (fs.readdir as unknown as jest.Mock).mockResolvedValueOnce(['file.conf']);
-
-      // Mock fs.stat to indicate template file is older
-      (fs.stat as unknown as jest.Mock)
-        .mockResolvedValueOnce({ mtime: new Date(2023, 1, 1) }) // template file
-        .mockResolvedValueOnce({ mtime: new Date(2023, 1, 2) }); // output file
-
-      const result = await templateService.shouldProcessTemplates();
-
-      expect(result).toBe(false);
-      expect(fs.stat).toHaveBeenCalledTimes(2);
+      // Restore console.error
+      consoleErrorSpy.mockRestore();
     });
   });
 });

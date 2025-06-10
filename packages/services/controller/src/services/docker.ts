@@ -95,7 +95,7 @@ export class DockerService {
 
         // Parse environment variables into a record
         const env: Record<string, string> = {};
-        envOutput.trim().split('\n').forEach(envVar => {
+        envOutput.trim().split('\\n').forEach(envVar => {
           if (!envVar) return;
           const [key, ...valueParts] = envVar.split('=');
           if (key) {

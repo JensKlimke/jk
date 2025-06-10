@@ -1,22 +1,78 @@
-import { exec } from 'child_process';
 import * as path from 'path';
-import { promisify } from 'util';
 
 import * as fs from 'fs-extra';
+import * as mustache from 'mustache';
 
-import { ConfigService } from './config';
+import {ConfigService} from './config';
+import {ContainerInfo, DockerService} from './docker';
 
-const execAsync = promisify(exec);
+/**
+ * Interface representing a service for Nginx configuration
+ */
+export interface Service {
+  service: string;
+  host: string;
+  port: number;
+  cert: boolean;
+  auth: boolean;
+  auth_headers: boolean;
+  certificate_file?: string;
+  certificate_key_file?: string;
+}
 
 /**
  * Service for processing Nginx configuration templates
  */
 export class TemplateService {
   private configService: ConfigService;
+  private dockerService: DockerService;
 
   constructor(configService: ConfigService) {
     this.configService = configService;
+    this.dockerService = new DockerService();
   }
+
+  /**
+   * Create a service object from container information
+   * @param container The container information
+   * @returns A service object for the mustache template
+   */
+  private createServiceObject(container: ContainerInfo): Service {
+    // Extract the service name from the container name
+    const service = container.name;
+
+    // Extract the port from the VIRTUAL_PORT environment variable or use a default
+    const port = container.env.VIRTUAL_PORT ? parseInt(container.env.VIRTUAL_PORT, 10) : 80;
+
+    // Extract the host from the VIRTUAL_HOST environment variable or use service name
+    // Make sure to extract only the hostname part without any newlines or other environment variables
+    let host = '';
+    if (container.env.VIRTUAL_HOST) {
+      // Extract only the first line and remove any trailing characters
+      host = container.env.VIRTUAL_HOST.split('\n')[0].trim();
+    } else {
+      host = service;
+    }
+
+    // Check if certificates exist
+    const certsDir = this.configService.getCertsDir();
+    const certificateFile = path.join(certsDir, host, 'fullchain.pem');
+    const certificateKeyFile = path.join(certsDir, host, 'privkey.pem');
+
+    // Create the service object
+    return {
+      service,
+      host,
+      port,
+      cert: fs.existsSync(certificateFile) && fs.existsSync(certificateKeyFile),
+      auth: container.env.REQUIRE_AUTH === 'true',
+      auth_headers: container.env.REQUIRE_AUTH === 'true',
+      certificate_file: certificateFile,
+      certificate_key_file: certificateKeyFile
+    };
+  }
+
+
 
   /**
    * Process all template files
@@ -26,82 +82,71 @@ export class TemplateService {
 
     const templateDir = this.configService.getTemplateDir();
     const outputDir = this.configService.getOutputDir();
-    const domain = this.configService.getDomain();
-    // const certsDir = this.configService.getCertsDir();
 
     // Ensure the output directory exists
     await fs.ensureDir(outputDir);
 
     try {
-      // Get all .conf and .incl files in the template directory
+      // Get all files in the template directory
       const files = await fs.readdir(templateDir);
-      const templateFiles = files.filter(file => file.endsWith('.conf') || file.endsWith('.incl'));
 
-      for (const filename of templateFiles) {
+      // Process mustache templates
+      const mustacheFiles = files.filter(file => file.endsWith('.mustache'));
+
+      // Get all running containers
+      const containers = await this.dockerService.getAllContainers();
+
+      // Create an array of service objects for all valid containers
+      // This is moved outside the loop since it doesn't change depending on the template file
+      const services: Service[] = [];
+      for (const container of containers) {
+        // Skip containers without VIRTUAL_HOST
+        console.log(`Processing container ${container.name} ${container.env.VIRTUAL_HOST}`);
+        if (!container.env.VIRTUAL_HOST) {
+          continue;
+        }
+
+        // Create service object
+        const serviceObject = this.createServiceObject(container);
+        services.push(serviceObject);
+      }
+
+      // Get general configuration from environment variables
+      const authService = process.env.AUTH_SERVICE || 'oauth2-proxy';
+      const authPort = 4180; // Default port for oauth2-proxy
+      const authHost = `auth.${process.env.DOMAIN || 'localhost'}`;
+
+      // Create a configuration object with services array and general configuration
+      const config = {
+        services,
+        auth_name: authService,
+        auth_port: authPort,
+        auth_host: authHost
+      };
+
+      // Update the container count file for change detection
+      const containerCountPath = path.join(outputDir, '.container-count');
+      await fs.writeFile(containerCountPath, services.length.toString());
+
+      for (const filename of mustacheFiles) {
         const filePath = path.join(templateDir, filename);
         const stats = await fs.stat(filePath);
 
         if (stats.isFile()) {
-          // Check if this is a secure config file (.sec.conf)
-          if (filename.endsWith('.sec.conf')) {
-            // Read the file content
-            const content = await fs.readFile(filePath, 'utf8');
+          console.log(`Processing mustache template ${filename}`);
 
-            // Extract server_name from the file
-            const serverNameMatch = content.match(/server_name\s+([^;]+);/);
-            if (!serverNameMatch) {
-              console.error(`Could not extract server_name from ${filename}, skipping`);
-              continue;
-            }
+          // Read the template content
+          const templateContent = await fs.readFile(filePath, 'utf8');
 
-            const serverName = serverNameMatch[1].replace(/{{ domain }}/g, domain);
+          // Generate the output filename
+          let outputFilename = filename.replace('.mustache', '');
 
-            // Check if oauth2-proxy service is running
-            console.log(`Checking if oauth2-proxy service is running for ${filename}...`);
-            try {
-              const { stdout } = await execAsync(
-                `docker ps --format '{{.Names}}' | grep -q "oauth2-proxy" && echo "running" || echo "stopped"`,
-              );
-              if (stdout.trim() !== 'running') {
-                console.log(`oauth2-proxy service is not running, skipping ${filename}`);
-                continue;
-              }
-            } catch (error) {
-              console.error(`Error checking if oauth2-proxy service is running:`, error);
-              continue;
-            }
+          // Render the template with the configuration object
+          const renderedContent = mustache.render(templateContent, config);
 
-            // Extract certificate paths and replace domain placeholder
-            const certPathMatch = content.match(/ssl_certificate\s+([^;]+);/);
-            const keyPathMatch = content.match(/ssl_certificate_key\s+([^;]+);/);
-
-            if (!certPathMatch || !keyPathMatch) {
-              console.error(`Could not extract certificate paths from ${filename}, skipping`);
-              continue;
-            }
-
-            const certPath = certPathMatch[1].replace(/{{ domain }}/g, domain);
-            const keyPath = keyPathMatch[1].replace(/{{ domain }}/g, domain);
-
-            console.log(`Checking certificate files for ${serverName}:`);
-            console.log(`  - Certificate: ${certPath}`);
-            console.log(`  - Key: ${keyPath}`);
-
-            // Check if both certificate files exist
-            if ((await fs.pathExists(certPath)) && (await fs.pathExists(keyPath))) {
-              console.log(`Certificate files found, processing ${filename}`);
-              const processedContent = content.replace(/{{ domain }}/g, domain);
-              await fs.writeFile(path.join(outputDir, filename), processedContent);
-            } else {
-              console.log(`Certificate files not found for ${serverName}, skipping ${filename}`);
-            }
-          } else {
-            // Process regular config files normally
-            console.log(`Processing ${filename}, replacing {{ domain }} with ${domain}`);
-            const content = await fs.readFile(filePath, 'utf8');
-            const processedContent = content.replace(/{{ domain }}/g, domain);
-            await fs.writeFile(path.join(outputDir, filename), processedContent);
-          }
+          // Write the output file
+          await fs.writeFile(path.join(outputDir, outputFilename), renderedContent);
+          console.log(`Generated ${outputFilename}`);
         }
       }
 
@@ -111,50 +156,37 @@ export class TemplateService {
       throw error;
     }
   }
-
   /**
-   * Check if templates should be processed
-   * This happens when:
-   * 1. The output directory doesn't exist
-   * 2. The output directory is empty
-   * 3. Any template file is newer than the corresponding output file
+   * Copy default configuration files from template directory to output directory
    */
-  async shouldProcessTemplates(): Promise<boolean> {
-    const templateDir = this.configService.getTemplateDir();
-    const outputDir = this.configService.getOutputDir();
+  copyDefaultConfigs(): void {
+    try {
+      const templateDir = this.configService.getTemplateDir();
+      const outputDir = this.configService.getOutputDir();
 
-    // Check if output directory exists
-    if (!(await fs.pathExists(outputDir))) {
-      return true;
-    }
+      // Ensure the output directory exists
+      fs.ensureDirSync(outputDir);
 
-    // Check if output directory is empty
-    const outputFiles = await fs.readdir(outputDir);
-    if (outputFiles.length === 0) {
-      return true;
-    }
+      // Get all .conf files in the template directory
+      const files = fs.readdirSync(templateDir);
+      const confFiles = files.filter(file => file.endsWith('.conf'));
 
-    // Check if any template file is newer than the corresponding output file
-    const templateFiles = await fs.readdir(templateDir);
-    for (const filename of templateFiles) {
-      if (filename.endsWith('.conf') || filename.endsWith('.incl')) {
-        const templatePath = path.join(templateDir, filename);
-        const outputPath = path.join(outputDir, filename);
+      // Copy each .conf file to the output directory
+      for (const file of confFiles) {
+        const sourcePath = path.join(templateDir, file);
+        const destPath = path.join(outputDir, file);
 
-        // If output file doesn't exist, we should process
-        if (!(await fs.pathExists(outputPath))) {
-          return true;
-        }
-
-        // Check if template file is newer than output file
-        const templateStat = await fs.stat(templatePath);
-        const outputStat = await fs.stat(outputPath);
-        if (templateStat.mtime > outputStat.mtime) {
-          return true;
+        // Check if it's a file before copying
+        if (fs.statSync(sourcePath).isFile()) {
+          fs.copySync(sourcePath, destPath);
+          console.log(`Copied default config: ${file}`);
         }
       }
-    }
 
-    return false;
+      console.log('Default configuration files have been copied to the output directory');
+    } catch (error) {
+      console.error('Error copying default configuration files:', error);
+      throw error;
+    }
   }
 }

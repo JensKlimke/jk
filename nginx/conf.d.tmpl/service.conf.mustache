@@ -1,27 +1,55 @@
+{{#services}}
+server {
+    listen 80;
+    server_name {{host}};
+
+    # For certification
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+
+    {{#cert}}
+    # Redirect HTTP to HTTPS
+    location / {
+        return 301 https://$host$request_uri;
+    }
+    {{/cert}}
+    {{^cert}}
+    location / {
+        return 503;
+    }
+    {{/cert}}
+
+}
+
+{{#cert}}
 server {
     listen 443 ssl;
-    server_name controller.{{ domain }};
+    server_name {{host}};
 
     # Certs
-    ssl_certificate /etc/nginx/certs/controller.{{ domain }}/fullchain.pem;
-    ssl_certificate_key /etc/nginx/certs/controller.{{ domain }}/privkey.pem;
+    ssl_certificate {{{certificate_file}}};
+    ssl_certificate_key {{{certificate_key_file}}};
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
 
+    {{#auth}}
     # Include common OAuth2 configuration if it exists
     include /etc/nginx/conf.d/oauth2.conf.incl*;
+    {{/auth}}
 
     location / {
-
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
+        {{#auth}}
         # Auth request
         auth_request /oauth2/auth;
         error_page 401 =403 /oauth2/sign_in;
 
+        {{#auth_headers}}
         # Set auth headers
         auth_request_set $user   $upstream_http_x_auth_request_user;
         auth_request_set $email  $upstream_http_x_auth_request_email;
@@ -30,11 +58,16 @@ server {
 
         auth_request_set $token  $upstream_http_x_auth_request_access_token;
         proxy_set_header X-Access-Token $token;
+        {{/auth_headers}}
 
         # Cookie refresh handling
         auth_request_set $auth_cookie $upstream_http_set_cookie;
         add_header Set-Cookie $auth_cookie;
+        {{/auth}}
 
-        proxy_pass http://controller:3000;
+        proxy_pass http://{{service}}:{{port}};
     }
 }
+{{/cert}}
+
+{{/services}}
