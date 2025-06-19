@@ -2,6 +2,7 @@ import { app } from '../src/server';
 import {DockerService} from '../src/services/docker';
 import { TemplateService } from '../src/services/template';
 import { NginxService } from '../src/services/nginx';
+import { Container } from '../src/services/container';
 import request from "supertest";
 
 // Mock the services
@@ -90,31 +91,31 @@ describe('API Server', () => {
     it('should return all containers', async () => {
       // Mock container data
       const mockContainers = [
-        {
-          id: 'abc123',
-          name: 'nginx-proxy',
-          image: 'nginx:latest',
-          status: 'Up 2 hours',
-          created: '2023-06-15 10:30:45',
-          ports: '0.0.0.0:80->80/tcp',
-          env: {
+        new Container(
+          'abc123',
+          'nginx-proxy',
+          'nginx:latest',
+          'Up 2 hours',
+          '2023-06-15 10:30:45',
+          '0.0.0.0:80->80/tcp',
+          {
             NGINX_VERSION: '1.21.0',
             PROXY_MODE: 'production'
           }
-        },
-        {
-          id: 'def456',
-          name: 'api',
-          image: 'node:18',
-          status: 'Up 1 hour',
-          created: '2023-06-15 11:30:45',
-          ports: '0.0.0.0:3000->3000/tcp',
-          env: {
+        ),
+        new Container(
+          'def456',
+          'api',
+          'node:18',
+          'Up 1 hour',
+          '2023-06-15 11:30:45',
+          '0.0.0.0:3000->3000/tcp',
+          {
             NODE_ENV: 'production',
             PORT: '3000',
             API_KEY: 'secret123'
           }
-        }
+        )
       ];
 
       // Mock the docker service to return containers
@@ -136,19 +137,19 @@ describe('API Server', () => {
     it('should filter containers by environment variables', async () => {
       // Mock filtered container data
       const mockFilteredContainers = [
-        {
-          id: 'def456',
-          name: 'api',
-          image: 'node:18',
-          status: 'Up 1 hour',
-          created: '2023-06-15 11:30:45',
-          ports: '0.0.0.0:3000->3000/tcp',
-          env: {
+        new Container(
+          'def456',
+          'api',
+          'node:18',
+          'Up 1 hour',
+          '2023-06-15 11:30:45',
+          '0.0.0.0:3000->3000/tcp',
+          {
             NODE_ENV: 'production',
             PORT: '3000',
             API_KEY: 'secret123'
           }
-        }
+        )
       ];
 
       // Mock the docker service to return filtered containers

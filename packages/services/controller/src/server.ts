@@ -135,7 +135,7 @@ export async function startServer(port: number = 3000): Promise<void> {
     // Start the server and store the server instance
     const server = app.listen(port, () => {
       logger.info(`Server is running on port ${port}`);
-      logger.info(`API documentation available at http://localhost:${port}/api-docs`);
+      logger.info(`API documentation available at http://localhost:${port}/api-docs`); // TODO: update to target url
     });
 
     // Setup graceful shutdown
