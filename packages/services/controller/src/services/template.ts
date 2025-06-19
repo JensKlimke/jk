@@ -2,9 +2,11 @@ import * as path from 'path';
 
 import * as fs from 'fs-extra';
 import * as mustache from 'mustache';
+import logger from '../utils/logger';
 
 import {ConfigService} from './config';
-import {ContainerInfo, DockerService} from './docker';
+import {Container} from './container';
+import {DockerService} from './docker';
 
 /**
  * Interface representing a service for Nginx configuration
@@ -37,12 +39,20 @@ export class TemplateService {
    * @param container The container information
    * @returns A service object for the mustache template
    */
-  private createServiceObject(container: ContainerInfo): Service {
+  private createServiceObject(container: Container): Service {
     // Extract the service name from the container name
     const service = container.name;
 
-    // Extract the port from the VIRTUAL_PORT environment variable or use a default
-    const port = container.env.VIRTUAL_PORT ? parseInt(container.env.VIRTUAL_PORT, 10) : 80;
+    // Extract the port from the VIRTUAL_PORT environment variable, or use the first exposed port, or use a default
+    let port = 80; // Default port
+    if (container.env.VIRTUAL_PORT) {
+      port = parseInt(container.env.VIRTUAL_PORT, 10);
+    } else {
+      const exposedPort = container.getFirstExposedPort();
+      if (exposedPort !== null) {
+        port = exposedPort;
+      }
+    }
 
     // Extract the host from the VIRTUAL_HOST environment variable or use service name
     // Make sure to extract only the hostname part without any newlines or other environment variables
@@ -78,7 +88,7 @@ export class TemplateService {
    * Process all template files
    */
   async processTemplates(): Promise<void> {
-    console.log(`Processing templates at ${new Date().toISOString()}`);
+    logger.info(`Processing templates at ${new Date().toISOString()}`);
 
     const templateDir = this.configService.getTemplateDir();
     const outputDir = this.configService.getOutputDir();
@@ -101,7 +111,7 @@ export class TemplateService {
       const services: Service[] = [];
       for (const container of containers) {
         // Skip containers without VIRTUAL_HOST
-        console.log(`Processing container ${container.name} ${container.env.VIRTUAL_HOST}`);
+        logger.debug(`Processing container ${container.name} ${container.env.VIRTUAL_HOST}`);
         if (!container.env.VIRTUAL_HOST) {
           continue;
         }
@@ -111,17 +121,35 @@ export class TemplateService {
         services.push(serviceObject);
       }
 
-      // Get general configuration from environment variables
-      const authService = process.env.AUTH_SERVICE || 'oauth2-proxy';
-      const authPort = 4180; // Default port for oauth2-proxy
-      const authHost = `auth.${process.env.DOMAIN || 'localhost'}`;
+      // Find the auth service from the services array
+      let authService = process.env.AUTH_SERVICE || 'oauth2-proxy';
+      let authPort = 4180; // Default port for oauth2-proxy
+      let authHost = `auth.${process.env.DOMAIN || 'localhost'}`;
+
+      // Look for the auth service in the containers
+      const authContainer = containers.find(container => 
+        container.name === authService || container.name.includes('auth') || container.name.includes('oauth')
+      );
+
+      if (authContainer) {
+        authService = authContainer.name;
+        authPort = authContainer.env.VIRTUAL_PORT ? parseInt(authContainer.env.VIRTUAL_PORT, 10) : authPort;
+        authHost = authContainer.env.VIRTUAL_HOST ? 
+          authContainer.env.VIRTUAL_HOST.split('\n')[0].trim() : 
+          authHost;
+        logger.info(`Found auth service: ${authService}, port: ${authPort}, host: ${authHost}`);
+      } else {
+        logger.info(`Auth service not found in containers, using defaults: ${authService}, port: ${authPort}, host: ${authHost}`);
+      }
 
       // Create a configuration object with services array and general configuration
       const config = {
         services,
-        auth_name: authService,
-        auth_port: authPort,
-        auth_host: authHost
+        auth: {
+          name: authService,
+          port: authPort,
+          host: authHost
+        }
       };
 
       // Update the container count file for change detection
@@ -133,26 +161,26 @@ export class TemplateService {
         const stats = await fs.stat(filePath);
 
         if (stats.isFile()) {
-          console.log(`Processing mustache template ${filename}`);
+          logger.info(`Processing mustache template ${filename}`);
 
           // Read the template content
           const templateContent = await fs.readFile(filePath, 'utf8');
 
           // Generate the output filename
-          let outputFilename = filename.replace('.mustache', '');
+          const outputFilename = filename.replace('.mustache', '');
 
           // Render the template with the configuration object
           const renderedContent = mustache.render(templateContent, config);
 
           // Write the output file
           await fs.writeFile(path.join(outputDir, outputFilename), renderedContent);
-          console.log(`Generated ${outputFilename}`);
+          logger.info(`Generated ${outputFilename}`);
         }
       }
 
-      console.log('Configuration files have been processed and placed in the output directory');
+      logger.info('Configuration files have been processed and placed in the output directory');
     } catch (error) {
-      console.error('Error processing templates:', error);
+      logger.error('Error processing templates:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }
@@ -179,13 +207,13 @@ export class TemplateService {
         // Check if it's a file before copying
         if (fs.statSync(sourcePath).isFile()) {
           fs.copySync(sourcePath, destPath);
-          console.log(`Copied default config: ${file}`);
+          logger.info(`Copied default config: ${file}`);
         }
       }
 
-      console.log('Default configuration files have been copied to the output directory');
+      logger.info('Default configuration files have been copied to the output directory');
     } catch (error) {
-      console.error('Error copying default configuration files:', error);
+      logger.error('Error copying default configuration files:', error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
   }

@@ -1,8 +1,10 @@
 import { TemplateService } from '../../src/services/template';
 import { ConfigService } from '../../src/services/config';
 import { DockerService } from '../../src/services/docker';
+import { Container } from '../../src/services/container';
 import * as fs from 'fs-extra';
 import { exec } from 'child_process';
+import logger from "../../src/utils/logger";
 
 // Mock dependencies
 jest.mock('../../src/services/config');
@@ -52,34 +54,46 @@ describe('TemplateService', () => {
       // Mock fs.ensureDir to do nothing
       (fs.ensureDir as jest.Mock).mockResolvedValue(undefined);
 
-      // Mock fs.readFile to return template content
-      (fs.readFile as unknown as jest.Mock).mockResolvedValue('{{#services}}server_name {{host}};{{/services}}');
+      // Mock fs.readFile to return template content with auth service information
+      (fs.readFile as unknown as jest.Mock).mockResolvedValue('{{#services}}server_name {{host}};{{/services}} auth_name: {{auth.name}}, auth_port: {{auth.port}}, auth_host: {{auth.host}}');
 
       // Mock DockerService.getAllContainers to return some containers
       const mockContainers = [
-        {
-          id: 'container1',
-          name: 'service1',
-          image: 'image1',
-          status: 'running',
-          created: '2023-01-01',
-          ports: '80/tcp',
-          env: {
+        new Container(
+          'container1',
+          'service1',
+          'image1',
+          'running',
+          '2023-01-01',
+          '0.0.0.0:8080->80/tcp',
+          {
             VIRTUAL_HOST: 'service1.example.com',
             VIRTUAL_PORT: '8080'
           }
-        },
-        {
-          id: 'container2',
-          name: 'service2',
-          image: 'image2',
-          status: 'running',
-          created: '2023-01-02',
-          ports: '80/tcp',
-          env: {
+        ),
+        new Container(
+          'container2',
+          'service2',
+          'image2',
+          'running',
+          '2023-01-02',
+          '0.0.0.0:8081->80/tcp',
+          {
             VIRTUAL_HOST: 'service2.example.com'
           }
-        }
+        ),
+        new Container(
+          'container3',
+          'oauth2-proxy',
+          'oauth2-proxy/oauth2-proxy',
+          'running',
+          '2023-01-03',
+          '0.0.0.0:4180->4180/tcp',
+          {
+            VIRTUAL_HOST: 'auth.example.com',
+            VIRTUAL_PORT: '4180'
+          }
+        )
       ];
       (DockerService.prototype.getAllContainers as jest.Mock).mockResolvedValue(mockContainers);
 
@@ -100,16 +114,26 @@ describe('TemplateService', () => {
       // Verify template was read
       expect(fs.readFile).toHaveBeenCalledWith('/template/dir/service.conf.mustache', 'utf8');
 
+      // Capture the rendered content
+      const writeFileCalls = (fs.writeFile as unknown as jest.Mock).mock.calls;
+      const outputFileCall = writeFileCalls.find(call => call[0] === '/output/dir/service.conf');
+      const renderedContent = outputFileCall ? outputFileCall[1] : '';
+
       // Verify output file was written
       expect(fs.writeFile).toHaveBeenCalledWith(
         '/output/dir/service.conf',
         expect.any(String)
       );
 
+      // Verify the rendered content includes the correct auth service information
+      expect(renderedContent).toContain('auth_name: oauth2-proxy');
+      expect(renderedContent).toContain('auth_port: 4180');
+      expect(renderedContent).toContain('auth_host: auth.example.com');
+
       // Verify container count was written
       expect(fs.writeFile).toHaveBeenCalledWith(
         '/output/dir/.container-count',
-        '2'
+        '3'
       );
     });
   });
@@ -153,7 +177,7 @@ describe('TemplateService', () => {
       });
 
       // Mock console.error to capture the error
-      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
+      const consoleErrorSpy = jest.spyOn(logger, 'error').mockImplementation();
 
       // Expect the function to throw the error
       expect(() => templateService.copyDefaultConfigs()).toThrow(mockError);

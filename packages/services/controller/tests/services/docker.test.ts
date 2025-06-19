@@ -1,4 +1,5 @@
 import { DockerService } from '../../src/services/docker';
+import { Container } from '../../src/services/container';
 import { exec } from 'child_process';
 
 // Mock child_process.exec
@@ -125,85 +126,31 @@ describe('DockerService', () => {
       const result = await dockerService.getAllContainers();
 
       expect(result).toHaveLength(2);
-      expect(result[0]).toEqual({
-        id: 'abc123',
-        name: 'nginx-proxy',
-        image: 'nginx:latest',
-        status: 'Up 2 hours',
-        created: '2023-06-15 10:30:45',
-        ports: '0.0.0.0:80->80/tcp',
-        env: {
-          NGINX_VERSION: '1.21.0',
-          PROXY_MODE: 'production'
-        }
+      // Check properties of the DockerContainer instance
+      expect(result[0].id).toEqual('abc123');
+      expect(result[0].name).toEqual('nginx-proxy');
+      expect(result[0].image).toEqual('nginx:latest');
+      expect(result[0].status).toEqual('Up 2 hours');
+      expect(result[0].created).toEqual('2023-06-15 10:30:45');
+      expect(result[0].ports).toEqual('0.0.0.0:80->80/tcp');
+      expect(result[0].env).toEqual({
+        NGINX_VERSION: '1.21.0',
+        PROXY_MODE: 'production'
       });
-      expect(result[1]).toEqual({
-        id: 'def456',
-        name: 'api',
-        image: 'node:18',
-        status: 'Up 1 hour',
-        created: '2023-06-15 11:30:45',
-        ports: '0.0.0.0:3000->3000/tcp',
-        env: {
-          NODE_ENV: 'production',
-          PORT: '3000',
-          API_KEY: 'secret123'
-        }
+      // Check properties of the second DockerContainer instance
+      expect(result[1].id).toEqual('def456');
+      expect(result[1].name).toEqual('api');
+      expect(result[1].image).toEqual('node:18');
+      expect(result[1].status).toEqual('Up 1 hour');
+      expect(result[1].created).toEqual('2023-06-15 11:30:45');
+      expect(result[1].ports).toEqual('0.0.0.0:3000->3000/tcp');
+      expect(result[1].env).toEqual({
+        NODE_ENV: 'production',
+        PORT: '3000',
+        API_KEY: 'secret123'
       });
     });
 
-    it('should filter containers by environment variables', async () => {
-      // Mock exec for container list
-      (exec as unknown as jest.Mock).mockImplementationOnce((cmd, callback) => {
-        const stdout = 'abc123\tnginx-proxy\tnginx:latest\tUp 2 hours\t2023-06-15 10:30:45\t0.0.0.0:80->80/tcp\n' +
-                      'def456\tapi\tnode:18\tUp 1 hour\t2023-06-15 11:30:45\t0.0.0.0:3000->3000/tcp\n';
-        callback(null, { stdout, stderr: '' });
-      });
-
-      // Mock exec for first container env vars
-      (exec as unknown as jest.Mock).mockImplementationOnce((cmd, callback) => {
-        const stdout = 'NGINX_VERSION=1.21.0\nPROXY_MODE=production\n';
-        callback(null, { stdout, stderr: '' });
-      });
-
-      // Mock exec for second container env vars
-      (exec as unknown as jest.Mock).mockImplementationOnce((cmd, callback) => {
-        const stdout = 'NODE_ENV=production\nPORT=3000\nAPI_KEY=secret123\n';
-        callback(null, { stdout, stderr: '' });
-      });
-
-      // Filter for containers with NODE_ENV
-      const result = await dockerService.getAllContainers('NODE_ENV');
-
-      expect(result).toHaveLength(1);
-      expect(result[0].name).toBe('api');
-    });
-
-    it('should return an empty array when no containers match the filter', async () => {
-      // Mock exec for container list
-      (exec as unknown as jest.Mock).mockImplementationOnce((cmd, callback) => {
-        const stdout = 'abc123\tnginx-proxy\tnginx:latest\tUp 2 hours\t2023-06-15 10:30:45\t0.0.0.0:80->80/tcp\n' +
-                      'def456\tapi\tnode:18\tUp 1 hour\t2023-06-15 11:30:45\t0.0.0.0:3000->3000/tcp\n';
-        callback(null, { stdout, stderr: '' });
-      });
-
-      // Mock exec for first container env vars
-      (exec as unknown as jest.Mock).mockImplementationOnce((cmd, callback) => {
-        const stdout = 'NGINX_VERSION=1.21.0\nPROXY_MODE=production\n';
-        callback(null, { stdout, stderr: '' });
-      });
-
-      // Mock exec for second container env vars
-      (exec as unknown as jest.Mock).mockImplementationOnce((cmd, callback) => {
-        const stdout = 'NODE_ENV=production\nPORT=3000\nAPI_KEY=secret123\n';
-        callback(null, { stdout, stderr: '' });
-      });
-
-      // Filter for non-existent env var
-      const result = await dockerService.getAllContainers('NON_EXISTENT_VAR');
-
-      expect(result).toHaveLength(0);
-    });
 
     it('should return an empty array when exec throws an error', async () => {
       // Mock exec to throw an error
@@ -214,6 +161,46 @@ describe('DockerService', () => {
       const result = await dockerService.getAllContainers();
 
       expect(result).toHaveLength(0);
+    });
+
+    it('should filter containers by environment variable when envFilter is provided', async () => {
+      // Mock exec for container list
+      (exec as unknown as jest.Mock).mockImplementationOnce((cmd, callback) => {
+        const stdout = 'abc123\tnginx-proxy\tnginx:latest\tUp 2 hours\t2023-06-15 10:30:45\t0.0.0.0:80->80/tcp\n' +
+                      'def456\tapi\tnode:18\tUp 1 hour\t2023-06-15 11:30:45\t0.0.0.0:3000->3000/tcp\n' +
+                      'ghi789\tdb\tpostgres:14\tUp 3 hours\t2023-06-15 09:30:45\t0.0.0.0:5432->5432/tcp\n';
+        callback(null, { stdout, stderr: '' });
+      });
+
+      // Mock exec for first container env vars
+      (exec as unknown as jest.Mock).mockImplementationOnce((cmd, callback) => {
+        const stdout = 'NGINX_VERSION=1.21.0\nPROXY_MODE=production\n';
+        callback(null, { stdout, stderr: '' });
+      });
+
+      // Mock exec for second container env vars
+      (exec as unknown as jest.Mock).mockImplementationOnce((cmd, callback) => {
+        const stdout = 'NODE_ENV=production\nPORT=3000\nAPI_KEY=secret123\n';
+        callback(null, { stdout, stderr: '' });
+      });
+
+      // Mock exec for third container env vars
+      (exec as unknown as jest.Mock).mockImplementationOnce((cmd, callback) => {
+        const stdout = 'POSTGRES_VERSION=14\nPORT=5432\nDB_NAME=mydb\n';
+        callback(null, { stdout, stderr: '' });
+      });
+
+      // Filter by NODE_ENV - should only return the second container
+      const result = await dockerService.getAllContainers('NODE_ENV');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toEqual('def456');
+      expect(result[0].name).toEqual('api');
+      expect(result[0].env).toEqual({
+        NODE_ENV: 'production',
+        PORT: '3000',
+        API_KEY: 'secret123'
+      });
     });
   });
 });

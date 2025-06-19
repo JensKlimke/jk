@@ -1,9 +1,13 @@
-import express, { Request, Response, NextFunction } from 'express';
+import path from 'path';
+
 import cors from 'cors';
+import express, { Request, Response, NextFunction } from 'express';
 import helmet from 'helmet';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
-import path from 'path';
+
+import logger from './utils/logger';
+
 import { ConfigService } from './services/config';
 import { DockerService } from './services/docker';
 import { NginxService } from './services/nginx';
@@ -28,7 +32,7 @@ try {
   const swaggerDocument = YAML.load(path.join(__dirname, '../openapi.yaml'));
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 } catch (error) {
-  console.warn('OpenAPI specification not found. API documentation will not be available.');
+  logger.warn('OpenAPI specification not found. API documentation will not be available.');
 }
 
 // Health check endpoint
@@ -83,7 +87,7 @@ app.get('/api/containers', async (req: Request, res: Response, next: NextFunctio
 
 // API endpoint to get user information from oauth2-proxy
 app.get('/api/user', (req: Request, res: Response) => {
-  console.log('Headers received:', req.headers);
+  logger.debug('Headers received: ' + JSON.stringify(req.headers));
   // Extract user information from headers set by oauth2-proxy
   const user = {
     user: req.headers['x-user'] || null,
@@ -101,7 +105,7 @@ app.get('/api/user', (req: Request, res: Response) => {
 
 // Error handling middleware
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('Error:', err);
+  logger.error('Server error:', err);
   res.status(500).json({ 
     status: 'error', 
     message: err.message || 'An unexpected error occurred' 
@@ -118,11 +122,11 @@ export async function startServer(port: number = 3000): Promise<void> {
     templateService.copyDefaultConfigs();
 
     // Wait for nginx to start
-    console.log('Waiting for nginx to be fully started...');
+    logger.info('Waiting for nginx to be fully started...');
     await nginxService.waitForNginx();
 
     // Initial processing
-    console.log('Performing initial template processing...');
+    logger.info('Performing initial template processing...');
     await templateService.processTemplates();
 
     // Restart nginx
@@ -130,14 +134,14 @@ export async function startServer(port: number = 3000): Promise<void> {
 
     // Start the server and store the server instance
     const server = app.listen(port, () => {
-      console.log(`Server is running on port ${port}`);
-      console.log(`API documentation available at http://localhost:${port}/api-docs`);
+      logger.info(`Server is running on port ${port}`);
+      logger.info(`API documentation available at http://localhost:${port}/api-docs`);
     });
 
     // Setup graceful shutdown
     setupGracefulShutdown(server);
   } catch (error) {
-    console.error('Error starting server:', error);
+    logger.error('Error starting server:', error instanceof Error ? error : new Error(String(error)));
     throw error;
   }
 }
@@ -146,23 +150,23 @@ export async function startServer(port: number = 3000): Promise<void> {
  * Setup graceful shutdown handlers
  * @param server The HTTP server instance
  */
-function setupGracefulShutdown(server: any): void {
+function setupGracefulShutdown(server: ReturnType<typeof app.listen>): void {
   // Function to handle shutdown
   const shutdown = async (signal: string): Promise<void> => {
-    console.log(`\n${signal} received. Starting graceful shutdown...`);
+    logger.info(`${signal} received. Starting graceful shutdown...`);
 
     // Close the server to stop accepting new connections
     server.close(() => {
-      console.log('HTTP server closed.');
+      logger.info('HTTP server closed.');
 
       // Exit process
-      console.log('Graceful shutdown completed.');
+      logger.info('Graceful shutdown completed.');
       process.exit(0);
     });
 
     // Set a timeout for forceful shutdown if graceful shutdown takes too long
     setTimeout(() => {
-      console.error('Graceful shutdown timed out. Forcing exit.');
+      logger.error('Graceful shutdown timed out. Forcing exit.');
       process.exit(1);
     }, 10000); // 10 seconds timeout
   };

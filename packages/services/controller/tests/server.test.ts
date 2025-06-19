@@ -1,5 +1,5 @@
 import { app } from '../src/server';
-import {ContainerInfo, DockerService} from '../src/services/docker';
+import {DockerService} from '../src/services/docker';
 import { TemplateService } from '../src/services/template';
 import { NginxService } from '../src/services/nginx';
 import request from "supertest";
@@ -89,7 +89,7 @@ describe('API Server', () => {
   describe('GET /api/containers', () => {
     it('should return all containers', async () => {
       // Mock container data
-      const mockContainers : ContainerInfo[] = [
+      const mockContainers = [
         {
           id: 'abc123',
           name: 'nginx-proxy',

@@ -6,6 +6,7 @@ const buildOrder = [
   '@jk/api-server',
   '@jk/api',
   '@jk/whois',
+  '@jk/controller',
   '@jk/app'
 ];
 

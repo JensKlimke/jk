@@ -26,6 +26,7 @@ services:
     environment:
       - VIRTUAL_HOST=controller.${DOMAIN:-localhost}
       - AUTH_SERVICE=oauth2-proxy
+      - REQUIRE_AUTH=true
     expose:
       - "3000"
     depends_on:
@@ -38,6 +39,7 @@ services:
       - "8000"
     environment:
       - VIRTUAL_HOST=whoami.${DOMAIN:-localhost}
+      - REQUIRE_AUTH=true
 
   oauth2-proxy:
     image: quay.io/oauth2-proxy/oauth2-proxy:latest

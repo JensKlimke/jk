@@ -1,4 +1,5 @@
 import { DockerService } from './docker';
+import logger from '../utils/logger';
 
 /**
  * Service for interacting with Nginx
@@ -31,12 +32,12 @@ export class NginxService {
           'nginx -t',
         );
         if (success) {
-          console.log('Nginx is running and configuration is valid');
+          logger.info('Nginx is running and configuration is valid');
           return;
         }
       }
 
-      console.log(`Waiting for nginx to start (attempt ${attempt}/${this.maxAttempts})...`);
+      logger.info(`Waiting for nginx to start (attempt ${attempt}/${this.maxAttempts})...`);
       await this.delay(this.attemptDelay);
     }
 
@@ -47,7 +48,7 @@ export class NginxService {
    * Restart Nginx
    */
   async restartNginx(): Promise<void> {
-    console.log('Attempting to restart nginx container...');
+    logger.info('Attempting to restart nginx container...');
 
     // Use docker command to restart the nginx-proxy container
     const success = await this.dockerService.restartContainer(this.nginxContainerName);
@@ -55,7 +56,7 @@ export class NginxService {
       throw new Error('Failed to restart nginx container');
     }
 
-    console.log('Nginx container restart initiated');
+    logger.info('Nginx container restart initiated');
 
     // Wait for nginx to be ready after restart
     let attempt = 0;
@@ -71,12 +72,12 @@ export class NginxService {
           'nginx -t',
         );
         if (success) {
-          console.log('Nginx container restarted successfully and configuration is valid');
+          logger.info('Nginx container restarted successfully and configuration is valid');
           return;
         }
       }
 
-      console.log(
+      logger.info(
         `Waiting for nginx to be ready after restart (attempt ${attempt}/${this.maxRestartAttempts})...`,
       );
       await this.delay(this.attemptDelay);
