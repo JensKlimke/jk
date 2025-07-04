@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: website-content
+  namespace: {{ .Values.global.namespace }}
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{{ .Values.website.title | replace "DOMAIN" .Values.global.domain }}</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                margin: 0;
+                padding: 20px;
+                color: #333;
+                max-width: 800px;
+                margin: 0 auto;
+            }
+            h1 {
+                color: #2c3e50;
+                text-align: center;
+                margin-top: 40px;
+            }
+            p {
+                margin-bottom: 20px;
+            }
+            .container {
+                border: 1px solid #ddd;
+                padding: 20px;
+                border-radius: 5px;
+                background-color: #f9f9f9;
+                margin-top: 30px;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>{{ .Values.website.content.heading | replace "DOMAIN" .Values.global.domain }}</h1>
+        <div class="container">
+            {{- range .Values.website.content.paragraphs }}
+            <p>{{ . | replace "DOMAIN" $.Values.global.domain }}</p>
+            {{- end }}
+        </div>
+    </body>
+    </html>
