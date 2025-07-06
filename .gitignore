@@ -2,9 +2,22 @@
 
 .env
 
+# Node.js dependencies
 node_modules/
 coverage/
 dist/
+package-lock.json
+
+# TypeScript build artifacts
+bin/
+*.js
+*.d.ts
 tsconfig.tsbuildinfo
+
+# Pulumi artifacts
+.pulumi/
+Pulumi.*.yaml
+!Pulumi.yaml
+!Pulumi.dev.yaml
 
 .venv

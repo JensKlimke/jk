@@ -1,0 +1,4 @@
+config:
+  # No specific configuration needed for this minimal setup
+  # Users should update the domain in index.ts directly
+  kubernetes:context: default
