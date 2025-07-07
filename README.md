@@ -1,20 +1,25 @@
-# Single Page Website on k3s with Pulumi
+# JK Server Infrastructure
 
-This repository contains a minimal Pulumi setup for deploying a single-page website on a public server with k3s installed. 
 
-## Quick Start
+## Server
 
-1. Ensure you have the prerequisites: k3s server, domain name, Node.js, npm, Pulumi CLI, and kubectl
-2. Clone the repository and install dependencies
-3. Update the domain name in the configuration
-4. Deploy using Pulumi
+- V-Host with static IP and DNS entry (domain: marlene.cloud)
+- Ubuntu 24.04.2 LTS (GNU/Linux 6.8.0-63-generic x86_64)
+- SSH root access via certificate
 
-## Documentation
+### Preparation
 
-Detailed documentation is available in the `docs` folder:
+Install k3s with disabled traefik and local balancer:
 
-- [Deployment Guide](docs/deployment.md) - How to deploy the website
+```
+curl -sfL https://get.k3s.io | sh -s - --disable=traefik --disable servicelb
+```
 
-## License
+Copy the config (e.g. by using cat), replace the server name by the domain and add the content to your local ```~/.kube/config``` file
 
-See the [LICENSE](LICENSE) file for details.
+```
+sudo cat /etc/rancher/k3s/k3s.yaml
+```
+
+Now you are able to work on your server with ```kubectl``` from your local machine.
+

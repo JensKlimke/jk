@@ -1,3 +1,0 @@
-name: single-page-website
-runtime: nodejs
-description: A minimal Pulumi program to deploy a single-page website on k3s
