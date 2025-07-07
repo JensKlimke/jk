@@ -21,10 +21,12 @@ fi
 # Set up the renewal schedule
 trap exit TERM
 while :; do
+    # Sleep for 12 hours before attempting renewal
+    echo "Waiting 12 hours before next certificate renewal check..."
+    sleep 12h & wait $!
+
     # Use --force-renewal only if you want to force renewal regardless of expiration
     # For normal operation, omit this flag to let certbot decide based on expiration date
+    echo "Checking certificate renewal..."
     obtain_cert "--force-renewal"
-    
-    # Sleep for 12 hours
-    sleep 12h & wait $!
 done
