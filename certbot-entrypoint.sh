@@ -13,20 +13,23 @@ obtain_cert() {
 # Check if certificate exists
 if [ ! -f "$CERT_PATH" ]; then
     echo "Certificate does not exist. Obtaining immediately..."
-    obtain_cert ""
+    obtain_cert "--force-renewal"
 else
     echo "Certificate already exists. Setting up renewal schedule..."
+    obtain_cert ""
 fi
 
 # Set up the renewal schedule
 trap exit TERM
 while :; do
+
     # Sleep for 12 hours before attempting renewal
     echo "Waiting 12 hours before next certificate renewal check..."
     sleep 12h & wait $!
 
-    # Use --force-renewal only if you want to force renewal regardless of expiration
-    # For normal operation, omit this flag to let certbot decide based on expiration date
+    # Let certbot decide if renewal is necessary based on expiration date
+    # (certificates are typically renewed when they're within 30 days of expiry)
     echo "Checking certificate renewal..."
-    obtain_cert "--force-renewal"
+    obtain_cert ""
+
 done
