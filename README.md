@@ -1,6 +1,6 @@
 # Single Page Website on k3s with Pulumi
 
-This repository contains a minimal Pulumi setup for deploying a single-page website on a public server with k3s installed. The website is served over HTTPS using SSL/TLS certificates obtained from Let's Encrypt using Certbot.
+This repository contains a minimal Pulumi setup for deploying a single-page website on a public server with k3s installed. 
 
 ## Quick Start
 
@@ -14,7 +14,6 @@ This repository contains a minimal Pulumi setup for deploying a single-page webs
 Detailed documentation is available in the `docs` folder:
 
 - [Deployment Guide](docs/deployment.md) - How to deploy the website
-- [Certbot Configuration](docs/certbot.md) - How to set up SSL/TLS certificates
 
 ## License
 

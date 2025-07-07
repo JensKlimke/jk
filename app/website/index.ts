@@ -3,7 +3,7 @@ import * as k8s from "@pulumi/kubernetes";
 import * as fs from "fs";
 import * as path from "path";
 
-export function createWebsite(provider: k8s.Provider) {
+export function createWebsite(provider: k8s.Provider, dependsOn?: pulumi.Resource[]) {
     // Create a namespace for our application
     const namespace = new k8s.core.v1.Namespace("website", {
         metadata: {
@@ -126,7 +126,7 @@ export function createWebsite(provider: k8s.Provider) {
                 },
             }],
         },
-    }, { provider });
+    }, { provider, dependsOn: dependsOn });
 
     // Return the website URL
     return {

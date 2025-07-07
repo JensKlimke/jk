@@ -23,10 +23,7 @@ This guide explains how to deploy a single-page website on a public server with 
    npm install
    ```
 
-3. Update the domain name in `index.ts`:
-   - Find the line with `host: "example.com"` and replace "example.com" with your actual domain name.
-
-4. Configure Pulumi to use your k3s cluster:
+3. Configure Pulumi to use your k3s cluster:
    - Ensure your kubeconfig is properly set up to connect to your k3s cluster
    - By default, the Pulumi program uses the "default" context from your kubeconfig
 
@@ -53,7 +50,7 @@ This setup creates the following Kubernetes resources:
 
 1. A namespace called "website" to organize all resources
 2. A ConfigMap containing the HTML content for the single-page website
-3. A Deployment running an nginx container that serves the HTML content
+3. A Deployment running a nginx container that serves the HTML content
 4. A Service that exposes the nginx deployment
 5. An Ingress that routes traffic from your domain to the service and handles TLS termination
 
@@ -61,34 +58,7 @@ The nginx container is configured with resource limits to ensure efficient resou
 
 ## SSL/TLS Configuration
 
-The Ingress is configured to use TLS certificates for HTTPS. This setup assumes you have cert-manager installed in your cluster for automatic certificate management. If you don't have cert-manager installed, you can follow these steps:
-
-1. Install cert-manager:
-   ```bash
-   kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.12.0/cert-manager.yaml
-   ```
-
-2. Create a ClusterIssuer for Let's Encrypt:
-   ```bash
-   cat <<EOF | kubectl apply -f -
-   apiVersion: cert-manager.io/v1
-   kind: ClusterIssuer
-   metadata:
-     name: letsencrypt-prod
-   spec:
-     acme:
-       server: https://acme-v02.api.letsencrypt.org/directory
-       email: your-email@example.com  # Replace with your email
-       privateKeySecretRef:
-         name: letsencrypt-prod
-       solvers:
-       - http01:
-           ingress:
-             class: traefik
-   EOF
-   ```
-
-Alternatively, you can manually create TLS certificates using Certbot as described in [Certbot Configuration](certbot.md) and create a Kubernetes secret with the certificates.
+The Ingress is configured to use TLS certificates for HTTPS. The Pulumi deployment automatically installs cert-manager in your cluster for automatic certificate management and creates a ClusterIssuer for Let's Encrypt.
 
 ## Customization
 
