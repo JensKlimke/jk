@@ -26,13 +26,6 @@ services:
     entrypoint: "/bin/sh /certbot-entrypoint.sh"
     restart: always
 
-  whoami:
-    image: traefik/whoami
-    container_name: whoami
-    restart: always
-    expose:
-      - "80"
-
   oauth2-proxy:
     image: quay.io/oauth2-proxy/oauth2-proxy:latest
     container_name: oauth2-proxy
@@ -55,6 +48,13 @@ services:
       - OAUTH2_PROXY_PASS_ACCESS_TOKEN=true
     expose:
       - "4180"
+
+  whoami:
+    image: traefik/whoami
+    container_name: whoami
+    restart: always
+    expose:
+      - "80"
 
 volumes:
   certbot:
