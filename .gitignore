@@ -21,3 +21,5 @@ Pulumi.*.yaml
 !Pulumi.dev.yaml
 
 .venv
+
+backup
