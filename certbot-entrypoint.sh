@@ -1,23 +1,40 @@
 #!/bin/sh
 
-# Path to the certificate
-CERT_PATH="/etc/letsencrypt/live/whoami.marlene.cloud/fullchain.pem"
+# List of domains to obtain certificates for
+DOMAINS="whoami.marlene.cloud auth.marlene.cloud"
 
-# Function to obtain/renew certificate
+# Email address for certificate registration
+EMAIL="jens.klimke@rwth-aachen.de"
+
+# Function to obtain/renew certificate for a specific domain
 obtain_cert() {
+    local domain=$1
+    local option=$2
+    echo "Processing certificate for $domain..."
     certbot certonly --webroot --webroot-path=/var/www/certbot \
-        --email jens.klimke@rwth-aachen.de --agree-tos --no-eff-email \
-        -d whoami.marlene.cloud $1
+        --email $EMAIL --agree-tos --no-eff-email \
+        -d $domain $option
 }
 
-# Check if certificate exists
-if [ ! -f "$CERT_PATH" ]; then
-    echo "Certificate does not exist. Obtaining immediately..."
-    obtain_cert "--force-renewal"
-else
-    echo "Certificate already exists. Setting up renewal schedule..."
-    obtain_cert "--keep"
-fi
+# Process each domain
+process_domains() {
+    local option=$1
+    for domain in $DOMAINS; do
+        local cert_path="/etc/letsencrypt/live/$domain/fullchain.pem"
+
+        # Check if certificate exists for this domain
+        if [ ! -f "$cert_path" ]; then
+            echo "Certificate for $domain does not exist. Obtaining immediately..."
+            obtain_cert "$domain" "--force-renewal"
+        else
+            echo "Certificate for $domain already exists. Setting up renewal schedule..."
+            obtain_cert "$domain" "$option"
+        fi
+    done
+}
+
+# Initial processing of all domains
+process_domains "--keep"
 
 # Set up the renewal schedule
 trap exit TERM
@@ -29,7 +46,7 @@ while :; do
 
     # Let certbot decide if renewal is necessary based on expiration date
     # (certificates are typically renewed when they're within 30 days of expiry)
-    echo "Checking certificate renewal..."
-    obtain_cert "--keep"
+    echo "Checking certificate renewal for all domains..."
+    process_domains "--keep"
 
 done
