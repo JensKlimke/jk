@@ -1,12 +1,14 @@
 import * as path from 'path';
-import * as fs from 'fs-extra';
+import * as fs from 'fs';
 import { ConfigGenerator } from '../src';
 
-// Mock fs-extra to avoid actual file operations during tests
-jest.mock('fs-extra', () => ({
-  readFile: jest.fn(),
-  writeFile: jest.fn(),
-  ensureDir: jest.fn()
+// Mock fs.promises to avoid actual file operations during tests
+jest.mock('fs', () => ({
+  promises: {
+    readFile: jest.fn(),
+    writeFile: jest.fn(),
+    mkdir: jest.fn()
+  }
 }));
 
 describe('ConfigGenerator', () => {
@@ -59,8 +61,8 @@ server {
     // Create a new instance of ConfigGenerator
     generator = new ConfigGenerator();
 
-    // Mock fs.readFile for template and JSON
-    (fs.readFile as unknown as jest.Mock).mockImplementation((path: string, encoding: string) => {
+    // Mock fs.promises.readFile for template and JSON
+    (fs.promises.readFile as unknown as jest.Mock).mockImplementation((path: string, encoding: string) => {
       if (path === 'template.mustache') {
         return Promise.resolve(sampleTemplate);
       } else if (path === 'config.json') {
@@ -69,23 +71,23 @@ server {
       return Promise.reject(new Error(`File not found: ${path}`));
     });
 
-    // Mock fs.writeFile
-    (fs.writeFile as unknown as jest.Mock).mockResolvedValue(undefined);
+    // Mock fs.promises.writeFile
+    (fs.promises.writeFile as unknown as jest.Mock).mockResolvedValue(undefined);
 
-    // Mock fs.ensureDir
-    (fs.ensureDir as unknown as jest.Mock).mockResolvedValue(undefined);
+    // Mock fs.promises.mkdir
+    (fs.promises.mkdir as unknown as jest.Mock).mockResolvedValue(undefined);
   });
 
   test('readTemplate should read a template file', async () => {
     const template = await generator.readTemplate('template.mustache');
     expect(template).toBe(sampleTemplate);
-    expect(fs.readFile).toHaveBeenCalledWith('template.mustache', 'utf8');
+    expect(fs.promises.readFile).toHaveBeenCalledWith('template.mustache', 'utf8');
   });
 
   test('readConfig should read and parse a JSON file', async () => {
     const config = await generator.readConfig('config.json');
     expect(config).toEqual(sampleData);
-    expect(fs.readFile).toHaveBeenCalledWith('config.json', 'utf8');
+    expect(fs.promises.readFile).toHaveBeenCalledWith('config.json', 'utf8');
   });
 
   test('renderTemplate should render a template with data', () => {
@@ -95,21 +97,21 @@ server {
 
   test('writeConfig should write content to a file', async () => {
     await generator.writeConfig('output.conf', 'content');
-    expect(fs.ensureDir).toHaveBeenCalledWith(path.dirname('output.conf'));
-    expect(fs.writeFile).toHaveBeenCalledWith('output.conf', 'content', 'utf8');
+    expect(fs.promises.mkdir).toHaveBeenCalledWith(path.dirname('output.conf'), { recursive: true });
+    expect(fs.promises.writeFile).toHaveBeenCalledWith('output.conf', 'content', 'utf8');
   });
 
   test('generateConfig should generate a config file', async () => {
     const result = await generator.generateConfig('template.mustache', 'config.json', 'output.conf');
     expect(result).toBe(expectedOutput);
-    expect(fs.readFile).toHaveBeenCalledWith('template.mustache', 'utf8');
-    expect(fs.readFile).toHaveBeenCalledWith('config.json', 'utf8');
-    expect(fs.writeFile).toHaveBeenCalledWith('output.conf', expectedOutput, 'utf8');
+    expect(fs.promises.readFile).toHaveBeenCalledWith('template.mustache', 'utf8');
+    expect(fs.promises.readFile).toHaveBeenCalledWith('config.json', 'utf8');
+    expect(fs.promises.writeFile).toHaveBeenCalledWith('output.conf', expectedOutput, 'utf8');
   });
 
   test('generateConfig should handle errors', async () => {
     // Mock readFile to throw an error
-    (fs.readFile as unknown as jest.Mock).mockRejectedValueOnce(new Error('File not found'));
+    (fs.promises.readFile as unknown as jest.Mock).mockRejectedValueOnce(new Error('File not found'));
 
     await expect(generator.generateConfig('nonexistent.mustache', 'config.json', 'output.conf'))
       .rejects.toThrow('Failed to read template file: Error: File not found');

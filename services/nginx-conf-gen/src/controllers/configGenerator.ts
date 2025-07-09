@@ -1,4 +1,4 @@
-import * as fs from 'fs-extra';
+import * as fs from 'fs';
 import * as path from 'path';
 import * as Mustache from 'mustache';
 
@@ -14,7 +14,7 @@ export class ConfigGenerator {
    */
   public async readTemplate(templatePath: string): Promise<string> {
     try {
-      return await fs.readFile(templatePath, 'utf8');
+      return await fs.promises.readFile(templatePath, 'utf8');
     } catch (error) {
       throw new Error(`Failed to read template file: ${error}`);
     }
@@ -27,7 +27,7 @@ export class ConfigGenerator {
    */
   public async readConfig(jsonPath: string): Promise<any> {
     try {
-      const jsonContent = await fs.readFile(jsonPath, 'utf8');
+      const jsonContent = await fs.promises.readFile(jsonPath, 'utf8');
       return JSON.parse(jsonContent);
     } catch (error) {
       throw new Error(`Failed to read or parse JSON file: ${error}`);
@@ -56,8 +56,8 @@ export class ConfigGenerator {
   public async writeConfig(outputPath: string, content: string): Promise<void> {
     try {
       // Ensure the directory exists
-      await fs.ensureDir(path.dirname(outputPath));
-      await fs.writeFile(outputPath, content, 'utf8');
+      await fs.promises.mkdir(path.dirname(outputPath), { recursive: true });
+      await fs.promises.writeFile(outputPath, content, 'utf8');
     } catch (error) {
       throw new Error(`Failed to write configuration file: ${error}`);
     }
@@ -78,11 +78,11 @@ export class ConfigGenerator {
     const template = await this.readTemplate(templatePath);
     const data = await this.readConfig(jsonPath);
     const rendered = this.renderTemplate(template, data);
-    
+
     if (outputPath) {
       await this.writeConfig(outputPath, rendered);
     }
-    
+
     return rendered;
   }
 }
