@@ -12,6 +12,14 @@ interface CertConfig {
 }
 
 /**
+ * Authentication configuration for a service
+ */
+interface AuthConfig {
+  service: string;
+  headers: boolean;
+}
+
+/**
  * Configuration for a single service
  */
 interface ServiceConfig {
@@ -19,6 +27,7 @@ interface ServiceConfig {
   cert: CertConfig;
   service: string;
   port: string;
+  auth?: AuthConfig;
 }
 
 /**

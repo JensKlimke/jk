@@ -45,8 +45,8 @@ server {
     server_name {{host}};
 
     # SSL configuration
-    ssl_certificate {{{cert.file}}};
-    ssl_certificate_key {{{cert.key_file}}};
+    ssl_certificate {{{file}}};
+    ssl_certificate_key {{{key_file}}};
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
 
@@ -57,7 +57,7 @@ server {
     {{#auth}}
     # OAuth2 endpoints
     location /oauth2/ {
-        proxy_pass http://{{ name }}:{{ port }};
+        proxy_pass http://{{ service }};
         proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
         proxy_set_header X-Forwarded-Uri $request_uri;
 
@@ -68,7 +68,7 @@ server {
 
     # Special handling for auth endpoint
     location = /oauth2/auth {
-        proxy_pass http://{{ name }}:{{ port }};
+        proxy_pass http://{{ service }};
         proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
         proxy_set_header X-Forwarded-Uri $request_uri;
 
@@ -94,7 +94,7 @@ server {
         auth_request /oauth2/auth;
         error_page 401 =403 /oauth2/sign_in;
 
-        {{#auth_headers}}
+        {{#headers}}
         # Set auth headers
         auth_request_set $user   $upstream_http_x_auth_request_user;
         auth_request_set $email  $upstream_http_x_auth_request_email;
@@ -103,7 +103,7 @@ server {
 
         auth_request_set $token  $upstream_http_x_auth_request_access_token;
         proxy_set_header X-Access-Token $token;
-        {{/auth_headers}}
+        {{/headers}}
 
         # Cookie refresh handling
         auth_request_set $auth_cookie $upstream_http_set_cookie;

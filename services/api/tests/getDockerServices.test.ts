@@ -46,6 +46,7 @@ describe('getDockerServices', () => {
         },
         service: container.name,
         port: container.ports[0]
+        // auth field is not set as it will be implemented later
       }))
     };
 
@@ -66,6 +67,7 @@ describe('getDockerServices', () => {
       },
       service: 'nginx',
       port: '80'
+      // auth field is not set as it will be implemented later
     });
   });
 

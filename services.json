@@ -16,9 +16,8 @@
         "key_file": "/etc/letsencrypt/live/whoami.marlene.cloud/privkey.pem"
       },
       "auth": {
-        "name": "oauth2-proxy",
-        "port": "4180",
-        "auth_headers": true
+        "service": "oauth2-proxy:4180",
+        "headers": true
       },
       "service": "whoami",
       "port": "80"
