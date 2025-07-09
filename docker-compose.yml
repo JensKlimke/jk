@@ -1,6 +1,16 @@
 version: '3'
 
 services:
+  nginx-conf-gen:
+    build:
+      context: ./services/nginx-conf-gen
+    container_name: nginx-conf-gen
+    volumes:
+      - ./nginx/tmpl/service.conf.mustache:/app/template/service.conf.mustache:ro
+      - ./services.json:/app/services.json:ro
+      - ./nginx/conf.d:/app/output
+    restart: "no"
+
   nginx:
     image: nginx:latest
     container_name: nginx-reverse-proxy
@@ -15,6 +25,7 @@ services:
     restart: always
     depends_on:
       - certbot
+      - nginx-conf-gen
 
   certbot:
     image: certbot/certbot:latest
