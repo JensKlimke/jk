@@ -7,7 +7,6 @@ services:
     container_name: nginx-conf-gen
     volumes:
       - ./nginx/tmpl/service.conf.mustache:/app/template/service.conf.mustache:ro
-      - ./services.json:/app/services.json:ro
       - ./nginx/conf.d:/app/output
     restart: "no"
 
