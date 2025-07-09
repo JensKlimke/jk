@@ -38,13 +38,22 @@ interface ServicesJson {
 }
 
 /**
+ * Authentication type for a container
+ */
+enum AuthType {
+  WITH_HEADERS = 'WITH_HEADERS',
+  WITHOUT_HEADERS = 'WITHOUT_HEADERS',
+  NONE = 'NONE'
+}
+
+/**
  * Container information with virtual host and ports
  */
 interface ContainerInfo {
   name: string;
   virtualHost: string;
   ports: string[];
-  withAuthHeaders?: boolean;
+  withAuth: AuthType;
 }
 
 /**
@@ -89,11 +98,24 @@ async function getContainersWithVirtualHost(): Promise<ContainerInfo[]> {
           const withAuthHeaders = withAuthHeadersVar ?
             withAuthHeadersVar.split('=')[1].toLowerCase() === 'true' : false;
 
+          // Extract WITH_AUTH environment variable
+          const withAuthVar = envVars.find((env: string) => env.startsWith('WITH_AUTH='));
+          const withAuth = withAuthVar ?
+            withAuthVar.split('=')[1].toLowerCase() === 'true' : false;
+
+          // Determine the auth type based on environment variables
+          let authType = AuthType.NONE;
+          if (withAuthHeaders) {
+            authType = AuthType.WITH_HEADERS;
+          } else if (withAuth) {
+            authType = AuthType.WITHOUT_HEADERS;
+          }
+
           containersWithVirtualHost.push({
             name,
             virtualHost,
             ports,
-            withAuthHeaders
+            withAuth: authType
           });
         }
       } catch (containerError) {
@@ -143,11 +165,11 @@ export async function getDockerServices(): Promise<ServicesJson> {
       port
     };
 
-    // Add auth configuration if WITH_AUTH_HEADERS is true and AUTH_SERVICE is defined
-    if (container.withAuthHeaders && authService) {
+    // Add auth configuration if withAuth is not NONE and AUTH_SERVICE is defined
+    if (authService && container.withAuth !== AuthType.NONE) {
       serviceConfig.auth = {
         service: authService,
-        headers: true
+        headers: container.withAuth === AuthType.WITH_HEADERS
       };
     }
 
@@ -157,5 +179,5 @@ export async function getDockerServices(): Promise<ServicesJson> {
   return { services };
 }
 
-// Export the getContainersWithVirtualHost function for testing
-export { getContainersWithVirtualHost };
+// Export the getContainersWithVirtualHost function and AuthType enum for testing
+export { getContainersWithVirtualHost, AuthType };

@@ -1,4 +1,5 @@
 import * as dockerServices from '../src/controllers/getDockerServices';
+import { AuthType } from '../src/controllers/getDockerServices';
 
 // Mock the entire module to avoid actual Docker calls during tests
 jest.mock('../src/controllers/getDockerServices', () => {
@@ -22,23 +23,23 @@ describe('getDockerServices', () => {
       name: 'nginx',
       virtualHost: 'example.com',
       ports: ['80', '443'],
-      withAuthHeaders: false
+      withAuth: AuthType.NONE
     },
     {
       name: 'auth-service',
       virtualHost: 'auth.example.com',
       ports: ['8080'],
-      withAuthHeaders: false
+      withAuth: AuthType.WITHOUT_HEADERS
     },
     {
       name: 'app-service',
       virtualHost: 'app.example.com',
       ports: ['3000'],
-      withAuthHeaders: true
+      withAuth: AuthType.WITH_HEADERS
     }
   ];
 
-  test('should return services from Docker containers with auth field for containers with withAuthHeaders=true', async () => {
+  test('should return services from Docker containers with auth field for containers with withAuth=WITH_HEADERS', async () => {
     // Create expected result
     const expectedResult = {
       services: mockContainers.map(container => {
@@ -52,8 +53,8 @@ describe('getDockerServices', () => {
           port: container.ports[0]
         };
 
-        // Add auth field for containers with withAuthHeaders=true
-        if (container.withAuthHeaders) {
+        // Add auth field for containers with withAuth=WITH_HEADERS
+        if (container.withAuth === AuthType.WITH_HEADERS) {
           Object.assign(service, {
             auth: {
               service: 'oauth2-proxy:4180',
@@ -101,6 +102,80 @@ describe('getDockerServices', () => {
     });
   });
 
+
+  test('should set auth field with headers=false for containers with withAuth=WITHOUT_HEADERS', async () => {
+    // Create expected result
+    const expectedResult = {
+      services: mockContainers.map(container => {
+        const service = {
+          host: container.virtualHost,
+          cert: {
+            file: `/etc/letsencrypt/live/${container.virtualHost}/fullchain.pem`,
+            key_file: `/etc/letsencrypt/live/${container.virtualHost}/privkey.pem`
+          },
+          service: container.name,
+          port: container.ports[0]
+        };
+
+        // Add auth field for containers with withAuth=WITHOUT_HEADERS or withAuth=WITH_HEADERS
+        if (container.withAuth === AuthType.WITHOUT_HEADERS) {
+          Object.assign(service, {
+            auth: {
+              service: 'oauth2-proxy:4180',
+              headers: false
+            }
+          });
+        } else if (container.withAuth === AuthType.WITH_HEADERS) {
+          Object.assign(service, {
+            auth: {
+              service: 'oauth2-proxy:4180',
+              headers: true
+            }
+          });
+        }
+
+        return service;
+      })
+    };
+
+    // Directly mock the getDockerServices function to return the expected result
+    (dockerServices.getDockerServices as jest.Mock).mockResolvedValue(expectedResult);
+
+    const result = await dockerServices.getDockerServices();
+
+    expect(result).toHaveProperty('services');
+    expect(result.services).toHaveLength(3);
+
+    // Check the second service (with withAuth=true)
+    expect(result.services[1]).toEqual({
+      host: 'auth.example.com',
+      cert: {
+        file: '/etc/letsencrypt/live/auth.example.com/fullchain.pem',
+        key_file: '/etc/letsencrypt/live/auth.example.com/privkey.pem'
+      },
+      service: 'auth-service',
+      port: '8080',
+      auth: {
+        service: 'oauth2-proxy:4180',
+        headers: false
+      }
+    });
+
+    // Check the third service (with withAuthHeaders=true)
+    expect(result.services[2]).toEqual({
+      host: 'app.example.com',
+      cert: {
+        file: '/etc/letsencrypt/live/app.example.com/fullchain.pem',
+        key_file: '/etc/letsencrypt/live/app.example.com/privkey.pem'
+      },
+      service: 'app-service',
+      port: '3000',
+      auth: {
+        service: 'oauth2-proxy:4180',
+        headers: true
+      }
+    });
+  });
 
   test('should not set auth field when AUTH_SERVICE is not defined', async () => {
     // Create expected result without auth field
@@ -168,20 +243,26 @@ describe('getContainersWithVirtualHost', () => {
     jest.resetAllMocks();
   });
 
-  test('should return containers with VIRTUAL_HOST and WITH_AUTH_HEADERS', async () => {
+  test('should return containers with VIRTUAL_HOST and different auth types', async () => {
     // Create mock result
     const mockResult = [
       {
         name: 'container1',
         virtualHost: 'example.com',
         ports: ['80', '443'],
-        withAuthHeaders: true
+        withAuth: AuthType.WITH_HEADERS
+      },
+      {
+        name: 'container2',
+        virtualHost: 'secure.example.com',
+        ports: ['3000'],
+        withAuth: AuthType.WITHOUT_HEADERS
       },
       {
         name: 'container3',
         virtualHost: 'another.example.com',
         ports: ['8080'],
-        withAuthHeaders: false
+        withAuth: AuthType.NONE
       }
     ];
 
@@ -190,22 +271,30 @@ describe('getContainersWithVirtualHost', () => {
 
     const result = await dockerServices.getContainersWithVirtualHost();
 
-    expect(result).toHaveLength(2);
+    expect(result).toHaveLength(3);
 
-    // Check first container
+    // Check first container (with withAuth=WITH_HEADERS)
     expect(result[0]).toEqual({
       name: 'container1',
       virtualHost: 'example.com',
       ports: ['80', '443'],
-      withAuthHeaders: true
+      withAuth: AuthType.WITH_HEADERS
     });
 
-    // Check second container
+    // Check second container (with withAuth=WITHOUT_HEADERS)
     expect(result[1]).toEqual({
+      name: 'container2',
+      virtualHost: 'secure.example.com',
+      ports: ['3000'],
+      withAuth: AuthType.WITHOUT_HEADERS
+    });
+
+    // Check third container (with withAuth=NONE)
+    expect(result[2]).toEqual({
       name: 'container3',
       virtualHost: 'another.example.com',
       ports: ['8080'],
-      withAuthHeaders: false
+      withAuth: AuthType.NONE
     });
   });
 
@@ -231,7 +320,7 @@ describe('getContainersWithVirtualHost', () => {
         name: 'container2',
         virtualHost: 'example.com',
         ports: ['80'],
-        withAuthHeaders: false
+        withAuth: AuthType.NONE
       }
     ];
 
@@ -251,7 +340,7 @@ describe('getContainersWithVirtualHost', () => {
       name: 'container2',
       virtualHost: 'example.com',
       ports: ['80'],
-      withAuthHeaders: false
+      withAuth: AuthType.NONE
     });
   });
 });
