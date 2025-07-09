@@ -69,54 +69,6 @@ describe('getDockerServices', () => {
     });
   });
 
-  test('should add auth configuration when authService is specified', async () => {
-    // Create expected result with auth configuration
-    const expectedResult = {
-      services: mockContainers.map(container => {
-        const serviceConfig = {
-          host: container.virtualHost,
-          cert: {
-            file: `/etc/letsencrypt/live/${container.virtualHost}/fullchain.pem`,
-            key_file: `/etc/letsencrypt/live/${container.virtualHost}/privkey.pem`
-          },
-          service: container.name,
-          port: container.ports[0]
-        };
-
-        // Add auth configuration to services other than auth-service
-        if (container.name !== 'auth-service') {
-          (serviceConfig as any).auth = {
-            name: 'auth-service',
-            port: '8080',
-            auth_headers: true
-          };
-        }
-
-        return serviceConfig;
-      })
-    };
-
-    // Directly mock the getDockerServices function to return the expected result
-    (dockerServices.getDockerServices as jest.Mock).mockResolvedValue(expectedResult);
-
-    const result = await dockerServices.getDockerServices('auth-service');
-
-    expect(result).toHaveProperty('services');
-    expect(result.services).toHaveLength(3);
-
-    // Check that auth-service doesn't have auth config
-    const authService = result.services.find(s => s.service === 'auth-service');
-    expect(authService).not.toHaveProperty('auth');
-
-    // Check that other services have auth config
-    const appService = result.services.find(s => s.service === 'app-service');
-    expect(appService).toHaveProperty('auth');
-    expect(appService?.auth).toEqual({
-      name: 'auth-service',
-      port: '8080',
-      auth_headers: true
-    });
-  });
 
   test('should handle empty container list', async () => {
     // Create expected result with empty services array
@@ -140,33 +92,6 @@ describe('getDockerServices', () => {
     expect(result.services).toHaveLength(0);
   });
 
-  test('should warn when specified auth service is not found', async () => {
-    // Create expected result
-    const expectedResult = {
-      services: mockContainers.map(container => ({
-        host: container.virtualHost,
-        cert: {
-          file: `/etc/letsencrypt/live/${container.virtualHost}/fullchain.pem`,
-          key_file: `/etc/letsencrypt/live/${container.virtualHost}/privkey.pem`
-        },
-        service: container.name,
-        port: container.ports[0]
-      }))
-    };
-
-    // Directly mock the getDockerServices function to return the expected result
-    // and call the console.warn
-    (dockerServices.getDockerServices as jest.Mock).mockImplementation((authService) => {
-      console.warn(`Specified auth service "${authService}" not found among containers`);
-      return expectedResult;
-    });
-
-    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
-
-    await dockerServices.getDockerServices('non-existent-service');
-
-    expect(consoleSpy).toHaveBeenCalledWith('Specified auth service "non-existent-service" not found among containers');
-  });
 });
 
 describe('getContainersWithVirtualHost', () => {

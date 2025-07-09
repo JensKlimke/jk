@@ -110,22 +110,7 @@ server {
     const result = await generator.generateConfig('template.mustache', 'output.conf');
     expect(result).toBe(expectedOutput);
     expect(fs.promises.readFile).toHaveBeenCalledWith('template.mustache', 'utf8');
-    expect(getDockerServices).toHaveBeenCalledWith(undefined);
-    expect(fs.promises.writeFile).toHaveBeenCalledWith('output.conf', expectedOutput, 'utf8');
-  });
-
-  test('generateConfig should pass authService to getDockerServices', async () => {
-    // Mock getDockerServices to return the sample data
-    (getDockerServices as jest.Mock).mockResolvedValue(sampleData);
-
-    // Mock readFile to return the sample template
-    (fs.promises.readFile as jest.Mock).mockResolvedValueOnce(sampleTemplate);
-
-    const result = await generator.generateConfig('template.mustache', 'output.conf', 'auth-service');
-
-    expect(result).toBe(expectedOutput);
-    expect(fs.promises.readFile).toHaveBeenCalledWith('template.mustache', 'utf8');
-    expect(getDockerServices).toHaveBeenCalledWith('auth-service');
+    expect(getDockerServices).toHaveBeenCalled();
     expect(fs.promises.writeFile).toHaveBeenCalledWith('output.conf', expectedOutput, 'utf8');
   });
 
@@ -133,7 +118,7 @@ server {
     // Mock readFile to throw an error
     (fs.promises.readFile as unknown as jest.Mock).mockRejectedValueOnce(new Error('File not found'));
 
-    await expect(generator.generateConfig('nonexistent.mustache', 'config.json', 'output.conf'))
+    await expect(generator.generateConfig('nonexistent.mustache', 'output.conf'))
       .rejects.toThrow('Failed to read template file: Error: File not found');
   });
 });

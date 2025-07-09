@@ -2,6 +2,9 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Install Docker client
+RUN apk add --no-cache docker-cli
+
 # Copy package.json and install dependencies
 COPY package*.json ./
 RUN npm install

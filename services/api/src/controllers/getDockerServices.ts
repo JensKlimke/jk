@@ -1,4 +1,3 @@
-import * as fs from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
@@ -13,15 +12,6 @@ interface CertConfig {
 }
 
 /**
- * Authentication service configuration
- */
-interface AuthConfig {
-  name: string;
-  port: string;
-  auth_headers: boolean;
-}
-
-/**
  * Configuration for a single service
  */
 interface ServiceConfig {
@@ -29,7 +19,6 @@ interface ServiceConfig {
   cert: CertConfig;
   service: string;
   port: string;
-  auth?: AuthConfig;
 }
 
 /**
@@ -106,10 +95,9 @@ async function getContainersWithVirtualHost(): Promise<ContainerInfo[]> {
 
 /**
  * Gets services configuration based on Docker containers
- * @param authService Optional name of the authentication service
  * @returns ServicesJson object with array of service configurations
  */
-export async function getDockerServices(authService?: string): Promise<ServicesJson> {
+export async function getDockerServices(): Promise<ServicesJson> {
   // Get all containers with VIRTUAL_HOST environment variable
   const containers = await getContainersWithVirtualHost();
 
@@ -118,15 +106,6 @@ export async function getDockerServices(authService?: string): Promise<ServicesJ
   }
 
   const services: ServiceConfig[] = [];
-
-  // Find the auth container if authService is specified
-  const authContainer = authService 
-    ? containers.find(container => container.name === authService)
-    : undefined;
-
-  if (authService && !authContainer) {
-    console.warn(`Specified auth service "${authService}" not found among containers`);
-  }
 
   // Process each container to create service configurations
   for (const container of containers) {
@@ -144,16 +123,6 @@ export async function getDockerServices(authService?: string): Promise<ServicesJ
       service: container.name,
       port
     };
-
-    // Add auth configuration if this is not the auth service and auth service exists
-    if (authContainer && container.name !== authContainer.name) {
-      serviceConfig.auth = {
-        name: authContainer.name,
-        // Default to port 80 if no port is found for auth container
-        port: authContainer.ports.length > 0 ? authContainer.ports[0] : '80',
-        auth_headers: true
-      };
-    }
 
     services.push(serviceConfig);
   }

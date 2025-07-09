@@ -54,16 +54,14 @@ export class ConfigGenerator {
    * Generates a configuration file from a template and JSON data
    * @param templatePath Path to the template file
    * @param outputPath Path to write the output file
-   * @param authService Optional name of the authentication service (only used when jsonPath is 'docker')
    * @returns The rendered configuration
    */
   public async generateConfig(
     templatePath: string,
     outputPath: string,
-    authService?: string
   ): Promise<string> {
     const template = await this.readTemplate(templatePath);
-    const data = await getDockerServices(authService);
+    const data = await getDockerServices();
     const rendered = this.renderTemplate(template, data);
 
     if (outputPath) {
