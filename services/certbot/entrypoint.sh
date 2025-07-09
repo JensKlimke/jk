@@ -1,7 +1,8 @@
 #!/bin/sh
 
 # List of domains to obtain certificates for
-DOMAINS="whoami.marlene.cloud auth.marlene.cloud"
+DOMAINS=""
+CERTS_PATH="/etc/letsencrypt/live"
 
 # Email address for certificate registration
 EMAIL="jens.klimke@rwth-aachen.de"
@@ -20,7 +21,7 @@ obtain_cert() {
 process_domains() {
     local option=$1
     for domain in $DOMAINS; do
-        local cert_path="/etc/letsencrypt/live/$domain/fullchain.pem"
+        local cert_path="$CERTS_PATH/$domain/fullchain.pem"
 
         # Check if certificate exists for this domain
         if [ ! -f "$cert_path" ]; then

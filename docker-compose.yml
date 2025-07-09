@@ -22,8 +22,10 @@ services:
     volumes:
       - certbot:/var/www/certbot
       - letsencrypt:/etc/letsencrypt
-      - ./certbot-entrypoint.sh:/certbot-entrypoint.sh
+      - ./services/certbot/entrypoint.sh:/certbot-entrypoint.sh
     entrypoint: "/bin/sh /certbot-entrypoint.sh"
+    environment:
+      DOMAINS: "whoami.marlene.cloud auth.marlene.cloud"
     restart: always
 
   oauth2-proxy:
