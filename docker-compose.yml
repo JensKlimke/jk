@@ -3,7 +3,7 @@ version: '3'
 services:
   nginx-conf-gen:
     build:
-      context: ./services/nginx-conf-gen
+      context: ./services/api
     container_name: nginx-conf-gen
     volumes:
       - ./nginx/tmpl/service.conf.mustache:/app/template/service.conf.mustache:ro

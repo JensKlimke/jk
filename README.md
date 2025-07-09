@@ -48,3 +48,8 @@ docker-compose logs -f
 ### Nginx Configuration
 
 The Nginx server is configured as a reverse proxy. Currently, it serves a placeholder page, but it's ready to be configured to proxy requests to web applications that will be added later.
+
+# TODO
+
+- [ ] Automatic config generation instead of services.json
+- [ ] Security measures (nginx conf, middleware, ...)

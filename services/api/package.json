@@ -1,5 +1,5 @@
 {
-  "name": "nginx-conf-gen",
+  "name": "api",
   "version": "1.0.0",
   "description": "Nginx configuration generator using Mustache templates",
   "main": "dist/index.js",
