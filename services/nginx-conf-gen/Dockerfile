@@ -13,7 +13,8 @@ COPY . .
 RUN npm run build
 
 # Create a script to run the service
-RUN printf '#!/bin/sh\nnode dist/index.js /app/template/service.conf.mustache /app/services.json /app/output/services.conf\n' > /app/run.sh && chmod +x /app/run.sh
+COPY run.sh /app/
+RUN chmod +x /app/run.sh
 
 # Create directories for input and output
 RUN mkdir -p /app/template /app/output
