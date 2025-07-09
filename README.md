@@ -52,4 +52,5 @@ The Nginx server is configured as a reverse proxy. Currently, it serves a placeh
 # TODO
 
 - [ ] Automatic config generation instead of services.json
+- [ ] Split dockerfiles up into build and run sections
 - [ ] Security measures (nginx conf, middleware, ...)
