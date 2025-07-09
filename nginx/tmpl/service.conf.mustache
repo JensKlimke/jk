@@ -10,6 +10,24 @@ server {
     }
 }
 
+{{#default_cert}}
+# Default server configuration for HTTPS
+server {
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
+    server_name _;
+
+    # Self-signed certificate for default server
+    ssl_certificate {{{file}}};
+    ssl_certificate_key {{{key_file}}};
+
+    # Redirect all unknown hosts to a 404 page
+    location / {
+        return 404;
+    }
+}
+{{/default_cert}}
+
 {{#services}}
 server {
     listen 80;

@@ -64,7 +64,11 @@ describe('getDockerServices', () => {
         }
 
         return service;
-      })
+      }),
+      default_cert: {
+        file: '/etc/letsencrypt/live/default/fullchain.pem',
+        key_file: '/etc/letsencrypt/live/default/privkey.pem'
+      }
     };
 
     // Directly mock the getDockerServices function to return the expected result
@@ -135,7 +139,11 @@ describe('getDockerServices', () => {
         }
 
         return service;
-      })
+      }),
+      default_cert: {
+        file: '/etc/letsencrypt/live/default/fullchain.pem',
+        key_file: '/etc/letsencrypt/live/default/privkey.pem'
+      }
     };
 
     // Directly mock the getDockerServices function to return the expected result
@@ -189,7 +197,11 @@ describe('getDockerServices', () => {
         service: container.name,
         port: container.ports[0]
         // No auth field should be set
-      }))
+      })),
+      default_cert: {
+        file: '/etc/letsencrypt/live/default/fullchain.pem',
+        key_file: '/etc/letsencrypt/live/default/privkey.pem'
+      }
     };
 
     // Directly mock the getDockerServices function to return the expected result
@@ -216,7 +228,11 @@ describe('getDockerServices', () => {
   test('should handle empty container list', async () => {
     // Create expected result with empty services array
     const expectedResult = {
-      services: []
+      services: [],
+      default_cert: {
+        file: '/etc/letsencrypt/live/default/fullchain.pem',
+        key_file: '/etc/letsencrypt/live/default/privkey.pem'
+      }
     };
 
     // Directly mock the getDockerServices function to return the expected result

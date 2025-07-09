@@ -132,10 +132,25 @@ async function getContainersWithVirtualHost(): Promise<ContainerInfo[]> {
 }
 
 /**
- * Gets services configuration based on Docker containers
- * @returns ServicesJson object with array of service configurations
+ * Structure for default certificate configuration
  */
-export async function getDockerServices(): Promise<ServicesJson> {
+interface DefaultCertConfig {
+  file: string;
+  key_file: string;
+}
+
+/**
+ * Extended structure of the services.json file with default certificate
+ */
+interface ServicesJsonWithDefault extends ServicesJson {
+  default_cert?: DefaultCertConfig;
+}
+
+/**
+ * Gets services configuration based on Docker containers
+ * @returns ServicesJsonWithDefault object with array of service configurations and default certificate
+ */
+export async function getDockerServices(): Promise<ServicesJsonWithDefault> {
   // Get all containers with VIRTUAL_HOST environment variable
   const containers = await getContainersWithVirtualHost();
 
@@ -176,7 +191,16 @@ export async function getDockerServices(): Promise<ServicesJson> {
     services.push(serviceConfig);
   }
 
-  return { services };
+  // Add default certificate configuration
+  const defaultCert: DefaultCertConfig = {
+    file: '/etc/letsencrypt/live/default/fullchain.pem',
+    key_file: '/etc/letsencrypt/live/default/privkey.pem'
+  };
+
+  return { 
+    services,
+    default_cert: defaultCert
+  };
 }
 
 // Export the getContainersWithVirtualHost function and AuthType enum for testing

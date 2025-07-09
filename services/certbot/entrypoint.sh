@@ -17,6 +17,38 @@ obtain_cert() {
         -d $domain $option
 }
 
+# Function to check if default certificate exists and create it if not
+check_default_cert() {
+    local default_cert_dir="$CERTS_PATH/default"
+    local default_cert_path="$default_cert_dir/fullchain.pem"
+    local default_key_path="$default_cert_dir/privkey.pem"
+
+    # Check if default certificate exists
+    if [ ! -f "$default_cert_path" ] || [ ! -f "$default_key_path" ]; then
+        echo "Default certificate does not exist. Creating self-signed certificate..."
+
+        # Create directory structure
+        mkdir -p "$default_cert_dir"
+
+        # Generate self-signed certificate with the same structure as Let's Encrypt
+        openssl req -x509 -nodes -newkey rsa:2048 -days 3650 \
+            -keyout "$default_key_path" \
+            -out "$default_cert_path" \
+            -subj "/CN=default.local" \
+            -addext "subjectAltName=DNS:default.local"
+
+        # Create chain.pem (same as fullchain.pem for self-signed)
+        cp "$default_cert_path" "$default_cert_dir/chain.pem"
+
+        # Create cert.pem (same as fullchain.pem for self-signed)
+        cp "$default_cert_path" "$default_cert_dir/cert.pem"
+
+        echo "Self-signed default certificate created successfully."
+    else
+        echo "Default certificate already exists."
+    fi
+}
+
 # Process each domain
 process_domains() {
     local option=$1
@@ -33,6 +65,9 @@ process_domains() {
         fi
     done
 }
+
+# Check for default certificate first
+check_default_cert
 
 # Initial processing of all domains
 process_domains "--keep"
