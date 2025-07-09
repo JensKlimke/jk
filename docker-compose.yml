@@ -4,6 +4,8 @@ services:
   nginx-conf-gen:
     build:
       context: ./services/api
+      dockerfile: Dockerfile
+    image: nginx-conf-gen:latest
     container_name: nginx-conf-gen
     volumes:
       - ./nginx/tmpl/service.conf.mustache:/app/template/service.conf.mustache:ro
