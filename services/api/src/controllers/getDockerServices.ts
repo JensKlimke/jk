@@ -44,6 +44,7 @@ interface ContainerInfo {
   name: string;
   virtualHost: string;
   ports: string[];
+  withAuthHeaders?: boolean;
 }
 
 /**
@@ -83,10 +84,16 @@ async function getContainersWithVirtualHost(): Promise<ContainerInfo[]> {
           const exposedPorts = containerInfo.Config.ExposedPorts || {};
           const ports = Object.keys(exposedPorts).map(p => p.split('/')[0]);
 
+          // Extract WITH_AUTH_HEADERS environment variable
+          const withAuthHeadersVar = envVars.find((env: string) => env.startsWith('WITH_AUTH_HEADERS='));
+          const withAuthHeaders = withAuthHeadersVar ?
+            withAuthHeadersVar.split('=')[1].toLowerCase() === 'true' : false;
+
           containersWithVirtualHost.push({
             name,
             virtualHost,
-            ports
+            ports,
+            withAuthHeaders
           });
         }
       } catch (containerError) {
@@ -116,6 +123,9 @@ export async function getDockerServices(): Promise<ServicesJson> {
 
   const services: ServiceConfig[] = [];
 
+  // Get AUTH_SERVICE from environment variable
+  const authService = process.env.AUTH_SERVICE || '';
+
   // Process each container to create service configurations
   for (const container of containers) {
     const host = container.virtualHost;
@@ -132,6 +142,14 @@ export async function getDockerServices(): Promise<ServicesJson> {
       service: container.name,
       port
     };
+
+    // Add auth configuration if WITH_AUTH_HEADERS is true and AUTH_SERVICE is defined
+    if (container.withAuthHeaders && authService) {
+      serviceConfig.auth = {
+        service: authService,
+        headers: true
+      };
+    }
 
     services.push(serviceConfig);
   }
