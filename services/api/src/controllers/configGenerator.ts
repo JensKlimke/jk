@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as Mustache from 'mustache';
+import { getDockerServices } from './getDockerServices';
 
 /**
  * Configuration Generator for Nginx
@@ -17,20 +18,6 @@ export class ConfigGenerator {
       return await fs.promises.readFile(templatePath, 'utf8');
     } catch (error) {
       throw new Error(`Failed to read template file: ${error}`);
-    }
-  }
-
-  /**
-   * Reads a JSON configuration file
-   * @param jsonPath Path to the JSON file
-   * @returns The parsed JSON data
-   */
-  public async readConfig(jsonPath: string): Promise<any> {
-    try {
-      const jsonContent = await fs.promises.readFile(jsonPath, 'utf8');
-      return JSON.parse(jsonContent);
-    } catch (error) {
-      throw new Error(`Failed to read or parse JSON file: ${error}`);
     }
   }
 
@@ -66,17 +53,17 @@ export class ConfigGenerator {
   /**
    * Generates a configuration file from a template and JSON data
    * @param templatePath Path to the template file
-   * @param jsonPath Path to the JSON data file
    * @param outputPath Path to write the output file
+   * @param authService Optional name of the authentication service (only used when jsonPath is 'docker')
    * @returns The rendered configuration
    */
   public async generateConfig(
     templatePath: string,
-    jsonPath: string,
-    outputPath: string
+    outputPath: string,
+    authService?: string
   ): Promise<string> {
     const template = await this.readTemplate(templatePath);
-    const data = await this.readConfig(jsonPath);
+    const data = await getDockerServices(authService);
     const rendered = this.renderTemplate(template, data);
 
     if (outputPath) {

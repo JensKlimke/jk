@@ -89,6 +89,31 @@ server {
 }
 ```
 
+## Docker Services Integration
+
+The utility can automatically detect Docker containers with the `VIRTUAL_HOST` environment variable and generate configuration for them.
+
+### How it works
+
+1. The `getDockerServices` function scans Docker containers and identifies those with the `VIRTUAL_HOST` environment variable set
+2. For each container, it extracts:
+   - The service name (container name)
+   - The exposed port
+   - The host (from VIRTUAL_HOST)
+3. It generates a services configuration with the proper structure, including:
+   - SSL certificate configuration
+   - Authentication configuration (if an auth service is specified)
+
+### Usage
+
+To use the Docker services integration, pass `docker` as the JSON path and optionally specify an auth service:
+
+```bash
+node dist/index.js <template-path> docker <output-path> [auth-service]
+```
+
+If an auth service is specified, all other services will be configured to use this service for authentication.
+
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.

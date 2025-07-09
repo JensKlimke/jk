@@ -105,11 +105,11 @@ async function getContainersWithVirtualHost(): Promise<ContainerInfo[]> {
 }
 
 /**
- * Generates services.json content based on Docker containers
+ * Gets services configuration based on Docker containers
  * @param authService Optional name of the authentication service
  * @returns ServicesJson object with array of service configurations
  */
-async function generateServicesJson(authService?: string): Promise<ServicesJson> {
+export async function getDockerServices(authService?: string): Promise<ServicesJson> {
   // Get all containers with VIRTUAL_HOST environment variable
   const containers = await getContainersWithVirtualHost();
 
@@ -161,63 +161,5 @@ async function generateServicesJson(authService?: string): Promise<ServicesJson>
   return { services };
 }
 
-/**
- * Main function to generate and save services.json
- * Parses command line arguments and handles the generation process
- */
-async function main() {
-  try {
-    // Parse command line arguments
-    const args = process.argv.slice(2);
-    const outputPath = args[0] || './services.json';
-    const authService = args[1]; // Optional auth service name
-
-    console.log(`Generating services.json${authService ? ` with auth service: ${authService}` : ''}`);
-    console.log(`Output will be saved to: ${outputPath}`);
-
-    // Generate the services.json content
-    const servicesJson = await generateServicesJson(authService);
-
-    if (servicesJson.services.length === 0) {
-      console.warn('No services were found. The output file will contain an empty services array.');
-    }
-
-    try {
-      // Write to file with pretty formatting (2 spaces indentation)
-      fs.writeFileSync(outputPath, JSON.stringify(servicesJson, null, 2));
-      console.log(`Services JSON generated successfully at: ${outputPath}`);
-    } catch (writeError) {
-      console.error(`Failed to write to ${outputPath}: ${writeError instanceof Error ? writeError.message : String(writeError)}`);
-      process.exit(1);
-    }
-
-    // Print summary information
-    console.log(`Found ${servicesJson.services.length} services with VIRTUAL_HOST`);
-
-    // Print the services for verification
-    if (servicesJson.services.length > 0) {
-      console.log('Services:');
-      servicesJson.services.forEach(service => {
-        let serviceInfo = `- ${service.host} -> ${service.service}:${service.port}`;
-        if (service.auth) {
-          serviceInfo += ` (Protected by ${service.auth.name})`;
-        }
-        console.log(serviceInfo);
-      });
-    }
-  } catch (error) {
-    console.error(`Error: ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(1);
-  }
-}
-
-// Run the main function if this file is executed directly
-if (require.main === module) {
-  main();
-}
-
-// Export functions for testing or use as a library
-export {
-  generateServicesJson,
-  getContainersWithVirtualHost,
-};
+// Export the getContainersWithVirtualHost function for testing
+export { getContainersWithVirtualHost };
