@@ -1,5 +1,6 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { existsSync } from 'fs';
 
 const execAsync = promisify(exec);
 
@@ -24,7 +25,7 @@ interface AuthConfig {
  */
 interface ServiceConfig {
   host: string;
-  cert: CertConfig;
+  cert?: CertConfig;
   service: string;
   port: string;
   auth?: AuthConfig;
@@ -172,13 +173,20 @@ export async function getDockerServices(): Promise<ServicesJsonWithDefault> {
     // Create the basic service configuration
     const serviceConfig: ServiceConfig = {
       host,
-      cert: {
-        file: `/etc/letsencrypt/live/${host}/fullchain.pem`,
-        key_file: `/etc/letsencrypt/live/${host}/privkey.pem`
-      },
       service: container.name,
       port
     };
+
+    // Check if certificate files exist before setting them
+    const certFile = `/etc/letsencrypt/live/${host}/fullchain.pem`;
+    const keyFile = `/etc/letsencrypt/live/${host}/privkey.pem`;
+
+    if (existsSync(certFile) && existsSync(keyFile)) {
+      serviceConfig.cert = {
+        file: certFile,
+        key_file: keyFile
+      };
+    }
 
     // Add auth configuration if withAuth is not NONE and AUTH_SERVICE is defined
     if (authService && container.withAuth !== AuthType.NONE) {
@@ -191,16 +199,21 @@ export async function getDockerServices(): Promise<ServicesJsonWithDefault> {
     services.push(serviceConfig);
   }
 
-  // Add default certificate configuration
-  const defaultCert: DefaultCertConfig = {
-    file: '/etc/letsencrypt/live/default/fullchain.pem',
-    key_file: '/etc/letsencrypt/live/default/privkey.pem'
-  };
+  // Check if default certificate files exist
+  const defaultCertFile = '/etc/letsencrypt/live/default/fullchain.pem';
+  const defaultKeyFile = '/etc/letsencrypt/live/default/privkey.pem';
 
-  return { 
-    services,
-    default_cert: defaultCert
-  };
+  const result: ServicesJsonWithDefault = { services };
+
+  // Only add default_cert if both files exist
+  if (existsSync(defaultCertFile) && existsSync(defaultKeyFile)) {
+    result.default_cert = {
+      file: defaultCertFile,
+      key_file: defaultKeyFile
+    };
+  }
+
+  return result;
 }
 
 // Export the getContainersWithVirtualHost function and AuthType enum for testing

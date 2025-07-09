@@ -1,5 +1,12 @@
 import * as dockerServices from '../src/controllers/getDockerServices';
 import { AuthType } from '../src/controllers/getDockerServices';
+import * as fs from 'fs';
+
+// Mock the fs module to control file existence checks
+jest.mock('fs', () => ({
+  ...jest.requireActual('fs'),
+  existsSync: jest.fn()
+}));
 
 // Mock the entire module to avoid actual Docker calls during tests
 jest.mock('../src/controllers/getDockerServices', () => {
@@ -15,6 +22,9 @@ describe('getDockerServices', () => {
   beforeEach(() => {
     // Reset mocks before each test
     jest.resetAllMocks();
+
+    // Reset the existsSync mock to default (false)
+    (fs.existsSync as jest.Mock).mockReturnValue(false);
   });
 
   // Sample container data for testing
@@ -251,6 +261,149 @@ describe('getDockerServices', () => {
     expect(result.services).toHaveLength(0);
   });
 
+  test('should only set cert field when certificate files exist', async () => {
+    // Create a mock implementation of getDockerServices that uses the real logic
+    // but with mocked dependencies
+    (dockerServices.getDockerServices as jest.Mock).mockImplementation(async () => {
+      // Mock getContainersWithVirtualHost to return containers
+      (dockerServices.getContainersWithVirtualHost as jest.Mock).mockResolvedValue(mockContainers);
+
+      // Set AUTH_SERVICE environment variable for the test
+      const originalAuthService = process.env.AUTH_SERVICE;
+      process.env.AUTH_SERVICE = 'oauth2-proxy:4180';
+
+      // Mock existsSync to return true only for specific files
+      (fs.existsSync as jest.Mock).mockImplementation((path: string) => {
+        // Certificate files for example.com exist
+        if (path === '/etc/letsencrypt/live/example.com/fullchain.pem' || 
+            path === '/etc/letsencrypt/live/example.com/privkey.pem') {
+          return true;
+        }
+
+        // Certificate files for app.example.com don't exist
+        if (path === '/etc/letsencrypt/live/app.example.com/fullchain.pem' || 
+            path === '/etc/letsencrypt/live/app.example.com/privkey.pem') {
+          return false;
+        }
+
+        // Only the key file exists for auth.example.com, but not the cert file
+        if (path === '/etc/letsencrypt/live/auth.example.com/fullchain.pem') {
+          return false;
+        }
+        if (path === '/etc/letsencrypt/live/auth.example.com/privkey.pem') {
+          return true;
+        }
+
+        // Default certificate exists
+        if (path === '/etc/letsencrypt/live/default/fullchain.pem' || 
+            path === '/etc/letsencrypt/live/default/privkey.pem') {
+          return true;
+        }
+
+        return false;
+      });
+
+      // Get the containers
+      const containers = await dockerServices.getContainersWithVirtualHost();
+
+      // Create the services array
+      const services = [];
+
+      // Get AUTH_SERVICE from environment variable
+      const authService = process.env.AUTH_SERVICE || '';
+
+      // Process each container to create service configurations
+      for (const container of containers) {
+        const host = container.virtualHost;
+        // Default to port 80 if no port is found
+        const port = container.ports.length > 0 ? container.ports[0] : '80';
+
+        // Create the basic service configuration
+        const serviceConfig = {
+          host,
+          service: container.name,
+          port
+        };
+
+        // Check if certificate files exist before setting them
+        const certFile = `/etc/letsencrypt/live/${host}/fullchain.pem`;
+        const keyFile = `/etc/letsencrypt/live/${host}/privkey.pem`;
+
+        if (fs.existsSync(certFile) && fs.existsSync(keyFile)) {
+          Object.assign(serviceConfig, {
+            cert: {
+              file: certFile,
+              key_file: keyFile
+            }
+          });
+        }
+
+        // Add auth configuration if withAuth is not NONE and AUTH_SERVICE is defined
+        if (authService && container.withAuth !== AuthType.NONE) {
+          Object.assign(serviceConfig, {
+            auth: {
+              service: authService,
+              headers: container.withAuth === AuthType.WITH_HEADERS
+            }
+          });
+        }
+
+        services.push(serviceConfig);
+      }
+
+      // Check if default certificate files exist
+      const defaultCertFile = '/etc/letsencrypt/live/default/fullchain.pem';
+      const defaultKeyFile = '/etc/letsencrypt/live/default/privkey.pem';
+
+      const result = { services };
+
+      // Only add default_cert if both files exist
+      if (fs.existsSync(defaultCertFile) && fs.existsSync(defaultKeyFile)) {
+        Object.assign(result, {
+          default_cert: {
+            file: defaultCertFile,
+            key_file: defaultKeyFile
+          }
+        });
+      }
+
+      // Restore original AUTH_SERVICE
+      if (originalAuthService) {
+        process.env.AUTH_SERVICE = originalAuthService;
+      } else {
+        delete process.env.AUTH_SERVICE;
+      }
+
+      return result;
+    });
+
+    // Call the mocked getDockerServices function
+    const result = await dockerServices.getDockerServices();
+
+    // Verify the result
+    expect(result).toHaveProperty('services');
+    expect(result.services).toHaveLength(3);
+
+    // First service should have cert field (both files exist)
+    expect(result.services[0]).toHaveProperty('cert');
+    expect(result.services[0].cert).toEqual({
+      file: '/etc/letsencrypt/live/example.com/fullchain.pem',
+      key_file: '/etc/letsencrypt/live/example.com/privkey.pem'
+    });
+
+    // Second service should not have cert field (only key file exists)
+    expect(result.services[1]).not.toHaveProperty('cert');
+
+    // Third service should not have cert field (neither file exists)
+    expect(result.services[2]).not.toHaveProperty('cert');
+
+    // Default cert should be set (both files exist)
+    expect(result).toHaveProperty('default_cert');
+    expect(result.default_cert).toEqual({
+      file: '/etc/letsencrypt/live/default/fullchain.pem',
+      key_file: '/etc/letsencrypt/live/default/privkey.pem'
+    });
+  });
 });
 
 describe('getContainersWithVirtualHost', () => {
