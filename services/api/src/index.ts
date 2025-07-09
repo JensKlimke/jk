@@ -10,21 +10,20 @@ async function main() {
     // Parse command line arguments
     const args = process.argv.slice(2);
 
-    if (args.length < 2) {
-      console.error('Usage: nginx-conf-gen <template-path> <json-path> [output-path] [auth-service]');
+    if (args.length < 1) {
+      console.error('Usage: nginx-conf-gen <template-path> [output-path] [auth-service]');
       process.exit(1);
     }
 
     const templatePath = args[0];
-    const jsonPath = args[1];
-    const outputPath = args[2] || '';
-    const authService = args[3]; // Optional auth service name
+    const outputPath = args[1] || '';
+    const authService = args[2]; // Optional auth service name
 
     // Create a new config generator
     const generator = new ConfigGenerator();
 
     // Generate the configuration
-    const result = await generator.generateConfig(templatePath, jsonPath, outputPath, authService);
+    const result = await generator.generateConfig(templatePath, outputPath, authService);
 
     // If no output path was provided, print the result to stdout
     if (!outputPath) {

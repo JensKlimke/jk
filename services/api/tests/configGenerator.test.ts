@@ -90,35 +90,7 @@ server {
     expect(fs.promises.readFile).toHaveBeenCalledWith('template.mustache', 'utf8');
   });
 
-  test('readConfig should read and parse a JSON file', async () => {
-    const config = await generator.readConfig('config.json');
-    expect(config).toEqual(sampleData);
-    expect(fs.promises.readFile).toHaveBeenCalledWith('config.json', 'utf8');
-  });
-
-  test('readConfig should use getDockerServices when jsonPath is "docker"', async () => {
-    const mockServicesData = {
-      services: [
-        {
-          host: 'example.com',
-          cert: {
-            file: '/path/to/cert.pem',
-            key_file: '/path/to/key.pem'
-          },
-          service: 'app',
-          port: '8080'
-        }
-      ]
-    };
-
-    (getDockerServices as jest.Mock).mockResolvedValue(mockServicesData);
-
-    const config = await generator.readConfig('docker', 'auth-service');
-
-    expect(config).toEqual(mockServicesData);
-    expect(getDockerServices).toHaveBeenCalledWith('auth-service');
-    expect(fs.promises.readFile).not.toHaveBeenCalled();
-  });
+  // Tests for readConfig method have been removed as the method no longer exists
 
   test('renderTemplate should render a template with data', () => {
     const rendered = generator.renderTemplate(sampleTemplate, sampleData);
@@ -132,36 +104,24 @@ server {
   });
 
   test('generateConfig should generate a config file', async () => {
-    const result = await generator.generateConfig('template.mustache', 'config.json', 'output.conf');
+    // Mock getDockerServices to return the sample data
+    (getDockerServices as jest.Mock).mockResolvedValue(sampleData);
+
+    const result = await generator.generateConfig('template.mustache', 'output.conf');
     expect(result).toBe(expectedOutput);
     expect(fs.promises.readFile).toHaveBeenCalledWith('template.mustache', 'utf8');
-    expect(fs.promises.readFile).toHaveBeenCalledWith('config.json', 'utf8');
+    expect(getDockerServices).toHaveBeenCalledWith(undefined);
     expect(fs.promises.writeFile).toHaveBeenCalledWith('output.conf', expectedOutput, 'utf8');
   });
 
-  test('generateConfig should use getDockerServices when jsonPath is "docker"', async () => {
-    // Create mock data that matches the sample data used in other tests
-    const mockServicesData = {
-      services: [
-        {
-          host: 'example.com',
-          cert: {
-            file: '/path/to/cert.pem',
-            key_file: '/path/to/key.pem'
-          },
-          service: 'app',
-          port: '8080'
-        }
-      ]
-    };
-
-    // Mock getDockerServices to return data that will match the expected output
+  test('generateConfig should pass authService to getDockerServices', async () => {
+    // Mock getDockerServices to return the sample data
     (getDockerServices as jest.Mock).mockResolvedValue(sampleData);
 
     // Mock readFile to return the sample template
     (fs.promises.readFile as jest.Mock).mockResolvedValueOnce(sampleTemplate);
 
-    const result = await generator.generateConfig('template.mustache', 'docker', 'output.conf', 'auth-service');
+    const result = await generator.generateConfig('template.mustache', 'output.conf', 'auth-service');
 
     expect(result).toBe(expectedOutput);
     expect(fs.promises.readFile).toHaveBeenCalledWith('template.mustache', 'utf8');
