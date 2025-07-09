@@ -1,11 +1,11 @@
 #!/bin/sh
 
-# List of domains to obtain certificates for
-DOMAINS=""
-CERTS_PATH="/etc/letsencrypt/live"
+# These variables must be set:
+# - DOMAINS: all domains to be processed
+# - EMAIL: email address of the admin
 
-# Email address for certificate registration
-EMAIL="jens.klimke@rwth-aachen.de"
+# List of domains to obtain certificates for
+CERTS_PATH="/etc/letsencrypt/live"
 
 # Function to obtain/renew certificate for a specific domain
 obtain_cert() {
