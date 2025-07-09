@@ -60,6 +60,7 @@ services:
       OAUTH2_PROXY_COOKIE_SAMESITE: lax
       OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
       OAUTH2_PROXY_PASS_ACCESS_TOKEN: "true"
+      VIRTUAL_HOST: "auth.${DOMAIN:-localhost}"
     expose:
       - "4180"
 
@@ -67,6 +68,8 @@ services:
     image: traefik/whoami
     container_name: whoami
     restart: always
+    environment:
+      VIRTUAL_HOST: "whoami.${DOMAIN:-localhost}"
     expose:
       - "80"
 
