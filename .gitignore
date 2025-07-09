@@ -6,19 +6,9 @@
 node_modules/
 coverage/
 dist/
-package-lock.json
-
-# TypeScript build artifacts
 bin/
-*.js
-*.d.ts
+package-lock.json
 tsconfig.tsbuildinfo
-
-# Pulumi artifacts
-.pulumi/
-Pulumi.*.yaml
-!Pulumi.yaml
-!Pulumi.dev.yaml
 
 .venv
 
