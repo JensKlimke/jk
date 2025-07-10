@@ -47,7 +47,6 @@ services:
     entrypoint: "/bin/sh /certbot-entrypoint.sh"
     environment:
       EMAIL: ${EMAIL:-admin@example.com}
-      DOMAIN: ${DOMAIN:-localhost}
     restart: always
 
   oauth2-proxy:
