@@ -1,46 +1,81 @@
 #!/bin/sh
 
-# These variables must be set:
-# - DOMAINS: all domains to be processed
-# - EMAIL: email address of the admin
-
-# List of domains to obtain certificates for
+# Configuration constants
 CERTS_PATH="/etc/letsencrypt/live"
+REMOVED_DOMAINS_FILE="/tmp/removed_domains.txt"
+WEBROOT_PATH="/var/www/certbot"
+DEFAULT_DOMAIN="default"
+DEFAULT_CERT_CN="default.local"
+RENEWAL_INTERVAL_SECONDS=$((12 * 60 * 60))  # 12 hours in seconds
+CLEANUP_INTERVAL_SECONDS=$((24 * 60 * 60))  # 24 hours in seconds
+
+# Validate required environment variables
+if [ -z "$EMAIL" ]; then
+    echo "ERROR: EMAIL environment variable is not set. Cannot proceed with certificate operations."
+    exit 1
+fi
+
+# Initialize the removed domains file
+touch "$REMOVED_DOMAINS_FILE"
+
+# Function to get domains from containers with VIRTUAL_HOST environment variable
+get_domains_from_containers() {
+    local domain_list=""
+    local containers
+    local virtual_host
+
+    containers=$(docker ps --format "{{.Names}}")
+
+    for container in $containers; do
+        virtual_host=$(docker inspect --format '{{range .Config.Env}}{{if eq (index (split . "=") 0) "VIRTUAL_HOST"}}{{index (split . "=") 1}}{{end}}{{end}}' "$container")
+
+        if [ -n "$virtual_host" ]; then
+            if [ -z "$domain_list" ]; then
+                domain_list="$virtual_host"
+            else
+                domain_list="$domain_list $virtual_host"
+            fi
+        fi
+    done
+
+    DOMAINS="$domain_list"
+}
 
 # Function to obtain/renew certificate for a specific domain
 obtain_cert() {
-    local domain=$1
-    local option=$2
+    local domain="$1"
+    local force_renewal="$2"
+    local certbot_cmd="certbot certonly --webroot --webroot-path=$WEBROOT_PATH --email $EMAIL --agree-tos --no-eff-email -d $domain"
+
     echo "Processing certificate for $domain..."
-    certbot certonly --webroot --webroot-path=/var/www/certbot \
-        --email $EMAIL --agree-tos --no-eff-email \
-        -d $domain $option
+
+    if [ "$force_renewal" = "true" ]; then
+        echo "Forcing renewal for $domain..."
+        $certbot_cmd --force-renewal || echo "WARNING: Certificate operation for $domain failed"
+    else
+        echo "Standard renewal check for $domain..."
+        $certbot_cmd --keep || echo "WARNING: Certificate operation for $domain failed"
+    fi
 }
 
 # Function to check if default certificate exists and create it if not
 check_default_cert() {
-    local default_cert_dir="$CERTS_PATH/default"
+    local default_cert_dir="$CERTS_PATH/$DEFAULT_DOMAIN"
     local default_cert_path="$default_cert_dir/fullchain.pem"
     local default_key_path="$default_cert_dir/privkey.pem"
 
-    # Check if default certificate exists
     if [ ! -f "$default_cert_path" ] || [ ! -f "$default_key_path" ]; then
         echo "Default certificate does not exist. Creating self-signed certificate..."
 
-        # Create directory structure
         mkdir -p "$default_cert_dir"
 
-        # Generate self-signed certificate with the same structure as Let's Encrypt
         openssl req -x509 -nodes -newkey rsa:2048 -days 3650 \
             -keyout "$default_key_path" \
             -out "$default_cert_path" \
-            -subj "/CN=default.local" \
-            -addext "subjectAltName=DNS:default.local"
+            -subj "/CN=$DEFAULT_CERT_CN" \
+            -addext "subjectAltName=DNS:$DEFAULT_CERT_CN"
 
-        # Create chain.pem (same as fullchain.pem for self-signed)
         cp "$default_cert_path" "$default_cert_dir/chain.pem"
-
-        # Create cert.pem (same as fullchain.pem for self-signed)
         cp "$default_cert_path" "$default_cert_dir/cert.pem"
 
         echo "Self-signed default certificate created successfully."
@@ -49,72 +84,152 @@ check_default_cert() {
     fi
 }
 
-# Function to clean up certificates for domains no longer in the DOMAINS list
-cleanup_certificates() {
-    echo "Checking for certificates to clean up..."
+# Function to update the removed domains file
+update_removed_domains_file() {
+    local domain="$1"
+    local action="$2"
+    local current_time
 
-    # Get all certificate directories
-    for cert_dir in $CERTS_PATH/*; do
-        # Skip if not a directory
+    if [ "$action" = "add" ]; then
+        current_time=$(date +%s)
+        echo "Domain $domain is no longer in the list. Tracking for removal..."
+        echo "$domain:$current_time" >> "$REMOVED_DOMAINS_FILE"
+    elif [ "$action" = "remove" ]; then
+        echo "Domain $domain is back in the list. Removing from tracking..."
+        grep -v "^$domain:" "$REMOVED_DOMAINS_FILE" > "${REMOVED_DOMAINS_FILE}.tmp"
+        mv "${REMOVED_DOMAINS_FILE}.tmp" "$REMOVED_DOMAINS_FILE"
+    fi
+}
+
+# Function to track domains that are no longer in the DOMAINS list
+track_removed_domains() {
+    echo "Tracking domains that are no longer in the list..."
+    local domain
+
+    for cert_dir in "$CERTS_PATH"/*; do
         [ -d "$cert_dir" ] || continue
 
-        # Extract domain name from directory path
         domain=$(basename "$cert_dir")
 
-        # Skip the default certificate
-        if [ "$domain" = "default" ]; then
-            echo "Skipping default certificate"
+        if [ "$domain" = "$DEFAULT_DOMAIN" ]; then
             continue
         fi
 
-        # Check if domain is in the DOMAINS list
         if ! echo "$DOMAINS" | grep -q -w "$domain"; then
-            echo "Certificate for $domain exists but domain is no longer in the list. Deleting..."
-            certbot delete --cert-name "$domain" --non-interactive
+            if ! grep -q "^$domain:" "$REMOVED_DOMAINS_FILE"; then
+                update_removed_domains_file "$domain" "add"
+            fi
+        else
+            if grep -q "^$domain:" "$REMOVED_DOMAINS_FILE"; then
+                update_removed_domains_file "$domain" "remove"
+            fi
         fi
     done
 }
 
-# Process each domain
-process_domains() {
-    local option=$1
-    for domain in $DOMAINS; do
-        local cert_path="$CERTS_PATH/$domain/fullchain.pem"
+# Function to clean up certificates for domains that have been missing for at least 24 hours
+cleanup_certificates() {
+    echo "Checking for certificates to clean up..."
+    local current_time=$(date +%s)
+    local domain
+    local timestamp
+    local time_diff
+    local hours_left
 
-        # Check if certificate exists for this domain
+    while IFS=: read -r domain timestamp; do
+        [ -z "$domain" ] && continue
+
+        time_diff=$((current_time - timestamp))
+
+        if [ "$time_diff" -ge "$CLEANUP_INTERVAL_SECONDS" ]; then
+            echo "Certificate for $domain has been missing for at least 24 hours. Deleting..."
+            certbot delete --cert-name "$domain" --non-interactive
+            update_removed_domains_file "$domain" "remove"
+        else
+            hours_left=$(( (CLEANUP_INTERVAL_SECONDS - time_diff) / 3600 ))
+            echo "Certificate for $domain will be deleted in approximately $hours_left hours."
+        fi
+    done < "$REMOVED_DOMAINS_FILE"
+}
+
+# Function to process each domain for certificate operations
+process_domains() {
+    local domain
+    local cert_path
+
+    for domain in $DOMAINS; do
+        cert_path="$CERTS_PATH/$domain/fullchain.pem"
+
         if [ ! -f "$cert_path" ]; then
             echo "Certificate for $domain does not exist. Obtaining immediately..."
-            obtain_cert "$domain" "--force-renewal"
+            obtain_cert "$domain" "true"
         else
             echo "Certificate for $domain already exists. Setting up renewal schedule..."
-            obtain_cert "$domain" "$option"
+            obtain_cert "$domain" "false"
         fi
     done
 }
 
-# Check for default certificate first
+# Function to handle certificate renewal (every 12 hours)
+certificate_renewal_check() {
+    local current_time=$(date +%s)
+
+    if [ $((current_time - last_renewal_check)) -ge "$RENEWAL_INTERVAL_SECONDS" ]; then
+        echo "Performing certificate renewal check..."
+        echo "Checking certificate renewal for all domains..."
+        process_domains
+        last_renewal_check=$(date +%s)
+    fi
+}
+
+# Function to handle certificate cleanup (every 24 hours)
+certificate_cleanup_check() {
+    local current_time=$(date +%s)
+
+    if [ $((current_time - last_cleanup_check)) -ge "$CLEANUP_INTERVAL_SECONDS" ]; then
+        echo "Performing certificate cleanup check..."
+        cleanup_certificates
+        last_cleanup_check=$(date +%s)
+    fi
+}
+
+# Initialize the system
 check_default_cert
+get_domains_from_containers
+process_domains
 
-# Clean up certificates for domains no longer in the list
-cleanup_certificates
+# Initialize timestamps for interval checks
+last_renewal_check=$(date +%s)
+last_cleanup_check=$(date +%s)
 
-# Initial processing of all domains
-process_domains "--keep"
-
-# Set up the renewal schedule
+# Set up signal handling
 trap exit TERM
+
+# Main loop information
+echo "Starting main loop with different intervals for each process:"
+echo "- Domain list checking: every second"
+echo "- Certificate renewal checking: every 12 hours"
+echo "- Certificate cleanup: every 24 hours"
+
+echo "Starting up with domains:"
+echo $DOMAINS
+
+# Main loop
 while :; do
+    previous_domains="$DOMAINS"
+    get_domains_from_containers
 
-    # Sleep for 12 hours before attempting renewal
-    echo "Waiting 12 hours before next certificate renewal check..."
-    sleep 12h & wait $!
+    if [ "$previous_domains" != "$DOMAINS" ]; then
+        echo "Domain list has changed. Processing new domains immediately..."
+        echo "Domain list:"
+        echo $DOMAINS
 
-    # Clean up certificates for domains no longer in the list
-    cleanup_certificates
+        process_domains
+        track_removed_domains
+    fi
 
-    # Let certbot decide if renewal is necessary based on expiration date
-    # (certificates are typically renewed when they're within 30 days of expiry)
-    echo "Checking certificate renewal for all domains..."
-    process_domains "--keep"
+    certificate_renewal_check
+    certificate_cleanup_check
 
+    sleep 1
 done
