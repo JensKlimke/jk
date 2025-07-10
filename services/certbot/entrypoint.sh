@@ -45,16 +45,44 @@ get_domains_from_containers() {
 obtain_cert() {
     local domain="$1"
     local force_renewal="$2"
-    local certbot_cmd="certbot certonly --webroot --webroot-path=$WEBROOT_PATH --email $EMAIL --agree-tos --no-eff-email -d $domain"
+    local cert_dir="$CERTS_PATH/$domain"
+    local cert_path="$cert_dir/fullchain.pem"
+    local key_path="$cert_dir/privkey.pem"
 
     echo "Processing certificate for $domain..."
 
-    if [ "$force_renewal" = "true" ]; then
-        echo "Forcing renewal for $domain..."
-        $certbot_cmd --force-renewal || echo "WARNING: Certificate operation for $domain failed"
+    # Check if domain is localhost or contains localhost
+    if echo "$domain" | grep -q "localhost"; then
+        echo "Domain $domain contains 'localhost'. Creating self-signed certificate..."
+
+        mkdir -p "$cert_dir"
+
+        # Only create new certificate if it doesn't exist or force renewal is true
+        if [ ! -f "$cert_path" ] || [ "$force_renewal" = "true" ]; then
+            openssl req -x509 -nodes -newkey rsa:2048 -days 3650 \
+                -keyout "$key_path" \
+                -out "$cert_path" \
+                -subj "/CN=$domain" \
+                -addext "subjectAltName=DNS:$domain"
+
+            cp "$cert_path" "$cert_dir/chain.pem"
+            cp "$cert_path" "$cert_dir/cert.pem"
+
+            echo "Self-signed certificate for $domain created successfully."
+        else
+            echo "Self-signed certificate for $domain already exists."
+        fi
     else
-        echo "Standard renewal check for $domain..."
-        $certbot_cmd --keep || echo "WARNING: Certificate operation for $domain failed"
+        # For non-localhost domains, use certbot as before
+        local certbot_cmd="certbot certonly --webroot --webroot-path=$WEBROOT_PATH --email $EMAIL --agree-tos --no-eff-email -d $domain"
+
+        if [ "$force_renewal" = "true" ]; then
+            echo "Forcing renewal for $domain..."
+            $certbot_cmd --force-renewal || echo "WARNING: Certificate operation for $domain failed"
+        else
+            echo "Standard renewal check for $domain..."
+            $certbot_cmd --keep || echo "WARNING: Certificate operation for $domain failed"
+        fi
     fi
 }
 
@@ -135,15 +163,26 @@ cleanup_certificates() {
     local timestamp
     local time_diff
     local hours_left
+    local cert_dir
 
     while IFS=: read -r domain timestamp; do
         [ -z "$domain" ] && continue
 
         time_diff=$((current_time - timestamp))
+        cert_dir="$CERTS_PATH/$domain"
 
         if [ "$time_diff" -ge "$CLEANUP_INTERVAL_SECONDS" ]; then
             echo "Certificate for $domain has been missing for at least 24 hours. Deleting..."
-            certbot delete --cert-name "$domain" --non-interactive
+
+            # Check if domain is localhost or contains localhost
+            if echo "$domain" | grep -q "localhost"; then
+                echo "Removing self-signed certificate for $domain..."
+                rm -rf "$cert_dir"
+            else
+                # For non-localhost domains, use certbot
+                certbot delete --cert-name "$domain" --non-interactive
+            fi
+
             update_removed_domains_file "$domain" "remove"
         else
             hours_left=$(( (CLEANUP_INTERVAL_SECONDS - time_diff) / 3600 ))
