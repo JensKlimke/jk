@@ -16,6 +16,12 @@ while $RUNNING; do
   echo "Generating configuration..."
   node dist/index.js /app/template/service.conf.mustache /app/output/services.conf
 
+  # Reload nginx if NGINX_SERVICE is defined
+  if [ -n "$NGINX_SERVICE" ]; then
+    echo "Reloading nginx service: $NGINX_SERVICE"
+    docker exec nginx-reverse-proxy nginx -s reload || echo "Failed to reload nginx"
+  fi
+
   if $RUNNING; then
     echo "Sleeping for ${INTERVAL} seconds..."
     # Sleep in small increments to respond quickly to termination signals
