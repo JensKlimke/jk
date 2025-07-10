@@ -44,7 +44,7 @@ services:
       - ./services/certbot/entrypoint.sh:/certbot-entrypoint.sh
     entrypoint: "/bin/sh /certbot-entrypoint.sh"
     environment:
-      DOMAINS: "whoami.${DOMAIN:-localhost} auth.${DOMAIN:-localhost}"
+      DOMAINS: "whoami.${DOMAIN:-localhost} whoami2.${DOMAIN:-localhost} auth.${DOMAIN:-localhost}"
       EMAIL: ${EMAIL:-admin@example.com}
     restart: always
 
