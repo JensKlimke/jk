@@ -8,6 +8,9 @@ import { getDockerServices } from './getDockerServices';
  * Renders Mustache templates with JSON data to generate Nginx configuration files
  */
 export class ConfigGenerator {
+  private readonly lastConfigPath = path.join('/app/logs', 'last_config.txt');
+  private readonly logsDir = '/app/logs';
+
   /**
    * Reads a template file
    * @param templatePath Path to the template file
@@ -51,6 +54,64 @@ export class ConfigGenerator {
   }
 
   /**
+   * Checks if the config has changed from the last saved version
+   * @param newConfig The new config to compare
+   * @returns True if the config has changed, false otherwise
+   */
+  private async hasConfigChanged(newConfig: string): Promise<boolean> {
+    try {
+      // Ensure logs directory exists
+      await fs.promises.mkdir(this.logsDir, { recursive: true });
+
+      // Check if last config file exists
+      try {
+        const lastConfig = await fs.promises.readFile(this.lastConfigPath, 'utf8');
+        return lastConfig !== newConfig;
+      } catch (error) {
+        // If file doesn't exist, consider it as changed
+        return true;
+      }
+    } catch (error) {
+      console.error(`Error checking if config changed: ${error}`);
+      // If there's an error, assume it has changed to be safe
+      return true;
+    }
+  }
+
+  /**
+   * Saves the current config as the last config
+   * @param config The config to save
+   */
+  private async saveLastConfig(config: string): Promise<void> {
+    try {
+      await fs.promises.mkdir(this.logsDir, { recursive: true });
+      await fs.promises.writeFile(this.lastConfigPath, config, 'utf8');
+    } catch (error) {
+      console.error(`Error saving last config: ${error}`);
+    }
+  }
+
+  /**
+   * Logs the config to a timestamped file
+   * @param config The config to log
+   */
+  private async logConfig(config: string): Promise<void> {
+    try {
+      // Create timestamp for filename
+      const now = new Date();
+      const timestamp = now.toISOString().replace(/:/g, '-').replace(/\..+/, '');
+      const logFilePath = path.join(this.logsDir, `config_${timestamp}.log`);
+
+      // Write config to log file
+      await fs.promises.mkdir(this.logsDir, { recursive: true });
+      await fs.promises.writeFile(logFilePath, config, 'utf8');
+      console.log(`Config logged to ${logFilePath}`);
+    } catch (error) {
+      console.error(`Error logging config: ${error}`);
+    }
+  }
+
+  /**
    * Generates a configuration file from a template and JSON data
    * @param templatePath Path to the template file
    * @param outputPath Path to write the output file
@@ -66,6 +127,13 @@ export class ConfigGenerator {
 
     if (outputPath) {
       await this.writeConfig(outputPath, rendered);
+    }
+
+    // Check if config has changed and log it if it has
+    const hasChanged = await this.hasConfigChanged(rendered);
+    if (hasChanged) {
+      await this.logConfig(rendered);
+      await this.saveLastConfig(rendered);
     }
 
     return rendered;

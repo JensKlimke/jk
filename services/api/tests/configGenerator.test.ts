@@ -17,6 +17,18 @@ jest.mock('../src/controllers/getDockerServices', () => ({
   getDockerServices: jest.fn()
 }));
 
+// Mock console methods
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+beforeAll(() => {
+  console.log = jest.fn();
+  console.error = jest.fn();
+});
+afterAll(() => {
+  console.log = originalConsoleLog;
+  console.error = originalConsoleError;
+});
+
 describe('ConfigGenerator', () => {
   let generator: ConfigGenerator;
 
@@ -73,6 +85,9 @@ server {
         return Promise.resolve(sampleTemplate);
       } else if (path === 'config.json') {
         return Promise.resolve(JSON.stringify(sampleData));
+      } else if (path.includes('last_config.txt')) {
+        // Mock for last config file
+        return Promise.resolve(expectedOutput);
       }
       return Promise.reject(new Error(`File not found: ${path}`));
     });
@@ -106,12 +121,67 @@ server {
   test('generateConfig should generate a config file', async () => {
     // Mock getDockerServices to return the sample data
     (getDockerServices as jest.Mock).mockResolvedValue(sampleData);
+    
+    // Mock hasConfigChanged to return true (config has changed)
+    (fs.promises.readFile as unknown as jest.Mock).mockImplementation((path: string, encoding: string) => {
+      if (path === 'template.mustache') {
+        return Promise.resolve(sampleTemplate);
+      } else if (path.includes('last_config.txt')) {
+        // Return a different config to simulate a change
+        return Promise.resolve('different config');
+      }
+      return Promise.reject(new Error(`File not found: ${path}`));
+    });
 
     const result = await generator.generateConfig('template.mustache', 'output.conf');
     expect(result).toBe(expectedOutput);
     expect(fs.promises.readFile).toHaveBeenCalledWith('template.mustache', 'utf8');
     expect(getDockerServices).toHaveBeenCalled();
     expect(fs.promises.writeFile).toHaveBeenCalledWith('output.conf', expectedOutput, 'utf8');
+    
+    // Check that the config was logged and saved
+    expect(fs.promises.writeFile).toHaveBeenCalledWith(
+      expect.stringContaining('/app/logs/config_'),
+      expectedOutput,
+      'utf8'
+    );
+    expect(fs.promises.writeFile).toHaveBeenCalledWith(
+      expect.stringContaining('/app/logs/last_config.txt'),
+      expectedOutput,
+      'utf8'
+    );
+  });
+
+  test('generateConfig should not log if config has not changed', async () => {
+    // Mock getDockerServices to return the sample data
+    (getDockerServices as jest.Mock).mockResolvedValue(sampleData);
+    
+    // Mock hasConfigChanged to return false (config has not changed)
+    (fs.promises.readFile as unknown as jest.Mock).mockImplementation((path: string, encoding: string) => {
+      if (path === 'template.mustache') {
+        return Promise.resolve(sampleTemplate);
+      } else if (path.includes('last_config.txt')) {
+        // Return the same config to simulate no change
+        return Promise.resolve(expectedOutput);
+      }
+      return Promise.reject(new Error(`File not found: ${path}`));
+    });
+
+    const result = await generator.generateConfig('template.mustache', 'output.conf');
+    expect(result).toBe(expectedOutput);
+    
+    // Check that the config was not logged
+    expect(fs.promises.writeFile).not.toHaveBeenCalledWith(
+      expect.stringContaining('/app/logs/config_'),
+      expectedOutput,
+      'utf8'
+    );
+    // Check that the last config was not updated
+    expect(fs.promises.writeFile).not.toHaveBeenCalledWith(
+      expect.stringContaining('/app/logs/last_config.txt'),
+      expectedOutput,
+      'utf8'
+    );
   });
 
   test('generateConfig should handle errors', async () => {
@@ -120,5 +190,35 @@ server {
 
     await expect(generator.generateConfig('nonexistent.mustache', 'output.conf'))
       .rejects.toThrow('Failed to read template file: Error: File not found');
+  });
+
+  test('generateConfig should handle errors when checking if config has changed', async () => {
+    // Mock getDockerServices to return the sample data
+    (getDockerServices as jest.Mock).mockResolvedValue(sampleData);
+    
+    // Mock readFile to throw an error when reading last_config.txt
+    (fs.promises.readFile as unknown as jest.Mock).mockImplementation((path: string, encoding: string) => {
+      if (path === 'template.mustache') {
+        return Promise.resolve(sampleTemplate);
+      } else if (path.includes('last_config.txt')) {
+        return Promise.reject(new Error('File not found'));
+      }
+      return Promise.reject(new Error(`File not found: ${path}`));
+    });
+
+    const result = await generator.generateConfig('template.mustache', 'output.conf');
+    expect(result).toBe(expectedOutput);
+    
+    // Check that the config was logged and saved (since file not found is treated as config changed)
+    expect(fs.promises.writeFile).toHaveBeenCalledWith(
+      expect.stringContaining('/app/logs/config_'),
+      expectedOutput,
+      'utf8'
+    );
+    expect(fs.promises.writeFile).toHaveBeenCalledWith(
+      expect.stringContaining('/app/logs/last_config.txt'),
+      expectedOutput,
+      'utf8'
+    );
   });
 });
