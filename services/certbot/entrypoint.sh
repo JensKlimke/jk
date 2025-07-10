@@ -49,6 +49,32 @@ check_default_cert() {
     fi
 }
 
+# Function to clean up certificates for domains no longer in the DOMAINS list
+cleanup_certificates() {
+    echo "Checking for certificates to clean up..."
+
+    # Get all certificate directories
+    for cert_dir in $CERTS_PATH/*; do
+        # Skip if not a directory
+        [ -d "$cert_dir" ] || continue
+
+        # Extract domain name from directory path
+        domain=$(basename "$cert_dir")
+
+        # Skip the default certificate
+        if [ "$domain" = "default" ]; then
+            echo "Skipping default certificate"
+            continue
+        fi
+
+        # Check if domain is in the DOMAINS list
+        if ! echo "$DOMAINS" | grep -q -w "$domain"; then
+            echo "Certificate for $domain exists but domain is no longer in the list. Deleting..."
+            certbot delete --cert-name "$domain" --non-interactive
+        fi
+    done
+}
+
 # Process each domain
 process_domains() {
     local option=$1
@@ -69,6 +95,9 @@ process_domains() {
 # Check for default certificate first
 check_default_cert
 
+# Clean up certificates for domains no longer in the list
+cleanup_certificates
+
 # Initial processing of all domains
 process_domains "--keep"
 
@@ -79,6 +108,9 @@ while :; do
     # Sleep for 12 hours before attempting renewal
     echo "Waiting 12 hours before next certificate renewal check..."
     sleep 12h & wait $!
+
+    # Clean up certificates for domains no longer in the list
+    cleanup_certificates
 
     # Let certbot decide if renewal is necessary based on expiration date
     # (certificates are typically renewed when they're within 30 days of expiry)
