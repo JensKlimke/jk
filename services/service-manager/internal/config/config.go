@@ -1,4 +1,4 @@
-// Package config provides configuration handling for the certobot service
+// Package config provides configuration handling for the service-manager
 package config
 
 import (
@@ -8,29 +8,20 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Config holds the configuration for the certobot service
+// Config holds the configuration for the service-manager
 type Config struct {
-	// Path to the certificates directory
-	CertsPath string
-	// Path to the file tracking removed domains
-	RemovedDomainsFile string
-	// Path to the webroot directory
-	WebrootPath string
-	// Default domain name
-	DefaultDomain string
-	// Default certificate common name
-	DefaultCertCN string
-	// Interval for certificate renewal checks
-	RenewalInterval time.Duration
-	// Interval for certificate cleanup
-	CleanupInterval time.Duration
-	// Email address for certificate registration
-	Email string
+	CertsPath          string        // Path to the certificates directory
+	RemovedDomainsFile string        // Path to the file tracking removed domains
+	WebrootPath        string        // Path to the webroot directory
+	DefaultDomain      string        // Default domain name
+	DefaultCertCN      string        // Default certificate common name
+	RenewalInterval    time.Duration // Interval for certificate renewal checks
+	CleanupInterval    time.Duration // Interval for certificate cleanup
+	Email              string        // Email address for certificate registration
 }
 
 // New creates a new Config instance with default values
 func New() (*Config, error) {
-	// Get EMAIL from environment variable
 	email := os.Getenv("EMAIL")
 	if email == "" {
 		logrus.Error("EMAIL environment variable is not set. Cannot proceed with certificate operations.")

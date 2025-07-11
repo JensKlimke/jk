@@ -17,12 +17,12 @@ import (
 
 // Tracker handles domain tracking and cleanup
 type Tracker struct {
-	Config       *config.Config
-	CertManager  *certificate.Manager
+	Config      *config.Config
+	CertManager certificate.CertificateManager
 }
 
 // NewTracker creates a new domain tracker
-func NewTracker(cfg *config.Config, certManager *certificate.Manager) *Tracker {
+func NewTracker(cfg *config.Config, certManager certificate.CertificateManager) *Tracker {
 	return &Tracker{
 		Config:      cfg,
 		CertManager: certManager,
@@ -62,14 +62,7 @@ func (t *Tracker) TrackRemovedDomains(domains []string) error {
 			continue
 		}
 
-		// Check if the domain is in the current domains list
-		domainInList := false
-		for _, d := range domains {
-			if d == domain {
-				domainInList = true
-				break
-			}
-		}
+		domainInList := containsDomain(domains, domain)
 
 		if !domainInList {
 			// Domain is not in the list, check if it's already being tracked
@@ -105,6 +98,16 @@ func (t *Tracker) TrackRemovedDomains(domains []string) error {
 	return nil
 }
 
+// containsDomain checks if a domain is in the domains list
+func containsDomain(domains []string, domain string) bool {
+	for _, d := range domains {
+		if d == domain {
+			return true
+		}
+	}
+	return false
+}
+
 // isDomainTracked checks if a domain is being tracked for removal
 func (t *Tracker) isDomainTracked(domain string) (bool, error) {
 	file, err := os.Open(t.Config.RemovedDomainsFile)
@@ -114,9 +117,10 @@ func (t *Tracker) isDomainTracked(domain string) (bool, error) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
+	domainPrefix := fmt.Sprintf("%s:", domain)
+
 	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, fmt.Sprintf("%s:", domain)) {
+		if strings.HasPrefix(scanner.Text(), domainPrefix) {
 			return true, nil
 		}
 	}
@@ -132,59 +136,71 @@ func (t *Tracker) isDomainTracked(domain string) (bool, error) {
 func (t *Tracker) updateRemovedDomainsFile(domain, action string) error {
 	switch action {
 	case "add":
-		currentTime := time.Now().Unix()
-		logrus.Infof("Domain %s is no longer in the list. Tracking for removal...", domain)
-
-		file, err := os.OpenFile(t.Config.RemovedDomainsFile, os.O_APPEND|os.O_WRONLY, 0644)
-		if err != nil {
-			return fmt.Errorf("failed to open removed domains file for appending: %w", err)
-		}
-		defer file.Close()
-
-		if _, err := fmt.Fprintf(file, "%s:%d\n", domain, currentTime); err != nil {
-			return fmt.Errorf("failed to write to removed domains file: %w", err)
-		}
-
+		return t.addDomainToFile(domain)
 	case "remove":
-		logrus.Infof("Domain %s is back in the list. Removing from tracking...", domain)
-
-		file, err := os.Open(t.Config.RemovedDomainsFile)
-		if err != nil {
-			return fmt.Errorf("failed to open removed domains file: %w", err)
-		}
-
-		tempFilePath := t.Config.RemovedDomainsFile + ".tmp"
-		tempFile, err := os.Create(tempFilePath)
-		if err != nil {
-			file.Close()
-			return fmt.Errorf("failed to create temporary file: %w", err)
-		}
-
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			line := scanner.Text()
-			if !strings.HasPrefix(line, fmt.Sprintf("%s:", domain)) {
-				if _, err := fmt.Fprintln(tempFile, line); err != nil {
-					file.Close()
-					tempFile.Close()
-					return fmt.Errorf("failed to write to temporary file: %w", err)
-				}
-			}
-		}
-
-		file.Close()
-		tempFile.Close()
-
-		if err := scanner.Err(); err != nil {
-			return fmt.Errorf("failed to read removed domains file: %w", err)
-		}
-
-		if err := os.Rename(tempFilePath, t.Config.RemovedDomainsFile); err != nil {
-			return fmt.Errorf("failed to rename temporary file: %w", err)
-		}
-
+		return t.removeDomainFromFile(domain)
 	default:
 		return fmt.Errorf("invalid action: %s", action)
+	}
+}
+
+// addDomainToFile adds a domain to the removed domains file
+func (t *Tracker) addDomainToFile(domain string) error {
+	currentTime := time.Now().Unix()
+	logrus.Infof("Domain %s is no longer in the list. Tracking for removal...", domain)
+
+	file, err := os.OpenFile(t.Config.RemovedDomainsFile, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open removed domains file for appending: %w", err)
+	}
+	defer file.Close()
+
+	if _, err := fmt.Fprintf(file, "%s:%d\n", domain, currentTime); err != nil {
+		return fmt.Errorf("failed to write to removed domains file: %w", err)
+	}
+
+	return nil
+}
+
+// removeDomainFromFile removes a domain from the removed domains file
+func (t *Tracker) removeDomainFromFile(domain string) error {
+	logrus.Infof("Domain %s is back in the list. Removing from tracking...", domain)
+
+	file, err := os.Open(t.Config.RemovedDomainsFile)
+	if err != nil {
+		return fmt.Errorf("failed to open removed domains file: %w", err)
+	}
+	defer file.Close()
+
+	tempFilePath := t.Config.RemovedDomainsFile + ".tmp"
+	tempFile, err := os.Create(tempFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to create temporary file: %w", err)
+	}
+	defer tempFile.Close()
+
+	scanner := bufio.NewScanner(file)
+	domainPrefix := fmt.Sprintf("%s:", domain)
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.HasPrefix(line, domainPrefix) {
+			if _, err := fmt.Fprintln(tempFile, line); err != nil {
+				return fmt.Errorf("failed to write to temporary file: %w", err)
+			}
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("failed to read removed domains file: %w", err)
+	}
+
+	// Close files before renaming
+	tempFile.Close()
+	file.Close()
+
+	if err := os.Rename(tempFilePath, t.Config.RemovedDomainsFile); err != nil {
+		return fmt.Errorf("failed to rename temporary file: %w", err)
 	}
 
 	return nil
@@ -195,16 +211,34 @@ func (t *Tracker) CleanupCertificates() error {
 	logrus.Info("Checking for certificates to clean up...")
 
 	currentTime := time.Now().Unix()
+	cleanupIntervalSeconds := int64(t.Config.CleanupInterval.Seconds())
 
+	domainsToRemove, err := t.getDomainsToCleanup(currentTime, cleanupIntervalSeconds)
+	if err != nil {
+		return err
+	}
+
+	// Remove domains from the tracking file
+	for _, domain := range domainsToRemove {
+		if err := t.updateRemovedDomainsFile(domain, "remove"); err != nil {
+			logrus.Errorf("Failed to remove domain %s from tracking file: %v", domain, err)
+		}
+	}
+
+	return nil
+}
+
+// getDomainsToCleanup returns a list of domains that should be cleaned up
+func (t *Tracker) getDomainsToCleanup(currentTime, cleanupIntervalSeconds int64) ([]string, error) {
 	file, err := os.Open(t.Config.RemovedDomainsFile)
 	if err != nil {
-		return fmt.Errorf("failed to open removed domains file: %w", err)
+		return nil, fmt.Errorf("failed to open removed domains file: %w", err)
 	}
 	defer file.Close()
 
 	var domainsToRemove []string
-
 	scanner := bufio.NewScanner(file)
+
 	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.Split(line, ":")
@@ -222,7 +256,6 @@ func (t *Tracker) CleanupCertificates() error {
 		}
 
 		timeDiff := currentTime - timestamp
-		cleanupIntervalSeconds := int64(t.Config.CleanupInterval.Seconds())
 
 		if timeDiff >= cleanupIntervalSeconds {
 			logrus.Infof("Certificate for %s has been missing for at least %d hours. Deleting...",
@@ -243,17 +276,10 @@ func (t *Tracker) CleanupCertificates() error {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return fmt.Errorf("failed to read removed domains file: %w", err)
+		return nil, fmt.Errorf("failed to read removed domains file: %w", err)
 	}
 
-	// Remove domains from the tracking file
-	for _, domain := range domainsToRemove {
-		if err := t.updateRemovedDomainsFile(domain, "remove"); err != nil {
-			logrus.Errorf("Failed to remove domain %s from tracking file: %v", domain, err)
-		}
-	}
-
-	return nil
+	return domainsToRemove, nil
 }
 
 // getCertificateDirectories gets all certificate directories

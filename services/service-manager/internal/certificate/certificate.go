@@ -12,6 +12,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// CertificateManager defines the interface for certificate operations
+type CertificateManager interface {
+	CheckDefaultCert() error
+	ObtainCert(domain string, forceRenewal bool) error
+	ProcessDomains(domains []string) error
+	DeleteCert(domain string) error
+}
+
 // Manager handles certificate operations
 type Manager struct {
 	Config *config.Config
@@ -30,16 +38,9 @@ func (m *Manager) CheckDefaultCert() error {
 	defaultCertPath := filepath.Join(defaultCertDir, "fullchain.pem")
 	defaultKeyPath := filepath.Join(defaultCertDir, "privkey.pem")
 
-	certExists := true
-	keyExists := true
-
-	if _, err := os.Stat(defaultCertPath); os.IsNotExist(err) {
-		certExists = false
-	}
-
-	if _, err := os.Stat(defaultKeyPath); os.IsNotExist(err) {
-		keyExists = false
-	}
+	// Check if both certificate and key exist
+	certExists, _ := fileExists(defaultCertPath)
+	keyExists, _ := fileExists(defaultKeyPath)
 
 	if !certExists || !keyExists {
 		logrus.Info("Default certificate does not exist. Creating self-signed certificate...")
@@ -78,60 +79,73 @@ func (m *Manager) ObtainCert(domain string, forceRenewal bool) error {
 
 	// Check if domain is localhost or contains localhost
 	if strings.Contains(domain, "localhost") {
-		logrus.Infof("Domain %s contains 'localhost'. Creating self-signed certificate...", domain)
-
-		if err := os.MkdirAll(certDir, 0755); err != nil {
-			return fmt.Errorf("failed to create certificate directory for %s: %w", domain, err)
-		}
-
-		// Only create new certificate if it doesn't exist or force renewal is true
-		if _, err := os.Stat(certPath); os.IsNotExist(err) || forceRenewal {
-			if err := m.createSelfSignedCert(keyPath, certPath, domain); err != nil {
-				return fmt.Errorf("failed to create self-signed certificate for %s: %w", domain, err)
-			}
-
-			// Copy certificate files
-			if err := copyFile(certPath, filepath.Join(certDir, "chain.pem")); err != nil {
-				return fmt.Errorf("failed to copy certificate to chain.pem for %s: %w", domain, err)
-			}
-			if err := copyFile(certPath, filepath.Join(certDir, "cert.pem")); err != nil {
-				return fmt.Errorf("failed to copy certificate to cert.pem for %s: %w", domain, err)
-			}
-
-			logrus.Infof("Self-signed certificate for %s created successfully.", domain)
-		} else {
-			logrus.Infof("Self-signed certificate for %s already exists.", domain)
-		}
-	} else {
-		// For non-localhost domains, use certbot
-		args := []string{
-			"certonly",
-			"--webroot",
-			fmt.Sprintf("--webroot-path=%s", m.Config.WebrootPath),
-			"--email", m.Config.Email,
-			"--agree-tos",
-			"--no-eff-email",
-			"-d", domain,
-		}
-
-		if forceRenewal {
-			logrus.Infof("Forcing renewal for %s...", domain)
-			args = append(args, "--force-renewal")
-		} else {
-			logrus.Infof("Standard renewal check for %s...", domain)
-			args = append(args, "--keep")
-		}
-
-		cmd := exec.Command("certbot", args...)
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			logrus.Warnf("Certificate operation for %s failed: %s", domain, string(output))
-			return fmt.Errorf("certificate operation for %s failed: %s", domain, string(output))
-		}
-
-		logrus.Infof("Certificate operation for %s completed successfully.", domain)
+		return m.handleLocalDomain(domain, certDir, certPath, keyPath, forceRenewal)
 	}
 
+	// For non-localhost domains, use certbot
+	return m.handleRemoteDomain(domain, forceRenewal)
+}
+
+// handleLocalDomain creates self-signed certificates for localhost domains
+func (m *Manager) handleLocalDomain(domain, certDir, certPath, keyPath string, forceRenewal bool) error {
+	logrus.Infof("Domain %s contains 'localhost'. Creating self-signed certificate...", domain)
+
+	if err := os.MkdirAll(certDir, 0755); err != nil {
+		return fmt.Errorf("failed to create certificate directory for %s: %w", domain, err)
+	}
+
+	// Only create new certificate if it doesn't exist or force renewal is true
+	certExists, _ := fileExists(certPath)
+	if !certExists || forceRenewal {
+		if err := m.createSelfSignedCert(keyPath, certPath, domain); err != nil {
+			return fmt.Errorf("failed to create self-signed certificate for %s: %w", domain, err)
+		}
+
+		// Copy certificate files
+		if err := copyFile(certPath, filepath.Join(certDir, "chain.pem")); err != nil {
+			return fmt.Errorf("failed to copy certificate to chain.pem for %s: %w", domain, err)
+		}
+		if err := copyFile(certPath, filepath.Join(certDir, "cert.pem")); err != nil {
+			return fmt.Errorf("failed to copy certificate to cert.pem for %s: %w", domain, err)
+		}
+
+		logrus.Infof("Self-signed certificate for %s created successfully.", domain)
+	} else {
+		logrus.Infof("Self-signed certificate for %s already exists.", domain)
+	}
+
+	return nil
+}
+
+// handleRemoteDomain obtains certificates for non-localhost domains using certbot
+func (m *Manager) handleRemoteDomain(domain string, forceRenewal bool) error {
+	args := []string{
+		"certonly",
+		"--webroot",
+		fmt.Sprintf("--webroot-path=%s", m.Config.WebrootPath),
+		"--email", m.Config.Email,
+		"--agree-tos",
+		"--no-eff-email",
+		"-d", domain,
+	}
+
+	if forceRenewal {
+		logrus.Infof("Forcing renewal for %s...", domain)
+		args = append(args, "--force-renewal")
+	} else {
+		logrus.Infof("Standard renewal check for %s...", domain)
+		args = append(args, "--keep")
+	}
+
+	cmd := exec.Command("certbot", args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		outputStr := string(output)
+		logrus.Warnf("Certificate operation for %s failed: %s", domain, outputStr)
+		return fmt.Errorf("certificate operation for %s failed: %s", domain, outputStr)
+	}
+
+	logrus.Infof("Certificate operation for %s completed successfully.", domain)
 	return nil
 }
 
@@ -139,8 +153,9 @@ func (m *Manager) ObtainCert(domain string, forceRenewal bool) error {
 func (m *Manager) ProcessDomains(domains []string) error {
 	for _, domain := range domains {
 		certPath := filepath.Join(m.Config.CertsPath, domain, "fullchain.pem")
+		certExists, _ := fileExists(certPath)
 
-		if _, err := os.Stat(certPath); os.IsNotExist(err) {
+		if !certExists {
 			logrus.Infof("Certificate for %s does not exist. Obtaining immediately...", domain)
 			if err := m.ObtainCert(domain, true); err != nil {
 				logrus.Errorf("Failed to obtain certificate for %s: %v", domain, err)
@@ -173,8 +188,9 @@ func (m *Manager) DeleteCert(domain string) error {
 		cmd := exec.Command("certbot", "delete", "--cert-name", domain, "--non-interactive")
 		output, err := cmd.CombinedOutput()
 		if err != nil {
-			logrus.Warnf("Failed to delete certificate for %s: %s", domain, string(output))
-			return fmt.Errorf("failed to delete certificate for %s: %s", domain, string(output))
+			outputStr := string(output)
+			logrus.Warnf("Failed to delete certificate for %s: %s", domain, outputStr)
+			return fmt.Errorf("failed to delete certificate for %s: %s", domain, outputStr)
 		}
 	}
 
@@ -194,11 +210,24 @@ func (m *Manager) createSelfSignedCert(keyPath, certPath, domain string) error {
 	)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		logrus.Errorf("Failed to create self-signed certificate for %s: %s", domain, string(output))
-		return fmt.Errorf("failed to create self-signed certificate for %s: %s", domain, string(output))
+		outputStr := string(output)
+		logrus.Errorf("Failed to create self-signed certificate for %s: %s", domain, outputStr)
+		return fmt.Errorf("failed to create self-signed certificate for %s: %s", domain, outputStr)
 	}
 
 	return nil
+}
+
+// fileExists checks if a file exists and is not a directory
+func fileExists(filename string) (bool, error) {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return !info.IsDir(), nil
 }
 
 // copyFile copies a file from src to dst
@@ -208,10 +237,5 @@ func copyFile(src, dst string) error {
 		return err
 	}
 
-	err = os.WriteFile(dst, input, 0644)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return os.WriteFile(dst, input, 0644)
 }

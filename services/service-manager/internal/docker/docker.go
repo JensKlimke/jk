@@ -10,17 +10,17 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// GetDomainsFromContainers gets domains from containers with VIRTUAL_HOST environment variable
+// Variable to allow mocking exec.Command in tests
+var execCommand = exec.Command
+
+// GetDomainsFromContainers retrieves domains from containers with VIRTUAL_HOST environment variable
 func GetDomainsFromContainers() ([]string, error) {
-	// Get list of running containers
 	containers, err := getRunningContainers()
 	if err != nil {
 		return nil, err
 	}
 
 	var domains []string
-
-	// For each container, check if it has VIRTUAL_HOST environment variable
 	for _, container := range containers {
 		virtualHost, err := getVirtualHost(container)
 		if err != nil {
@@ -37,16 +37,17 @@ func GetDomainsFromContainers() ([]string, error) {
 	return domains, nil
 }
 
-// getRunningContainers gets a list of running containers
+// getRunningContainers retrieves a list of running container names
 func getRunningContainers() ([]string, error) {
-	cmd := exec.Command("docker", "ps", "--format", "{{.Names}}")
+	cmd := execCommand("docker", "ps", "--format", "{{.Names}}")
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		logrus.Errorf("Docker ps command failed: %s", stderr.String())
-		return nil, fmt.Errorf("docker ps command failed: %s", stderr.String())
+		errMsg := stderr.String()
+		logrus.Errorf("Docker ps command failed: %s", errMsg)
+		return nil, fmt.Errorf("docker ps command failed: %s", errMsg)
 	}
 
 	var containers []string
@@ -61,22 +62,19 @@ func getRunningContainers() ([]string, error) {
 	return containers, nil
 }
 
-// getVirtualHost gets the VIRTUAL_HOST environment variable from a container
+// getVirtualHost retrieves the VIRTUAL_HOST environment variable from a container
 func getVirtualHost(container string) (string, error) {
-	cmd := exec.Command(
-		"docker",
-		"inspect",
-		"--format",
-		`{{range .Config.Env}}{{if eq (index (split . "=") 0) "VIRTUAL_HOST"}}{{index (split . "=") 1}}{{end}}{{end}}`,
-		container,
-	)
+	inspectFormat := `{{range .Config.Env}}{{if eq (index (split . "=") 0) "VIRTUAL_HOST"}}{{index (split . "=") 1}}{{end}}{{end}}`
+	cmd := execCommand("docker", "inspect", "--format", inspectFormat, container)
+
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		logrus.Warnf("Docker inspect command failed for container %s: %s", container, stderr.String())
-		return "", fmt.Errorf("docker inspect command failed for container %s: %s", container, stderr.String())
+		errMsg := stderr.String()
+		logrus.Warnf("Docker inspect command failed for container %s: %s", container, errMsg)
+		return "", fmt.Errorf("docker inspect command failed for container %s: %s", container, errMsg)
 	}
 
 	virtualHost := strings.TrimSpace(stdout.String())
