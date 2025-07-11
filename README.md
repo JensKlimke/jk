@@ -15,6 +15,7 @@ This project uses Docker Compose to run an Nginx reverse proxy.
 - **Nginx**: Acts as a reverse proxy for web applications (to be added later)
 - **Certbot**: Manages SSL certificates for domains specified by containers with VIRTUAL_HOST environment variables
 - **Nginx Config Generator**: Generates Nginx configuration files based on running containers with VIRTUAL_HOST environment variables
+- **InfluxDB**: Time series database for storing metrics
 
 ### Directory Structure
 
@@ -82,6 +83,8 @@ The Nginx configuration will be automatically generated, and an SSL certificate 
 
 - [x] Automatic config generation based on containers with VIRTUAL_HOST
 - [x] Automatic SSL certificate management based on containers with VIRTUAL_HOST
+- [ ] Integrations: influxdb/Grafana/mongodb
 - [ ] Split dockerfiles up into build and run sections
 - [ ] Security measures (nginx conf, middleware, ...) → see SECURITY.md
+- [ ] Merge services
 - [ ] Export (by central log volume) and collect all log files and make them accessible 
