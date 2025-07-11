@@ -12,8 +12,6 @@ import (
 
 // GetDomainsFromContainers gets domains from containers with VIRTUAL_HOST environment variable
 func GetDomainsFromContainers() ([]string, error) {
-	logrus.Info("Getting domains from containers with VIRTUAL_HOST environment variable")
-
 	// Get list of running containers
 	containers, err := getRunningContainers()
 	if err != nil {
@@ -36,7 +34,6 @@ func GetDomainsFromContainers() ([]string, error) {
 		}
 	}
 
-	logrus.Infof("Found %d domains: %v", len(domains), domains)
 	return domains, nil
 }
 
