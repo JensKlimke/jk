@@ -83,5 +83,5 @@ The Nginx configuration will be automatically generated, and an SSL certificate 
 - [x] Automatic config generation based on containers with VIRTUAL_HOST
 - [x] Automatic SSL certificate management based on containers with VIRTUAL_HOST
 - [ ] Split dockerfiles up into build and run sections
-- [ ] Security measures (nginx conf, middleware, ...)
+- [ ] Security measures (nginx conf, middleware, ...) → see SECURITY.md
 - [ ] Export (by central log volume) and collect all log files and make them accessible 
