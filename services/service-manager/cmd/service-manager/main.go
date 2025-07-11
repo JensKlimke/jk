@@ -1,4 +1,4 @@
-// Package main provides the entry point for the certobot-go application
+// Package main provides the entry point for the service-manager application
 package main
 
 import (
@@ -7,10 +7,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/jens/certobot-go/internal/certificate"
-	"github.com/jens/certobot-go/internal/config"
-	"github.com/jens/certobot-go/internal/docker"
-	"github.com/jens/certobot-go/internal/domain"
+	"github.com/jens/service-manager/internal/certificate"
+	"github.com/jens/service-manager/internal/config"
+	"github.com/jens/service-manager/internal/docker"
+	"github.com/jens/service-manager/internal/domain"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,7 +30,7 @@ func main() {
 	}
 	logrus.SetLevel(level)
 
-	logrus.Info("Starting certobot-go...")
+	logrus.Info("Starting service-manager...")
 
 	// Load configuration
 	cfg, err := config.New()

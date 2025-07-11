@@ -1,6 +1,6 @@
-# Certobot-Go
+# Service Manager
 
-Certobot-Go is a Go implementation of the certbot service for managing SSL certificates. It replaces the previous Rust implementation while maintaining the same functionality.
+Service Manager is a Go implementation for managing services, including SSL certificates. It replaces the previous Certobot-Go implementation while expanding functionality.
 
 ## Features
 
@@ -30,7 +30,7 @@ The application is structured into several packages:
 ### Building the Docker Image
 
 ```bash
-docker build -t certobot-go .
+docker build -t service-manager .
 ```
 
 ### Running with Docker Compose

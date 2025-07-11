@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jens/certobot-go/internal/config"
+	"github.com/jens/service-manager/internal/config"
 	"github.com/sirupsen/logrus"
 )
 

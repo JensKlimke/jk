@@ -17,7 +17,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o certobot-go ./cmd/certobot
+RUN CGO_ENABLED=0 GOOS=linux go build -o service-manager ./cmd/service-manager
 
 # Runtime stage
 FROM certbot/certbot:latest
@@ -26,7 +26,7 @@ FROM certbot/certbot:latest
 RUN apk add --no-cache docker-cli openssl
 
 # Copy the built binary from the builder stage
-COPY --from=builder /app/certobot-go /usr/local/bin/certobot-go
+COPY --from=builder /app/service-manager /usr/local/bin/service-manager
 
 # Set environment variables
 ENV LOG_LEVEL=info
@@ -35,4 +35,4 @@ ENV LOG_LEVEL=info
 RUN mkdir -p /var/www/certbot /etc/letsencrypt/live
 
 # Set the entrypoint
-ENTRYPOINT ["/usr/local/bin/certobot-go"]
+ENTRYPOINT ["/usr/local/bin/service-manager"]
