@@ -9,12 +9,11 @@ import (
 
 func TestNewManager(t *testing.T) {
 	cfg := &config.Config{
-		CertsPath:          "/tmp/certs",
-		RemovedDomainsFile: "/tmp/removed_domains.txt",
-		WebrootPath:        "/tmp/webroot",
-		DefaultDomain:      "default",
-		DefaultCertCN:      "default.local",
-		Email:              "test@example.com",
+		CertsPath:       "/tmp/certs",
+		WebrootPath:     "/tmp/webroot",
+		DefaultDomain:   "default",
+		DefaultCertCN:   "default.local",
+		Email:           "test@example.com",
 	}
 
 	manager := NewManager(cfg)

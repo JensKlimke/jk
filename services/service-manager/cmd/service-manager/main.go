@@ -10,7 +10,6 @@ import (
 	"github.com/jens/service-manager/internal/certificate"
 	"github.com/jens/service-manager/internal/config"
 	"github.com/jens/service-manager/internal/docker"
-	"github.com/jens/service-manager/internal/domain"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,13 +24,13 @@ func main() {
 	}
 
 	// Create and initialize components
-	certManager, domainTracker := setupComponents(cfg)
+	certManager := setupComponents(cfg)
 
 	// Get and process initial domains
 	domains := getInitialDomains(certManager)
 
 	// Run the main service loop
-	runServiceLoop(cfg, certManager, domainTracker, domains)
+	runServiceLoop(cfg, certManager, domains)
 }
 
 // initializeLogger sets up the logging configuration
@@ -54,10 +53,9 @@ func initializeLogger() {
 	logrus.SetLevel(level)
 }
 
-// setupComponents initializes the certificate manager and domain tracker
-func setupComponents(cfg *config.Config) (*certificate.Manager, *domain.Tracker) {
+// setupComponents initializes the certificate manager
+func setupComponents(cfg *config.Config) *certificate.Manager {
 	certManager := certificate.NewManager(cfg)
-	domainTracker := domain.NewTracker(cfg, certManager)
 
 	logrus.Info("Initializing the system...")
 
@@ -65,11 +63,7 @@ func setupComponents(cfg *config.Config) (*certificate.Manager, *domain.Tracker)
 		logrus.Fatalf("Failed to check default certificate: %v", err)
 	}
 
-	if err := domainTracker.Initialize(); err != nil {
-		logrus.Fatalf("Failed to initialize domain tracker: %v", err)
-	}
-
-	return certManager, domainTracker
+	return certManager
 }
 
 // getInitialDomains retrieves and processes the initial domains
@@ -89,10 +83,9 @@ func getInitialDomains(certManager *certificate.Manager) []string {
 }
 
 // runServiceLoop runs the main service loop
-func runServiceLoop(cfg *config.Config, certManager *certificate.Manager, domainTracker *domain.Tracker, initialDomains []string) {
+func runServiceLoop(cfg *config.Config, certManager *certificate.Manager, initialDomains []string) {
 	// Initialize timestamps for interval checks
 	lastRenewalCheck := time.Now()
-	lastCleanupCheck := time.Now()
 	domains := initialDomains
 
 	// Set up signal handling
@@ -103,7 +96,6 @@ func runServiceLoop(cfg *config.Config, certManager *certificate.Manager, domain
 	logrus.Info("Starting main loop with different intervals for each process:")
 	logrus.Info("- Domain list checking: every second")
 	logrus.Infof("- Certificate renewal checking: every %v", cfg.RenewalInterval)
-	logrus.Infof("- Certificate cleanup: every %v", cfg.CleanupInterval)
 
 	// Main loop
 	ticker := time.NewTicker(1 * time.Second)
@@ -112,9 +104,8 @@ func runServiceLoop(cfg *config.Config, certManager *certificate.Manager, domain
 	for {
 		select {
 		case <-ticker.C:
-			domains = processDomainUpdates(certManager, domainTracker, domains)
+			domains = processDomainUpdates(certManager, domains)
 			lastRenewalCheck = checkCertificateRenewal(certManager, cfg, domains, lastRenewalCheck)
-			lastCleanupCheck = checkCertificateCleanup(domainTracker, cfg, lastCleanupCheck)
 
 		case <-stop:
 			logrus.Info("Received termination signal. Shutting down...")
@@ -124,7 +115,7 @@ func runServiceLoop(cfg *config.Config, certManager *certificate.Manager, domain
 }
 
 // processDomainUpdates checks for domain changes and processes them
-func processDomainUpdates(certManager *certificate.Manager, domainTracker *domain.Tracker, currentDomains []string) []string {
+func processDomainUpdates(certManager *certificate.Manager, currentDomains []string) []string {
 	// Store previous domains for comparison
 	previousDomains := currentDomains
 
@@ -142,10 +133,6 @@ func processDomainUpdates(certManager *certificate.Manager, domainTracker *domai
 
 		if err := certManager.ProcessDomains(newDomains); err != nil {
 			logrus.Errorf("Failed to process domains: %v", err)
-		}
-
-		if err := domainTracker.TrackRemovedDomains(newDomains); err != nil {
-			logrus.Errorf("Failed to track removed domains: %v", err)
 		}
 	}
 
@@ -168,21 +155,6 @@ func checkCertificateRenewal(certManager *certificate.Manager, cfg *config.Confi
 	return lastCheck
 }
 
-// checkCertificateCleanup performs certificate cleanup if needed
-func checkCertificateCleanup(domainTracker *domain.Tracker, cfg *config.Config, lastCheck time.Time) time.Time {
-	now := time.Now()
-	if now.Sub(lastCheck) >= cfg.CleanupInterval {
-		logrus.Info("Performing certificate cleanup check...")
-
-		if err := domainTracker.CleanupCertificates(); err != nil {
-			logrus.Errorf("Failed to clean up certificates: %v", err)
-		}
-
-		return now
-	}
-
-	return lastCheck
-}
 
 // equalStringSlices checks if two string slices are equal
 func equalStringSlices(a, b []string) bool {

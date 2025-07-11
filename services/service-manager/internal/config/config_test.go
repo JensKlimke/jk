@@ -30,9 +30,6 @@ func TestNewWithEmail(t *testing.T) {
 	if cfg.RenewalInterval != 12*time.Hour {
 		t.Errorf("Expected RenewalInterval to be 12h, got %v", cfg.RenewalInterval)
 	}
-	if cfg.CleanupInterval != 24*time.Hour {
-		t.Errorf("Expected CleanupInterval to be 24h, got %v", cfg.CleanupInterval)
-	}
 }
 
 func TestNewWithoutEmail(t *testing.T) {

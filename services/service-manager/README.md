@@ -6,8 +6,6 @@ Service Manager is a Go implementation for managing services, including SSL cert
 
 - Extracts domains from Docker containers with VIRTUAL_HOST environment variable
 - Manages SSL certificates using certbot or self-signed certificates for localhost domains
-- Tracks domains that are no longer in use
-- Cleans up certificates for domains that have been missing for a specified period
 
 ## Configuration
 
@@ -23,7 +21,35 @@ The application is structured into several packages:
 - `config`: Configuration handling
 - `certificate`: Certificate management
 - `docker`: Docker container interaction
-- `domain`: Domain tracking and cleanup
+
+### Process Flow Diagram
+
+```mermaid
+graph TD
+    A[Start Service Manager] --> B[Initialize Logger]
+    B --> C[Load Configuration]
+    C --> D[Setup Components]
+    D --> E[Get Initial Domains from Docker Containers]
+    E --> F[Process Initial Domains for Certificates]
+    F --> G[Start Main Service Loop]
+
+    subgraph "Main Service Loop (Every Second)"
+        G --> H{Check for Domain Updates}
+        H --> |Changes Detected| I[Process New Domains]
+        I --> K{Check Renewal Interval}
+        H --> |No Changes| K
+        K --> |Time to Renew| L[Renew Certificates]
+        K --> |Not Time Yet| H
+        L --> H
+    end
+
+    subgraph "Domain Processing"
+        I --> I1[Extract Domains from Docker Containers]
+        I1 --> I2{Domain Contains 'localhost'?}
+        I2 --> |Yes| I3[Create Self-Signed Certificate]
+        I2 --> |No| I4[Obtain Certificate via Certbot]
+    end
+```
 
 ## Building and Running
 

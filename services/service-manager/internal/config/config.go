@@ -10,14 +10,12 @@ import (
 
 // Config holds the configuration for the service-manager
 type Config struct {
-	CertsPath          string        // Path to the certificates directory
-	RemovedDomainsFile string        // Path to the file tracking removed domains
-	WebrootPath        string        // Path to the webroot directory
-	DefaultDomain      string        // Default domain name
-	DefaultCertCN      string        // Default certificate common name
-	RenewalInterval    time.Duration // Interval for certificate renewal checks
-	CleanupInterval    time.Duration // Interval for certificate cleanup
-	Email              string        // Email address for certificate registration
+	CertsPath       string        // Path to the certificates directory
+	WebrootPath     string        // Path to the webroot directory
+	DefaultDomain   string        // Default domain name
+	DefaultCertCN   string        // Default certificate common name
+	RenewalInterval time.Duration // Interval for certificate renewal checks
+	Email           string        // Email address for certificate registration
 }
 
 // New creates a new Config instance with default values
@@ -29,14 +27,12 @@ func New() (*Config, error) {
 	}
 
 	return &Config{
-		CertsPath:          "/etc/letsencrypt/live",
-		RemovedDomainsFile: "/tmp/removed_domains.txt",
-		WebrootPath:        "/var/www/certbot",
-		DefaultDomain:      "default",
-		DefaultCertCN:      "default.local",
-		RenewalInterval:    12 * time.Hour,
-		CleanupInterval:    24 * time.Hour,
-		Email:              email,
+		CertsPath:       "/etc/letsencrypt/live",
+		WebrootPath:     "/var/www/certbot",
+		DefaultDomain:   "default",
+		DefaultCertCN:   "default.local",
+		RenewalInterval: 12 * time.Hour,
+		Email:           email,
 	}, nil
 }
 
