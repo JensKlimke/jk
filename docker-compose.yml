@@ -10,7 +10,7 @@ services:
       - ./nginx/tmpl/service.conf.mustache:/app/template/service.conf.mustache:ro
       - ./nginx/conf.d:/app/output
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./config-logs:/app/logs
+      - logs/nginx:/app/logs
       - letsencrypt:/etc/letsencrypt:ro
     environment:
       AUTH_SERVICE: "oauth2-proxy:4180"
@@ -36,7 +36,7 @@ services:
 
   certbot:
     build:
-      context: ./services/certobot-go
+      context: ./services/service-manager
       dockerfile: Dockerfile
     container_name: certbot
     volumes:
@@ -85,3 +85,4 @@ services:
 volumes:
   certbot:
   letsencrypt:
+  logs:
