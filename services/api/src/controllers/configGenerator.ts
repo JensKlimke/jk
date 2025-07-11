@@ -9,7 +9,7 @@ import { getDockerServices } from './getDockerServices';
  */
 export class ConfigGenerator {
   private readonly lastConfigPath = path.join('/app/logs', 'last_config.txt');
-  private readonly logsDir = '/app/logs';
+  private readonly logsDir = '/app/logs/nginx-conf';
 
   /**
    * Reads a template file
