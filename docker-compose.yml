@@ -1,22 +1,6 @@
 version: '3'
 
 services:
-  nginx-conf-gen:
-    build:
-      context: ./services/api
-      dockerfile: Dockerfile
-    container_name: nginx-conf-gen
-    volumes:
-      - ./nginx/tmpl/service.conf.mustache:/app/template/service.conf.mustache:ro
-      - ./nginx/conf.d:/app/output
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - logs:/app/logs
-      - letsencrypt:/etc/letsencrypt:ro
-    environment:
-      AUTH_SERVICE: "oauth2-proxy:4180"
-      NGINX_SERVICE: "nginx"
-    restart: "no"
-
   nginx:
     image: nginx:latest
     container_name: nginx-reverse-proxy
@@ -32,7 +16,6 @@ services:
     restart: always
     depends_on:
       - certbot
-      - nginx-conf-gen
 
   certbot:
     build:
@@ -43,9 +26,16 @@ services:
       - certbot:/var/www/certbot
       - letsencrypt:/etc/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./nginx/tmpl/service.conf.mustache:/app/template/service.conf.mustache:ro
+      - ./nginx/conf.d:/app/output
+      - logs:/app/logs
     environment:
       EMAIL: ${EMAIL:-admin@example.com}
       LOG_LEVEL: info
+      AUTH_SERVICE: "oauth2-proxy:4180"
+      TEMPLATE_PATH: "/app/template/service.conf.mustache"
+      OUTPUT_PATH: "/app/output/services.conf"
+      CONFIG_INTERVAL: "30s"
     restart: always
 
   oauth2-proxy:

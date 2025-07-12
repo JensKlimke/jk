@@ -10,6 +10,7 @@ import (
 	"github.com/jens/service-manager/internal/certificate"
 	"github.com/jens/service-manager/internal/config"
 	"github.com/jens/service-manager/internal/docker"
+	"github.com/jens/service-manager/internal/nginx"
 	"github.com/sirupsen/logrus"
 )
 
@@ -21,13 +22,16 @@ func main() {
     configuration := loadConfiguration()
 
 	// Create and initialize components
-	certManager := setupComponents(configuration)
+	certManager, nginxGenerator := setupComponents(configuration)
 
 	// Get and process initial domains
 	domains := getInitialDomains(certManager)
 
+	// Generate initial Nginx configuration
+	generateInitialNginxConfig(nginxGenerator)
+
 	// Run the main service loop
-	runServiceLoop(configuration, certManager, domains)
+	runServiceLoop(configuration, certManager, nginxGenerator, domains)
 }
 
 // initializeLogger sets up the logging configuration
@@ -61,9 +65,10 @@ func loadConfiguration() *config.Config {
     return cfg
 }
 
-// setupComponents initializes the certificate manager
-func setupComponents(cfg *config.Config) *certificate.Manager {
+// setupComponents initializes the certificate manager and nginx generator
+func setupComponents(cfg *config.Config) (*certificate.Manager, *nginx.Generator) {
 	certManager := certificate.NewManager(cfg)
+	nginxGenerator := nginx.NewGenerator(cfg)
 
 	logrus.Info("Initializing the system...")
 
@@ -71,7 +76,21 @@ func setupComponents(cfg *config.Config) *certificate.Manager {
 		logrus.Fatalf("Failed to check default certificate: %v", err)
 	}
 
-	return certManager
+	// Load the last Nginx configuration
+	nginxGenerator.LoadLastConfig()
+
+	return certManager, nginxGenerator
+}
+
+// generateInitialNginxConfig generates the initial Nginx configuration
+func generateInitialNginxConfig(nginxGenerator *nginx.Generator) {
+	logrus.Info("Generating initial Nginx configuration...")
+
+	if err := nginxGenerator.GenerateConfig(); err != nil {
+		logrus.Errorf("Failed to generate initial Nginx configuration: %v", err)
+	} else {
+		logrus.Info("Initial Nginx configuration generated successfully")
+	}
 }
 
 // getInitialDomains retrieves and processes the initial domains
@@ -91,9 +110,10 @@ func getInitialDomains(certManager *certificate.Manager) []string {
 }
 
 // runServiceLoop runs the main service loop
-func runServiceLoop(cfg *config.Config, certManager *certificate.Manager, initialDomains []string) {
+func runServiceLoop(cfg *config.Config, certManager *certificate.Manager, nginxGenerator *nginx.Generator, initialDomains []string) {
 	// Initialize timestamps for interval checks
 	lastRenewalCheck := time.Now()
+	lastConfigCheck := time.Now()
 	domains := initialDomains
 
 	// Set up signal handling
@@ -104,6 +124,7 @@ func runServiceLoop(cfg *config.Config, certManager *certificate.Manager, initia
 	logrus.Info("Starting main loop with different intervals for each process:")
 	logrus.Info("- Domain list checking: every second")
 	logrus.Infof("- Certificate renewal checking: every %v", cfg.RenewalInterval)
+	logrus.Infof("- Nginx configuration checking: every %v", cfg.ConfigInterval)
 
 	// Main loop
 	ticker := time.NewTicker(1 * time.Second)
@@ -114,12 +135,29 @@ func runServiceLoop(cfg *config.Config, certManager *certificate.Manager, initia
 		case <-ticker.C:
 			domains = processDomainUpdates(certManager, domains)
 			lastRenewalCheck = checkCertificateRenewal(certManager, cfg, domains, lastRenewalCheck)
+			lastConfigCheck = checkNginxConfiguration(nginxGenerator, cfg, lastConfigCheck)
 
 		case <-stop:
 			logrus.Info("Received termination signal. Shutting down...")
 			return
 		}
 	}
+}
+
+// checkNginxConfiguration checks if Nginx configuration needs to be updated
+func checkNginxConfiguration(nginxGenerator *nginx.Generator, cfg *config.Config, lastCheck time.Time) time.Time {
+	now := time.Now()
+	if now.Sub(lastCheck) >= cfg.ConfigInterval {
+		logrus.Debug("Checking Nginx configuration...")
+
+		if err := nginxGenerator.GenerateConfig(); err != nil {
+			logrus.Errorf("Failed to generate Nginx configuration: %v", err)
+		}
+
+		return now
+	}
+
+	return lastCheck
 }
 
 // processDomainUpdates checks for domain changes and processes them
