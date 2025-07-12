@@ -17,20 +17,17 @@ func main() {
 	initializeLogger()
 	logrus.Info("Starting service-manager...")
 
-	// Load configuration
-	cfg, err := config.New()
-	if err != nil {
-		logrus.Fatalf("Failed to load configuration: %v", err)
-	}
+    // Load the configuration
+    configuration := loadConfiguration()
 
 	// Create and initialize components
-	certManager := setupComponents(cfg)
+	certManager := setupComponents(configuration)
 
 	// Get and process initial domains
 	domains := getInitialDomains(certManager)
 
 	// Run the main service loop
-	runServiceLoop(cfg, certManager, domains)
+	runServiceLoop(configuration, certManager, domains)
 }
 
 // initializeLogger sets up the logging configuration
@@ -51,6 +48,17 @@ func initializeLogger() {
 	}
 
 	logrus.SetLevel(level)
+}
+
+func loadConfiguration() *config.Config {
+    // Load configuration
+	cfg, err := config.New()
+
+	if err != nil {
+		logrus.Fatalf("Failed to load configuration: %v", err)
+	}
+
+    return cfg
 }
 
 // setupComponents initializes the certificate manager
