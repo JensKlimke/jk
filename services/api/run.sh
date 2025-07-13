@@ -53,7 +53,6 @@ while $RUNNING; do
   fi
 
   if $RUNNING; then
-    echo "Sleeping for 1 second..."
     sleep 1
   fi
 done
