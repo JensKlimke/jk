@@ -1,7 +1,7 @@
 import * as path from 'path';
 import * as fs from 'fs';
 import { ConfigGenerator } from '../src';
-import { getDockerServices } from '../src/controllers/getDockerServices';
+import { getDockerServices } from '../src/service/getDockerServices';
 
 // Mock fs.promises to avoid actual file operations during tests
 jest.mock('fs', () => ({
@@ -13,7 +13,7 @@ jest.mock('fs', () => ({
 }));
 
 // Mock getDockerServices to avoid actual Docker calls during tests
-jest.mock('../src/controllers/getDockerServices', () => ({
+jest.mock('../src/service/getDockerServices', () => ({
   getDockerServices: jest.fn()
 }));
 

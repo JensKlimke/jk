@@ -1,7 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as Mustache from 'mustache';
-import { getDockerServices } from './getDockerServices';
+import { getDockerServices } from '../service/getDockerServices';
 
 /**
  * Configuration Generator for Nginx

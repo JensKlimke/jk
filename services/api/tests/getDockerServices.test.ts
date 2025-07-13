@@ -1,5 +1,5 @@
-import * as dockerServices from '../src/controllers/getDockerServices';
-import { AuthType } from '../src/controllers/getDockerServices';
+import * as dockerServices from '../src/service/getDockerServices';
+import { AuthType } from '../src/service/getDockerServices';
 import * as fs from 'fs';
 
 // Mock the fs module to control file existence checks
@@ -9,8 +9,8 @@ jest.mock('fs', () => ({
 }));
 
 // Mock the entire module to avoid actual Docker calls during tests
-jest.mock('../src/controllers/getDockerServices', () => {
-  const original = jest.requireActual('../src/controllers/getDockerServices');
+jest.mock('../src/service/getDockerServices', () => {
+  const original = jest.requireActual('../src/service/getDockerServices');
   return {
     ...original,
     getContainersWithVirtualHost: jest.fn(),

@@ -4,7 +4,7 @@ import * as path from 'path';
 import { ConfigGenerator } from './controllers/configGenerator';
 import { CertificateManager } from './controllers/certificateManager';
 import { getConfig } from './config';
-import { getDockerServices } from './controllers/getDockerServices';
+import { getDockerServices } from './service/getDockerServices';
 
 /**
  * Main entry point for the Nginx configuration generator and certificate manager
@@ -39,7 +39,7 @@ async function main() {
 
       // Generate the default configuration
       const defaultOutputPath = path.join(outputDir, 'default.conf');
-      const defaultResult = await generator.generateDefaultConfig(defaultTemplatePath, defaultOutputPath);
+      await generator.generateDefaultConfig(defaultTemplatePath, defaultOutputPath);
       console.log(`Default configuration generated successfully: ${defaultOutputPath}`);
 
       // Generate the service configurations
