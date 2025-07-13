@@ -138,4 +138,70 @@ export class ConfigGenerator {
 
     return rendered;
   }
+
+  /**
+   * Generates the default configuration file
+   * @param templatePath Path to the default template file
+   * @param outputPath Path to write the default output file
+   * @returns The rendered default configuration
+   */
+  public async generateDefaultConfig(
+    templatePath: string,
+    outputPath: string,
+  ): Promise<string> {
+    const template = await this.readTemplate(templatePath);
+    const data = await getDockerServices();
+    const rendered = this.renderTemplate(template, data);
+
+    if (outputPath) {
+      await this.writeConfig(outputPath, rendered);
+    }
+
+    return rendered;
+  }
+
+  /**
+   * Generates individual configuration files for each service
+   * @param templatePath Path to the service template file
+   * @param outputDir Directory to write the service output files
+   * @returns An array of the rendered service configurations
+   */
+  public async generateServiceConfigs(
+    templatePath: string,
+    outputDir: string,
+  ): Promise<string[]> {
+    const template = await this.readTemplate(templatePath);
+    const data = await getDockerServices();
+    const renderedConfigs: string[] = [];
+
+    // Ensure the output directory exists
+    await fs.promises.mkdir(outputDir, { recursive: true });
+
+    // Generate a config file for each service
+    for (const service of data.services) {
+      // Create a data object with just this service
+      const serviceData = {
+        services: [service],
+        default_cert: data.default_cert
+      };
+
+      // Render the template with just this service's data
+      const rendered = this.renderTemplate(template, serviceData);
+
+      // Skip empty configs
+      if (rendered.trim() === '') {
+        continue;
+      }
+
+      // Create a filename based on the service's host
+      const filename = `service.${service.host}.conf`;
+      const outputPath = path.join(outputDir, filename);
+
+      // Write the config to a file
+      await this.writeConfig(outputPath, rendered);
+      renderedConfigs.push(rendered);
+    }
+
+    return renderedConfigs;
+  }
 }

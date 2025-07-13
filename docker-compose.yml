@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  nginx:
+  nginx-reverse-proxy:
     image: nginx:latest
     container_name: nginx-reverse-proxy
     ports:
@@ -13,29 +13,33 @@ services:
       - ./nginx/html:/usr/share/nginx/html
       - certbot:/var/www/html
       - letsencrypt:/etc/letsencrypt:ro
-    restart: always
     depends_on:
-      - certbot
+      - nginx-services-ts
+    restart: always
 
-  certbot:
+  nginx-services-ts:
     build:
-      context: ./services/service-manager
+      context: ./services/api
       dockerfile: Dockerfile
-    container_name: certbot
+    container_name: nginx-services-ts
     volumes:
-      - certbot:/var/www/certbot
+      - certbot:/var/www/html
       - letsencrypt:/etc/letsencrypt
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./nginx/tmpl/service.conf.mustache:/app/template/service.conf.mustache:ro
+      - ./nginx/tmpl/default.conf.mustache:/app/template/default.conf.mustache:ro
       - ./nginx/conf.d:/app/output
       - logs:/app/logs
     environment:
       EMAIL: ${EMAIL:-admin@example.com}
-      LOG_LEVEL: info
       AUTH_SERVICE: "oauth2-proxy:4180"
-      TEMPLATE_PATH: "/app/template/service.conf.mustache"
-      OUTPUT_PATH: "/app/output/services.conf"
-      CONFIG_INTERVAL: "30s"
+      GENERATOR_INTERVAL: "30"
+      CERT_INTERVAL: "3600"
+      CERTS_PATH: "/etc/letsencrypt/live"
+      WEBROOT_PATH: "/var/www/html"
+      DEFAULT_DOMAIN: "default"
+      DEFAULT_CERT_CN: "default.local"
+      NGINX_SERVICE: "nginx-reverse-proxy"
     restart: always
 
   oauth2-proxy:

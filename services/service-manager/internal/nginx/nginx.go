@@ -20,6 +20,18 @@ type Generator struct {
 	lastConfig string
 }
 
+// fileExists checks if a file exists and is not a directory
+func fileExists(filename string) (bool, error) {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return !info.IsDir(), nil
+}
+
 // NewGenerator creates a new Nginx configuration generator
 func NewGenerator(cfg *config.Config) *Generator {
 	return &Generator{
@@ -124,8 +136,11 @@ func (g *Generator) GenerateConfig() error {
 		return fmt.Errorf("failed to render template: %w", err)
 	}
 
-	// Check if config has changed
-	if g.HasConfigChanged(rendered) {
+	// Check if config file exists
+	configExists, _ := fileExists(g.Config.OutputPath)
+
+	// Check if config has changed or file doesn't exist
+	if g.HasConfigChanged(rendered) || !configExists {
 		// Log the new config
 		if err := g.LogConfig(rendered); err != nil {
 			logrus.Warnf("Failed to log config: %v", err)
@@ -140,6 +155,11 @@ func (g *Generator) GenerateConfig() error {
 		}
 
 		logrus.Info("Nginx configuration updated successfully")
+
+		// Restart Nginx to apply the new configuration
+		if err := docker.RestartNginx(); err != nil {
+			logrus.Warnf("Failed to restart Nginx: %v", err)
+		}
 	} else {
 		logrus.Debug("Nginx configuration unchanged")
 	}

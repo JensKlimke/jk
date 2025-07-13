@@ -2,8 +2,8 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install Docker client
-RUN apk add --no-cache docker-cli
+# Install Docker client, OpenSSL, and Certbot
+RUN apk add --no-cache docker-cli openssl certbot
 
 # Copy package.json and install dependencies
 COPY package*.json ./

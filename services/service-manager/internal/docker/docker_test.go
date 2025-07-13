@@ -42,6 +42,9 @@ func TestHelperProcess(t *testing.T) {
 		if len(args) > 0 && args[0] == "ps" {
 			// Mock docker ps command
 			os.Stdout.WriteString("container1\ncontainer2\n")
+		} else if len(args) > 0 && args[0] == "restart" {
+			// Mock docker restart command
+			// Just return success, no output needed
 		} else if len(args) > 0 && args[0] == "inspect" {
 			// Mock docker inspect command
 			if len(args) > 2 && args[1] == "--format" {
@@ -115,6 +118,35 @@ func TestGetDomainsFromContainers(t *testing.T) {
 		if domain != expectedDomains[i] {
 			t.Errorf("Expected domain %s, got %s", expectedDomains[i], domain)
 		}
+	}
+}
+
+func TestRestartNginx(t *testing.T) {
+	// Save the original exec.Command and restore it after the test
+	origExecCommand := execCommand
+
+	// Track if docker restart was called with the right arguments
+	restartCalled := false
+	execCommand = func(command string, args ...string) *exec.Cmd {
+		if command == "docker" && len(args) >= 2 && args[0] == "restart" && args[1] == "nginx" {
+			restartCalled = true
+		}
+		return mockExecCommand(command, args...)
+	}
+	defer func() { execCommand = origExecCommand }()
+
+	// Update the TestHelperProcess to handle docker restart
+	// This is already handled by the existing implementation
+
+	// Call RestartNginx
+	err := RestartNginx()
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	// Check if docker restart was called with the right arguments
+	if !restartCalled {
+		t.Error("Expected docker restart nginx to be called")
 	}
 }
 

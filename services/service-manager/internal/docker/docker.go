@@ -14,6 +14,7 @@ import (
 // Variables to allow mocking in tests
 var execCommand = exec.Command
 var fileExistsFunc = defaultFileExists
+var restartNginxFunc = defaultRestartNginx
 
 // AuthType represents the authentication type for a container
 type AuthType string
@@ -155,6 +156,7 @@ func GetServicesConfig() (*ServicesConfig, error) {
 		}
 	}
 
+    logrus.Warn(result)
 	return result, nil
 }
 
@@ -333,4 +335,26 @@ func getContainerPorts(containerName string) ([]string, error) {
 	}
 
 	return ports, nil
+}
+
+// defaultRestartNginx is the default implementation of restartNginxFunc
+func defaultRestartNginx() error {
+	logrus.Info("Restarting Nginx container...")
+
+	cmd := execCommand("docker", "restart", "nginx")
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		errMsg := stderr.String()
+		return fmt.Errorf("failed to restart Nginx container: %s", errMsg)
+	}
+
+	logrus.Info("Nginx container restarted successfully")
+	return nil
+}
+
+// RestartNginx restarts the Nginx container
+func RestartNginx() error {
+	return restartNginxFunc()
 }
