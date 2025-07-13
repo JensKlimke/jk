@@ -16,7 +16,7 @@ interface CertConfig {
  * Authentication configuration for a service
  */
 interface AuthConfig {
-  service: string;
+  upstream_url: string;
   headers: boolean;
 }
 
@@ -161,8 +161,8 @@ export async function getDockerServices(): Promise<ServicesJsonWithDefault> {
 
   const services: ServiceConfig[] = [];
 
-  // Get AUTH_SERVICE from environment variable
-  const authService = process.env.AUTH_SERVICE || '';
+  // Get AUTH_UPSTREAM_URL  from environment variable
+  const authUpstreamUrl = process.env.AUTH_UPSTREAM_URL || '';
 
   // Process each container to create service configurations
   for (const container of containers) {
@@ -188,10 +188,10 @@ export async function getDockerServices(): Promise<ServicesJsonWithDefault> {
       };
     }
 
-    // Add auth configuration if withAuth is not NONE and AUTH_SERVICE is defined
-    if (authService && container.withAuth !== AuthType.NONE) {
+    // Add auth configuration if withAuth is not NONE and AUTH_UPSTREAM_URL is defined
+    if (authUpstreamUrl && container.withAuth !== AuthType.NONE) {
       serviceConfig.auth = {
-        service: authService,
+        upstream_url: authUpstreamUrl,
         headers: container.withAuth === AuthType.WITH_HEADERS
       };
     }

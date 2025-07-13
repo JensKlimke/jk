@@ -53,7 +53,7 @@ server {
     {{#auth}}
     # OAuth2 endpoints
     location /oauth2/ {
-        proxy_pass http://{{ service }};
+        proxy_pass {{{ upstream_url }}};
         proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
         proxy_set_header X-Forwarded-Uri $request_uri;
 
@@ -64,7 +64,7 @@ server {
 
     # Special handling for auth endpoint
     location = /oauth2/auth {
-        proxy_pass http://{{ service }};
+        proxy_pass {{{ upstream_url }}};
         proxy_set_header X-Auth-Request-Redirect $scheme://$host$request_uri;
         proxy_set_header X-Forwarded-Uri $request_uri;
 

@@ -1,116 +1,55 @@
 # Nginx Configuration Generator
 
-A TypeScript utility for generating Nginx configuration files from Mustache templates and JSON data.
+A TypeScript utility that automatically generates Nginx configuration files for Docker containers. It detects containers with the `VIRTUAL_HOST` environment variable, manages SSL certificates, and supports OAuth2 authentication.
 
-## Docker Integration
+## How It Works
 
-This utility is designed to be run as a Docker container that generates Nginx configuration files from templates and JSON data.
+1. **Container Detection**: Scans running Docker containers for those with the `VIRTUAL_HOST` environment variable
+2. **Certificate Management**: 
+   - Creates self-signed certificates for localhost domains
+   - Uses Let's Encrypt (certbot) for production domains
+   - Manages certificate renewal
+3. **Configuration Generation**: 
+   - Renders Nginx configuration files using Mustache templates
+   - Supports SSL/TLS configuration
+   - Configures OAuth2 authentication when specified
 
-### Using with Docker
+## Key Features
 
-The included Dockerfile builds an image that:
-1. Installs dependencies and builds the TypeScript code
-2. Sets up directories for templates, input JSON, and output configuration
-3. Runs the generator using the provided run.sh script
+- **Automatic Discovery**: No manual configuration needed for new containers
+- **SSL Support**: Automatic certificate management for secure connections
+- **Authentication**: Optional OAuth2 integration with header passing
+- **Template-Based**: Customizable configuration templates
 
-```bash
-# Build the Docker image
-docker build -t nginx-conf-gen .
+## Usage
 
-# Run the container
-docker run -v /path/to/template.mustache:/app/template/service.conf.mustache:ro \
-           -v /path/to/services.json:/app/services.json:ro \
-           -v /path/to/output:/app/output \
-           nginx-conf-gen
-```
+### Environment Variables
 
-### Docker Compose Integration
+- `EMAIL`: Email for Let's Encrypt registration
+- `AUTH_UPSTREAM_URL`: URL for the OAuth2 proxy service
+- `DOMAIN`: Base domain for services (defaults to localhost)
 
-In a docker-compose.yml file, you can integrate this service as follows:
+### Docker Containers
 
-```yaml
-services:
-  nginx-conf-gen:
-    build:
-      context: ./services/nginx-conf-gen
-    volumes:
-      - ./nginx/tmpl/service.conf.mustache:/app/template/service.conf.mustache:ro
-      - ./services.json:/app/services.json:ro
-      - ./nginx/conf.d:/app/output
-    restart: "no"
+To make a container work with this system, set these environment variables:
 
-  nginx:
-    image: nginx:latest
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
-    depends_on:
-      - nginx-conf-gen
-```
+- `VIRTUAL_HOST`: Domain name for the service (required)
+- `WITH_AUTH`: Set to "true" to enable authentication
+- `WITH_AUTH_HEADERS`: Set to "true" to pass authentication headers to the service
 
-## Local Development
-
-### Installation
+## Development
 
 ```bash
 # Install dependencies
 npm install
 
+# Run tests
+npm test
+
 # Build the project
 npm run build
 ```
 
-### Usage
-
-```bash
-# Generate a configuration file
-node dist/index.js <template-path> <json-path> <output-path>
-```
-
-If no output path is provided, the generated configuration will be printed to stdout.
-
-## Template Format
-
-The template uses Mustache syntax for variable substitution and conditional rendering:
-
-```mustache
-server {
-    listen 80;
-    server_name {{host}};
-
-    {{#ssl}}
-    # SSL configuration
-    ssl_certificate {{cert_file}};
-    ssl_certificate_key {{key_file}};
-    {{/ssl}}
-
-    location / {
-        proxy_pass http://{{service}}:{{port}}/;
-    }
-}
-```
-
-## Docker Services Integration
-
-The utility can automatically detect Docker containers with the `VIRTUAL_HOST` environment variable and generate configuration for them.
-
-### How it works
-
-1. The `getDockerServices` function scans Docker containers and identifies those with the `VIRTUAL_HOST` environment variable set
-2. For each container, it extracts:
-   - The service name (container name)
-   - The exposed port
-   - The host (from VIRTUAL_HOST)
-3. It generates a services configuration with the proper structure, including:
-   - SSL certificate configuration
-
-### Usage
-
-To use the Docker services integration, pass `docker` as the JSON path:
-
-```bash
-node dist/index.js <template-path> docker <output-path>
-```
-
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT License - See LICENSE file for details
