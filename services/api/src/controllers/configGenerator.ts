@@ -112,34 +112,6 @@ export class ConfigGenerator {
   }
 
   /**
-   * Generates a configuration file from a template and JSON data
-   * @param templatePath Path to the template file
-   * @param outputPath Path to write the output file
-   * @returns The rendered configuration
-   */
-  public async generateConfig(
-    templatePath: string,
-    outputPath: string,
-  ): Promise<string> {
-    const template = await this.readTemplate(templatePath);
-    const data = await getDockerServices();
-    const rendered = this.renderTemplate(template, data);
-
-    if (outputPath) {
-      await this.writeConfig(outputPath, rendered);
-    }
-
-    // Check if config has changed and log it if it has
-    const hasChanged = await this.hasConfigChanged(rendered);
-    if (hasChanged) {
-      await this.logConfig(rendered);
-      await this.saveLastConfig(rendered);
-    }
-
-    return rendered;
-  }
-
-  /**
    * Generates the default configuration file
    * @param templatePath Path to the default template file
    * @param outputPath Path to write the default output file
@@ -179,14 +151,9 @@ export class ConfigGenerator {
 
     // Generate a config file for each service
     for (const service of data.services) {
-      // Create a data object with just this service
-      const serviceData = {
-        services: [service],
-        default_cert: data.default_cert
-      };
 
       // Render the template with just this service's data
-      const rendered = this.renderTemplate(template, serviceData);
+      const rendered = this.renderTemplate(template, service);
 
       // Skip empty configs
       if (rendered.trim() === '') {
