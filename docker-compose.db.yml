@@ -1,0 +1,37 @@
+services:
+  influxdb:
+    image: influxdb:2
+    container_name: influxdb
+    restart: unless-stopped
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUX_ADMIN_PW}
+      DOCKER_INFLUXDB_INIT_ORG: jk
+      DOCKER_INFLUXDB_INIT_BUCKET: default
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUX_ADMIN_TOKEN}
+      VIRTUAL_HOST: "influx.${DOMAIN:-localhost}"
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+    expose:
+      - 8086
+
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-password}
+    volumes:
+      - mongodb-data:/data/db
+      - mongodb-config:/data/configdb
+    expose:
+      - 27017
+
+volumes:
+  influxdb-data:
+  influxdb-config:
+  mongodb-data:
+  mongodb-config:

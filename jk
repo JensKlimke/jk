@@ -1,0 +1,124 @@
+#!/bin/bash
+
+# JK - Docker Compose Management Tool
+
+# Function to display usage information
+usage() {
+    echo "Usage: ./jk COMMAND [OPTIONS]"
+    echo ""
+    echo "Commands:"
+    echo "  start [main|db]    Start services"
+    echo "    - No option:     Start all services"
+    echo "    - main:          Start only main services"
+    echo "    - db:            Start only database services"
+    echo ""
+    echo "  stop [main|db]     Stop services"
+    echo "    - No option:     Stop all services"
+    echo "    - main:          Stop only main services"
+    echo "    - db:            Stop only database services"
+    echo ""
+    echo "  restart [main|db]  Restart services (stop and then start)"
+    echo "    - No option:     Restart all services"
+    echo "    - main:          Restart only main services"
+    echo "    - db:            Restart only database services"
+    echo ""
+    echo "  clean              Remove all containers, networks, and volumes"
+    echo ""
+    exit 1
+}
+
+# Function to start services
+start_services() {
+    local option=$1
+    
+    if [ -z "$option" ]; then
+        echo "Starting all services (main and database)..."
+        docker-compose -f docker-compose.yml -f docker-compose.db.yml up -d
+    elif [ "$option" = "main" ]; then
+        echo "Starting main services..."
+        docker-compose -f docker-compose.yml up -d
+    elif [ "$option" = "db" ]; then
+        echo "Starting database services..."
+        docker-compose -f docker-compose.db.yml up -d
+    else
+        echo "Invalid option for start command: $option"
+        usage
+    fi
+    
+    echo "Services started successfully."
+}
+
+# Function to stop services
+stop_services() {
+    local option=$1
+    
+    if [ -z "$option" ]; then
+        echo "Stopping all services (main and database)..."
+        docker-compose -f docker-compose.yml -f docker-compose.db.yml down
+    elif [ "$option" = "main" ]; then
+        echo "Stopping main services..."
+        docker-compose -f docker-compose.yml down
+    elif [ "$option" = "db" ]; then
+        echo "Stopping database services..."
+        docker-compose -f docker-compose.db.yml down
+    else
+        echo "Invalid option for stop command: $option"
+        usage
+    fi
+    
+    echo "Services stopped successfully."
+}
+
+# Function to restart services
+restart_services() {
+    local option=$1
+    
+    # Stop services
+    stop_services "$option"
+    
+    # Start services
+    start_services "$option"
+    
+    echo "Services restarted successfully."
+}
+
+# Function to clean up Docker resources
+clean_services() {
+    echo "Cleaning up Docker resources..."
+    
+    # Stop all services first
+    docker-compose -f docker-compose.yml -f docker-compose.db.yml down
+    
+    # Remove all containers, networks, and volumes
+    echo "Removing all containers, networks, and volumes..."
+    docker-compose -f docker-compose.yml -f docker-compose.db.yml down -v --remove-orphans
+    
+    echo "Cleanup completed successfully."
+}
+
+# Main script logic
+if [ $# -eq 0 ]; then
+    usage
+fi
+
+command=$1
+shift  # Remove the first argument (command) and shift the rest
+
+case "$command" in
+    start)
+        start_services "$1"
+        ;;
+    stop)
+        stop_services "$1"
+        ;;
+    restart)
+        restart_services "$1"
+        ;;
+    clean)
+        clean_services
+        ;;
+    *)
+        echo "Unknown command: $command"
+        usage
+        ;;
+esac
