@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 import * as path from 'path';
+import { getConfig } from './config';
 import { ConfigGenerator } from './controllers/configGenerator';
 import { CertificateManager } from './controllers/certificateManager';
-import { getConfig } from './config';
 import { getDockerServices } from './service/getDockerServices';
 
 /**
