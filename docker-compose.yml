@@ -17,7 +17,7 @@ services:
 
   nginx-services-ts:
     build:
-      context: ./services/api
+      context: ./services/nginx-service
       dockerfile: Dockerfile
     container_name: nginx-services-ts
     volumes:

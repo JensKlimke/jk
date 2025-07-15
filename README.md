@@ -84,6 +84,7 @@ The Nginx configuration will be automatically generated, and an SSL certificate 
 - [x] Automatic config generation based on containers with VIRTUAL_HOST
 - [x] Automatic SSL certificate management based on containers with VIRTUAL_HOST
 - [ ] Integrations: influxdb/Grafana/mongodb
+- [ ] Keycloak integration
 - [ ] Split dockerfiles up into build and run sections
 - [ ] Security measures (nginx conf, middleware, ...) → see SECURITY.md
 - [ ] Merge services

@@ -1,7 +1,7 @@
 {
-  "name": "api",
+  "name": "nginx-service",
   "version": "1.0.0",
-  "description": "Nginx configuration generator using Mustache templates",
+  "description": "Nginx configuration generator using Mustache templates and certificate manager",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
