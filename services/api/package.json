@@ -6,8 +6,7 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "jest",
-    "clean": "rm -f ../../nginx/conf.d/*.conf"
+    "test": "jest"
   },
   "dependencies": {
     "mustache": "^4.2.0"
