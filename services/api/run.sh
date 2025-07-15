@@ -9,7 +9,8 @@ RUNNING=true
 
 # Counters for intervals
 CONFIG_COUNTER=0
-CERT_COUNTER=0
+# Initialize CERT_COUNTER to (CERT_INTERVAL - 60) to delay first certificate processing by 60 seconds
+CERT_COUNTER=$((CERT_INTERVAL - 60))
 
 # Handle termination signals
 trap 'echo "Received termination signal. Shutting down..."; RUNNING=false' TERM INT
