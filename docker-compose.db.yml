@@ -11,6 +11,7 @@ services:
       DOCKER_INFLUXDB_INIT_BUCKET: default
       DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: ${INFLUX_ADMIN_TOKEN}
       VIRTUAL_HOST: "influx.${DOMAIN:-localhost}"
+      WITH_AUTH: true
     volumes:
       - influxdb-data:/var/lib/influxdb2
       - influxdb-config:/etc/influxdb2
@@ -45,6 +46,7 @@ services:
       ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_USER:-admin}
       ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_PASSWORD:-password}
       VIRTUAL_HOST: "mongo.${DOMAIN:-localhost}"
+      WITH_AUTH: true
     expose:
       - 8081
 
