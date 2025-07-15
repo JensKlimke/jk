@@ -7,20 +7,23 @@ usage() {
     echo "Usage: ./jk COMMAND [OPTIONS]"
     echo ""
     echo "Commands:"
-    echo "  start [main|db]    Start services"
+    echo "  start [main|db|apps]    Start services"
     echo "    - No option:     Start all services"
     echo "    - main:          Start only main services"
     echo "    - db:            Start only database services"
+    echo "    - apps:          Start only app services"
     echo ""
-    echo "  stop [main|db]     Stop services"
+    echo "  stop [main|db|apps]     Stop services"
     echo "    - No option:     Stop all services"
     echo "    - main:          Stop only main services"
     echo "    - db:            Stop only database services"
+    echo "    - apps:          Stop only app services"
     echo ""
-    echo "  restart [main|db]  Restart services (stop and then start)"
+    echo "  restart [main|db|apps]  Restart services (stop and then start)"
     echo "    - No option:     Restart all services"
     echo "    - main:          Restart only main services"
     echo "    - db:            Restart only database services"
+    echo "    - apps:          Restart only app services"
     echo ""
     echo "  clean              Remove all containers, networks, and volumes"
     echo ""
@@ -30,69 +33,75 @@ usage() {
 # Function to start services
 start_services() {
     local option=$1
-    
+
     if [ -z "$option" ]; then
-        echo "Starting all services (main and database)..."
-        docker-compose -f docker-compose.yml -f docker-compose.db.yml up -d
+        echo "Starting all services (main, database, and apps)..."
+        docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.apps.yml up -d
     elif [ "$option" = "main" ]; then
         echo "Starting main services..."
         docker-compose -f docker-compose.yml up -d
     elif [ "$option" = "db" ]; then
         echo "Starting database services..."
         docker-compose -f docker-compose.db.yml up -d
+    elif [ "$option" = "apps" ]; then
+        echo "Starting app services..."
+        docker-compose -f docker-compose.apps.yml up -d
     else
         echo "Invalid option for start command: $option"
         usage
     fi
-    
+
     echo "Services started successfully."
 }
 
 # Function to stop services
 stop_services() {
     local option=$1
-    
+
     if [ -z "$option" ]; then
-        echo "Stopping all services (main and database)..."
-        docker-compose -f docker-compose.yml -f docker-compose.db.yml down
+        echo "Stopping all services (main, database, and apps)..."
+        docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.apps.yml down
     elif [ "$option" = "main" ]; then
         echo "Stopping main services..."
         docker-compose -f docker-compose.yml down
     elif [ "$option" = "db" ]; then
         echo "Stopping database services..."
         docker-compose -f docker-compose.db.yml down
+    elif [ "$option" = "apps" ]; then
+        echo "Stopping app services..."
+        docker-compose -f docker-compose.apps.yml down
     else
         echo "Invalid option for stop command: $option"
         usage
     fi
-    
+
     echo "Services stopped successfully."
 }
 
 # Function to restart services
 restart_services() {
     local option=$1
-    
+
     # Stop services
     stop_services "$option"
-    
+
     # Start services
     start_services "$option"
-    
+
     echo "Services restarted successfully."
 }
 
 # Function to clean up Docker resources
 clean_services() {
     echo "Cleaning up Docker resources..."
-    
+
     # Stop all services first
-    docker-compose -f docker-compose.yml -f docker-compose.db.yml down
-    
+    docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.apps.yml down
+
     # Remove all containers, networks, and volumes
     echo "Removing all containers, networks, and volumes..."
-    docker-compose -f docker-compose.yml -f docker-compose.db.yml down -v --remove-orphans
-    
+    docker-compose -f docker-compose.yml -f docker-compose.db.yml -f docker-compose.apps.yml down -v --remove-orphans
+
     echo "Cleanup completed successfully."
 }
 

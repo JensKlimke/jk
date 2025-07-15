@@ -7,7 +7,7 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
-    "clean": "rm ../../nginx/conf.d/*.conf"
+    "clean": "rm -f ../../nginx/conf.d/*.conf"
   },
   "dependencies": {
     "mustache": "^4.2.0"

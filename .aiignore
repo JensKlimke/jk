@@ -19,3 +19,5 @@
 
 # Results
 .coverage
+
+nginx/conf.d/*.conf

@@ -7,8 +7,11 @@ node_modules/
 coverage/
 dist/
 bin/
+logs/
 tsconfig.tsbuildinfo
 
 .venv
 
 backup
+
+mongo

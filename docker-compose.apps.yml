@@ -1,0 +1,15 @@
+services:
+  whoami:
+    build:
+      context: ./apps/whoami
+      dockerfile: Dockerfile
+    container_name: whoami
+    restart: always
+    environment:
+      MONGO_WEB_PASSWORD: ${MONGO_WEB_PASSWORD:-webpassword}
+      VIRTUAL_HOST: "whoami.${DOMAIN:-localhost}"
+      WITH_AUTH_HEADERS: true
+    depends_on:
+      - mongodb
+    expose:
+      - "3000"

@@ -58,16 +58,6 @@ services:
     expose:
       - "4180"
 
-  whoami:
-    image: traefik/whoami
-    container_name: whoami
-    restart: always
-    environment:
-      VIRTUAL_HOST: "whoami.${DOMAIN:-localhost}"
-      WITH_AUTH_HEADERS: true
-    expose:
-      - "80"
-
 
 volumes:
   certbot:
