@@ -16,6 +16,7 @@ The system consists of the following core components:
 | COMP-4 | Router | Defines API endpoints and request handling | PRD-3.3 |
 | COMP-5 | Logger | Provides structured logging capabilities | PRD-4.2 |
 | COMP-6 | Data Models | Defines database schemas | PRD-4.1 |
+| COMP-7 | Template Renderer | Renders HTML templates for browser display | PRD-3.3 |
 
 ### ARCH-2.2: Component Interactions
 ```
@@ -26,23 +27,30 @@ The system consists of the following core components:
                           │             └─────────────┘
                           │
                           ▼
-┌─────────────┐     ┌─────────────┐
-│   Logger    │◀────│   Express   │
-│  (COMP-5)   │     │ Application │
-└─────────────┘     │  (COMP-1)   │
-                    └─────────────┘
-                          │
-                          ▼
-                    ┌─────────────┐     ┌─────────────┐
-                    │  Database   │────▶│ Data Models │
-                    │   Service   │     │  (COMP-6)   │
-                    │  (COMP-2)   │     └─────────────┘
-                    └─────────────┘
-                          │
-                          ▼
-                    ┌─────────────┐
-                    │  MongoDB    │
-                    │  Database   │
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Logger    │◀────│   Express   │     │  Template   │
+│  (COMP-5)   │     │ Application │◀────│  Renderer   │
+└─────────────┘     │  (COMP-1)   │     │  (COMP-7)   │
+                    └─────────────┘     └─────────────┘
+                          │                    ▲
+                          │                    │
+                          ▼                    │
+                    ┌─────────────┐           │
+                    │  Database   │           │
+                    │   Service   │           │
+                    │  (COMP-2)   │           │
+                    └─────────────┘           │
+                          │                    │
+                          ▼                    │
+                    ┌─────────────┐           │
+                    │  MongoDB    │           │
+                    │  Database   │           │
+                    └─────────────┘           │
+                                              │
+                                              │
+                    ┌─────────────┐           │
+                    │ Data Models │───────────┘
+                    │  (COMP-6)   │
                     └─────────────┘
 ```
 
@@ -57,6 +65,7 @@ The system consists of the following core components:
 | Mongoose | ODM | Object Data Modeling library for MongoDB and Node.js |
 | Winston | Logging | Flexible logging library with multiple transport options |
 | TypeScript | Programming language | Adds static typing to JavaScript for improved code quality |
+| Mustache | Templating engine | Logic-less templates for HTML rendering with simple syntax |
 
 ### ARCH-3.2: Data Storage
 The application uses MongoDB to store a single document containing the API ID, which persists across application restarts.

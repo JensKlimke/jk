@@ -1,6 +1,7 @@
 import express from 'express';
 import { DatabaseService } from './services/database.service';
 import { WhoamiService } from './services/whoami.service';
+import { TemplateService } from './services/template.service';
 import { createRootRouter } from './routes/root.route';
 import logger from './utils/logger';
 
@@ -11,6 +12,7 @@ const port = process.env.PORT || 3000;
 // Create services
 const databaseService = new DatabaseService();
 const whoamiService = new WhoamiService();
+const templateService = new TemplateService();
 
 // Initialize app
 async function initializeApp() {
@@ -22,7 +24,7 @@ async function initializeApp() {
     const apiId = await databaseService.getOrCreateApiId();
 
     // Set up routes
-    app.use('/', createRootRouter(whoamiService, apiId));
+    app.use('/', createRootRouter(whoamiService, templateService, apiId));
 
     // Start server
     app.listen(port, () => {

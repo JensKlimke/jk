@@ -27,7 +27,8 @@ Users need to inspect details about their HTTP request, including:
 ### PRD-3.3: Response Format
 Users need to receive the information in a format appropriate to their client:
 - JSON format for programmatic access
-- Plain text format for human readability in browsers
+- Plain text format for basic human readability
+- HTML format for enhanced visual presentation in browsers
 
 ## PRD-4: Non-functional Requirements
 

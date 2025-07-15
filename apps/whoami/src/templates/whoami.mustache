@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whoami Service</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .info-section {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .info-item {
+            margin-bottom: 10px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #2980b9;
+        }
+        .headers-section {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header-item {
+            margin-bottom: 5px;
+            font-family: monospace;
+        }
+        .header-name {
+            color: #c0392b;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <h1>Whoami Service</h1>
+
+    <div class="info-section">
+        <div class="info-item">
+            <span class="info-label">Hostname:</span> {{hostname}}
+        </div>
+        <div class="info-item">
+            <span class="info-label">IPs:</span> {{#ips}}{{value}}{{^last}}, {{/last}}{{/ips}}
+        </div>
+        <div class="info-item">
+            <span class="info-label">Remote Address:</span> {{remoteAddr}}
+        </div>
+        <div class="info-item">
+            <span class="info-label">App ID:</span> {{apiId}}
+        </div>
+    </div>
+
+    <h2>Request Headers</h2>
+    <div class="headers-section">
+        {{#headers}}
+        <div class="header-item">
+            <span class="header-name">{{key}}:</span> {{value}}
+        </div>
+        {{/headers}}
+    </div>
+
+    <div class="footer">
+        <p>Whoami Service - Server Information</p>
+    </div>
+</body>
+</html>
