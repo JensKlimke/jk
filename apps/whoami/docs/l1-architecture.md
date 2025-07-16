@@ -35,21 +35,21 @@ The system consists of the following core components:
                           │                    ▲
                           │                    │
                           ▼                    │
-                    ┌─────────────┐           │
-                    │  Database   │           │
-                    │   Service   │           │
-                    │  (COMP-2)   │           │
-                    └─────────────┘           │
+                    ┌─────────────┐            │
+                    │  Database   │            │
+                    │   Service   │            │
+                    │  (COMP-2)   │            │
+                    └─────────────┘            │
                           │                    │
                           ▼                    │
-                    ┌─────────────┐           │
-                    │  MongoDB    │           │
-                    │  Database   │           │
-                    └─────────────┘           │
-                                              │
-                                              │
-                    ┌─────────────┐           │
-                    │ Data Models │───────────┘
+                    ┌─────────────┐            │
+                    │  MongoDB    │            │
+                    │  Database   │            │
+                    └─────────────┘            │
+                                               │
+                                               │
+                    ┌─────────────┐            │
+                    │ Data Models │────────────┘
                     │  (COMP-6)   │
                     └─────────────┘
 ```
