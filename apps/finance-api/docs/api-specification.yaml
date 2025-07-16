@@ -1,0 +1,1292 @@
+openapi: 3.0.0
+info:
+  title: Finance API
+  description: API for accessing and managing financial data
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Default API server
+paths:
+  /accounts:
+    get:
+      summary: Get all accounts
+      description: Retrieve a list of all financial accounts
+      operationId: getAccounts
+      parameters:
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+      responses:
+        '200':
+          description: A list of accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Account'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      summary: Create a new account
+      description: Create a new financial account
+      operationId: createAccount
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountInput'
+      responses:
+        '201':
+          description: Account created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  
+  /accounts/{uuid}:
+    get:
+      summary: Get account by UUID
+      description: Retrieve a specific account by its UUID
+      operationId: getAccountByUuid
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      responses:
+        '200':
+          description: Account found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Account'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      summary: Update an account
+      description: Update an existing account by its UUID
+      operationId: updateAccount
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AccountInput'
+      responses:
+        '200':
+          description: Account updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Account'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      summary: Delete an account
+      description: Delete an account by its UUID
+      operationId: deleteAccount
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      responses:
+        '204':
+          description: Account deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  
+  /transactions:
+    get:
+      summary: Get all transactions
+      description: Retrieve a list of financial transactions with optional filtering
+      operationId: getTransactions
+      parameters:
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - name: type
+          in: query
+          description: Filter by transaction type
+          schema:
+            type: string
+            enum: [deposit, expense, order, transfer]
+        - name: startDate
+          in: query
+          description: Filter by start date (inclusive)
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: Filter by end date (inclusive)
+          schema:
+            type: string
+            format: date
+        - name: accountUuid
+          in: query
+          description: Filter by account UUID
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Transaction'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      summary: Create a new transaction
+      description: Create a new financial transaction
+      operationId: createTransaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionInput'
+      responses:
+        '201':
+          description: Transaction created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  
+  /transactions/{uuid}:
+    get:
+      summary: Get transaction by UUID
+      description: Retrieve a specific transaction by its UUID
+      operationId: getTransactionByUuid
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      responses:
+        '200':
+          description: Transaction found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      summary: Update a transaction
+      description: Update an existing transaction by its UUID
+      operationId: updateTransaction
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionInput'
+      responses:
+        '200':
+          description: Transaction updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      summary: Delete a transaction
+      description: Delete a transaction by its UUID
+      operationId: deleteTransaction
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      responses:
+        '204':
+          description: Transaction deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  
+  /items:
+    get:
+      summary: Get all items
+      description: Retrieve a list of budget items
+      operationId: getItems
+      parameters:
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - name: group
+          in: query
+          description: Filter by item group
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of items
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Item'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      summary: Create a new item
+      description: Create a new budget item
+      operationId: createItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemInput'
+      responses:
+        '201':
+          description: Item created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Item'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  
+  /items/{uuid}:
+    get:
+      summary: Get item by UUID
+      description: Retrieve a specific budget item by its UUID
+      operationId: getItemByUuid
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      responses:
+        '200':
+          description: Item found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Item'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      summary: Update an item
+      description: Update an existing budget item by its UUID
+      operationId: updateItem
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemInput'
+      responses:
+        '200':
+          description: Item updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Item'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      summary: Delete an item
+      description: Delete a budget item by its UUID
+      operationId: deleteItem
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      responses:
+        '204':
+          description: Item deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  
+  /contracts:
+    get:
+      summary: Get all contracts
+      description: Retrieve a list of payment contracts
+      operationId: getContracts
+      parameters:
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+      responses:
+        '200':
+          description: A list of contracts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Contract'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      summary: Create a new contract
+      description: Create a new payment contract
+      operationId: createContract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractInput'
+      responses:
+        '201':
+          description: Contract created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Contract'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  
+  /contracts/{uuid}:
+    get:
+      summary: Get contract by UUID
+      description: Retrieve a specific payment contract by its UUID
+      operationId: getContractByUuid
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      responses:
+        '200':
+          description: Contract found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Contract'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      summary: Update a contract
+      description: Update an existing payment contract by its UUID
+      operationId: updateContract
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractInput'
+      responses:
+        '200':
+          description: Contract updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Contract'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      summary: Delete a contract
+      description: Delete a payment contract by its UUID
+      operationId: deleteContract
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      responses:
+        '204':
+          description: Contract deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  
+  /balances:
+    get:
+      summary: Get all balances
+      description: Retrieve a list of account balances
+      operationId: getBalances
+      parameters:
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - name: accountUuid
+          in: query
+          description: Filter by account UUID
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          description: Filter by start date (inclusive)
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: Filter by end date (inclusive)
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: A list of balances
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Balance'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      summary: Create a new balance
+      description: Create a new account balance snapshot
+      operationId: createBalance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BalanceInput'
+      responses:
+        '201':
+          description: Balance created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Balance'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  
+  /balances/{uuid}:
+    get:
+      summary: Get balance by UUID
+      description: Retrieve a specific balance by its UUID
+      operationId: getBalanceByUuid
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      responses:
+        '200':
+          description: Balance found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Balance'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      summary: Update a balance
+      description: Update an existing balance by its UUID
+      operationId: updateBalance
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BalanceInput'
+      responses:
+        '200':
+          description: Balance updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Balance'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      summary: Delete a balance
+      description: Delete a balance by its UUID
+      operationId: deleteBalance
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      responses:
+        '204':
+          description: Balance deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  
+  /stocks:
+    get:
+      summary: Get all stocks
+      description: Retrieve a list of stock investments
+      operationId: getStocks
+      parameters:
+        - $ref: '#/components/parameters/limitParam'
+        - $ref: '#/components/parameters/offsetParam'
+        - name: symbol
+          in: query
+          description: Filter by stock symbol
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of stocks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Stock'
+                  meta:
+                    $ref: '#/components/schemas/PaginationMeta'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      summary: Create a new stock
+      description: Create a new stock investment
+      operationId: createStock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockInput'
+      responses:
+        '201':
+          description: Stock created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Stock'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  
+  /stocks/{uuid}:
+    get:
+      summary: Get stock by UUID
+      description: Retrieve a specific stock by its UUID
+      operationId: getStockByUuid
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      responses:
+        '200':
+          description: Stock found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Stock'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    put:
+      summary: Update a stock
+      description: Update an existing stock by its UUID
+      operationId: updateStock
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockInput'
+      responses:
+        '200':
+          description: Stock updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Stock'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    delete:
+      summary: Delete a stock
+      description: Delete a stock by its UUID
+      operationId: deleteStock
+      parameters:
+        - $ref: '#/components/parameters/uuidParam'
+      responses:
+        '204':
+          description: Stock deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  
+  /reports/monthly-expenses:
+    get:
+      summary: Get monthly expenses report
+      description: Retrieve a report of expenses grouped by month
+      operationId: getMonthlyExpensesReport
+      parameters:
+        - name: year
+          in: query
+          description: Filter by year
+          required: true
+          schema:
+            type: integer
+            format: int32
+            minimum: 2000
+            maximum: 2100
+        - name: category
+          in: query
+          description: Filter by expense category
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Monthly expenses report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        month:
+                          type: integer
+                          format: int32
+                          minimum: 1
+                          maximum: 12
+                        total:
+                          type: number
+                          format: double
+                        categories:
+                          type: object
+                          additionalProperties:
+                            type: number
+                            format: double
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+  
+  /reports/item-expenses:
+    get:
+      summary: Get expenses by item report
+      description: Retrieve a report of expenses grouped by budget item
+      operationId: getItemExpensesReport
+      parameters:
+        - name: startDate
+          in: query
+          description: Filter by start date (inclusive)
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: Filter by end date (inclusive)
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Item expenses report
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        item:
+                          type: string
+                        group:
+                          type: string
+                        total:
+                          type: number
+                          format: double
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+components:
+  parameters:
+    uuidParam:
+      name: uuid
+      in: path
+      required: true
+      description: UUID of the resource
+      schema:
+        type: string
+        format: uuid
+    limitParam:
+      name: limit
+      in: query
+      description: Maximum number of items to return
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 100
+        default: 20
+    offsetParam:
+      name: offset
+      in: query
+      description: Number of items to skip
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+  
+  schemas:
+    Account:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - uuid
+        - name
+        - createdAt
+        - updatedAt
+    
+    AccountInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+        - name
+    
+    Transaction:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [deposit, expense, order, transfer]
+        amount:
+          type: number
+          format: double
+        date:
+          type: string
+          format: date-time
+        description:
+          type: string
+        account:
+          type: object
+          properties:
+            uuid:
+              type: string
+              format: uuid
+            name:
+              type: string
+        payer:
+          type: string
+        creditor:
+          type: string
+        category:
+          type: string
+        invoice:
+          type: boolean
+        item:
+          type: string
+        orderType:
+          type: string
+          enum: [purchase, sale, dividend, savings_plan, other]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - uuid
+        - type
+        - amount
+        - date
+        - description
+        - account
+        - createdAt
+        - updatedAt
+    
+    TransactionInput:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [deposit, expense, order, transfer]
+        amount:
+          type: number
+          format: double
+        date:
+          type: string
+          format: date-time
+        description:
+          type: string
+          minLength: 1
+          maxLength: 500
+        accountUuid:
+          type: string
+          format: uuid
+        payer:
+          type: string
+        creditor:
+          type: string
+        category:
+          type: string
+        invoice:
+          type: boolean
+        item:
+          type: string
+        orderType:
+          type: string
+          enum: [purchase, sale, dividend, savings_plan, other]
+      required:
+        - type
+        - amount
+        - date
+        - description
+    
+    Item:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        description:
+          type: string
+        group:
+          type: string
+        units:
+          type: number
+          format: double
+        unitPrice:
+          type: number
+          format: double
+        area:
+          type: number
+          format: double
+        areaPrice:
+          type: number
+          format: double
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - uuid
+        - description
+        - group
+        - createdAt
+        - updatedAt
+    
+    ItemInput:
+      type: object
+      properties:
+        description:
+          type: string
+          minLength: 1
+          maxLength: 200
+        group:
+          type: string
+          minLength: 1
+          maxLength: 100
+        units:
+          type: number
+          format: double
+        unitPrice:
+          type: number
+          format: double
+        area:
+          type: number
+          format: double
+        areaPrice:
+          type: number
+          format: double
+        comment:
+          type: string
+          maxLength: 500
+      required:
+        - description
+        - group
+    
+    Contract:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        name:
+          type: string
+        creditor:
+          type: string
+        amount:
+          type: number
+          format: double
+        shared:
+          type: boolean
+        months:
+          type: array
+          items:
+            type: boolean
+          minItems: 12
+          maxItems: 12
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - uuid
+        - name
+        - creditor
+        - amount
+        - shared
+        - months
+        - createdAt
+        - updatedAt
+    
+    ContractInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        creditor:
+          type: string
+          minLength: 1
+          maxLength: 200
+        amount:
+          type: number
+          format: double
+        shared:
+          type: boolean
+        months:
+          type: array
+          items:
+            type: boolean
+          minItems: 12
+          maxItems: 12
+      required:
+        - name
+        - creditor
+        - amount
+        - shared
+        - months
+    
+    Balance:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: double
+        date:
+          type: string
+          format: date-time
+        description:
+          type: string
+        account:
+          type: object
+          properties:
+            uuid:
+              type: string
+              format: uuid
+            name:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - uuid
+        - amount
+        - date
+        - description
+        - account
+        - createdAt
+        - updatedAt
+    
+    BalanceInput:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: double
+        date:
+          type: string
+          format: date-time
+        description:
+          type: string
+          minLength: 1
+          maxLength: 200
+        accountUuid:
+          type: string
+          format: uuid
+      required:
+        - amount
+        - date
+        - description
+        - accountUuid
+    
+    Stock:
+      type: object
+      properties:
+        uuid:
+          type: string
+          format: uuid
+        symbol:
+          type: string
+        name:
+          type: string
+        purchase:
+          type: number
+          format: double
+        quantity:
+          type: number
+          format: double
+        value:
+          type: number
+          format: double
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - uuid
+        - symbol
+        - name
+        - purchase
+        - quantity
+        - value
+        - createdAt
+        - updatedAt
+    
+    StockInput:
+      type: object
+      properties:
+        symbol:
+          type: string
+          minLength: 1
+          maxLength: 20
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+        purchase:
+          type: number
+          format: double
+        quantity:
+          type: number
+          format: double
+        value:
+          type: number
+          format: double
+      required:
+        - symbol
+        - name
+        - purchase
+        - quantity
+        - value
+    
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int32
+        limit:
+          type: integer
+          format: int32
+        offset:
+          type: integer
+          format: int32
+      required:
+        - total
+        - limit
+        - offset
+  
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    field:
+                      type: string
+                    message:
+                      type: string
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Resource not found
+    
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Internal server error
