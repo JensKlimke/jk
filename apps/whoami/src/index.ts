@@ -2,6 +2,7 @@ import express from 'express';
 import { DatabaseService } from './services/database.service';
 import { WhoamiService } from './services/whoami.service';
 import { TemplateService } from './services/template.service';
+import { WhoamiController } from './controllers/whoami.controller';
 import { createRootRouter } from './routes/root.route';
 import logger from './utils/logger';
 
@@ -23,8 +24,11 @@ async function initializeApp() {
     // Get or create app ID
     const apiId = await databaseService.getOrCreateApiId();
 
+    // Create controller
+    const whoamiController = new WhoamiController(whoamiService, templateService, apiId);
+
     // Set up routes
-    app.use('/', createRootRouter(whoamiService, templateService, apiId));
+    app.use('/', createRootRouter(whoamiController));
 
     // Start server
     app.listen(port, () => {

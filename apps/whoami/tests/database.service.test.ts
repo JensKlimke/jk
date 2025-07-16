@@ -39,6 +39,31 @@ describe('DatabaseService', () => {
     databaseService = new DatabaseService(testUri);
   });
 
+  describe('constructor', () => {
+    it('should use default URI if not provided', () => {
+      // Create a new instance without specifying URI
+      const defaultDbService = new DatabaseService();
+
+      // Verify that the default URI is set
+      expect((defaultDbService as any).uri).toBeDefined();
+
+      // Verify that the URI is a string that contains expected parts
+      const uri = (defaultDbService as any).uri;
+      expect(typeof uri).toBe('string');
+      expect(uri).toContain('mongodb://');
+      expect(uri).toContain('/web?authSource=admin');
+    });
+
+    it('should use custom URI if provided', () => {
+      // Create a new instance with a custom URI
+      const customUri = 'mongodb://custom:27017/test';
+      const customDbService = new DatabaseService(customUri);
+
+      // Verify that the custom URI is used
+      expect((customDbService as any).uri).toBe(customUri);
+    });
+  });
+
   describe('connect', () => {
     it('should connect to MongoDB using Mongoose', async () => {
       // Set up the mock to update connection state
@@ -117,11 +142,30 @@ describe('DatabaseService', () => {
       await connectPromise;
     });
 
-    // Skip the problematic test for now
-    it.skip('should throw error after maximum retries', async () => {
-      // This test is being skipped because it's causing timeouts
-      // The functionality is still tested in the application code
-      expect(true).toBe(true);
+    it('should throw error after maximum retries', async () => {
+      // Mock setTimeout to execute immediately
+      jest.spyOn(global, 'setTimeout').mockImplementation((callback: any) => {
+        callback();
+        return {} as any;
+      });
+
+      // Mock the connect method to always fail
+      (mongoose.connect as jest.Mock).mockRejectedValue(new Error('Connection error'));
+
+      // Use a small number of retries
+      const maxRetries = 2;
+
+      // Start the connection process
+      const connectPromise = databaseService.connectWithRetry(maxRetries, 10);
+
+      // Expect the promise to reject with the correct error message
+      await expect(connectPromise).rejects.toThrow(`Failed to connect to MongoDB after ${maxRetries} attempts`);
+
+      // Verify connect was called the expected number of times
+      expect(mongoose.connect).toHaveBeenCalledTimes(maxRetries);
+
+      // Restore the original setTimeout
+      (global.setTimeout as unknown as jest.Mock).mockRestore();
     });
   });
 
@@ -185,6 +229,35 @@ describe('DatabaseService', () => {
       });
     });
 
+    it('should return cached apiId without database query if already set', async () => {
+      // First call to set the apiId
+      const existingApiId = 'cached-app-id';
+      const mockApiInfo = {
+        _id: 'app_id',
+        apiId: existingApiId,
+        createdAt: new Date()
+      };
+
+      // Mock the findOne method to return the existing app info
+      (ApiInfoModel.findOne as jest.Mock).mockResolvedValueOnce(mockApiInfo);
+
+      // First call to get the apiId (this will cache it)
+      const firstApiId = await databaseService.getOrCreateApiId();
+      expect(firstApiId).toBe(existingApiId);
+      expect(ApiInfoModel.findOne).toHaveBeenCalledTimes(1);
+
+      // Clear the mocks to verify they aren't called again
+      jest.clearAllMocks();
+
+      // Second call should use the cached value
+      const secondApiId = await databaseService.getOrCreateApiId();
+      expect(secondApiId).toBe(existingApiId);
+
+      // Verify that no database calls were made
+      expect(ApiInfoModel.findOne).not.toHaveBeenCalled();
+      expect(ApiInfoModel.create).not.toHaveBeenCalled();
+    });
+
     it('should handle database errors', async () => {
       // Mock a database error
       (ApiInfoModel.findOne as jest.Mock).mockRejectedValueOnce(new Error('Database error'));
@@ -230,6 +303,28 @@ describe('DatabaseService', () => {
 
       // Should not throw when trying to close an already closed connection
       await expect(databaseService.close()).resolves.not.toThrow();
+
+      // Verify close was called despite the error
+      expect(mongoose.connection.close).toHaveBeenCalled();
+    });
+
+    it('should log error when close fails', async () => {
+      // Import logger and create a spy on its error method
+      const logger = require('../src/utils/logger').default;
+      const errorSpy = jest.spyOn(logger, 'error').mockImplementation();
+
+      // Mock the close method to throw a specific error
+      const mockError = new Error('Specific close error');
+      (mongoose.connection.close as jest.Mock).mockRejectedValueOnce(mockError);
+
+      // Close the connection (should not throw)
+      await databaseService.close();
+
+      // Verify error was logged
+      expect(errorSpy).toHaveBeenCalledWith('Error closing MongoDB connection:', mockError);
+
+      // Clean up
+      errorSpy.mockRestore();
     });
   });
 });

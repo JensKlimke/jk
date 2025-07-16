@@ -52,12 +52,6 @@ When adding a new feature that hasn't been implemented yet, follow this process:
    - Ensure tests cover all requirements from Level 0
 4. **Execute tests** to ensure correctness
    - Mark tasks as completed (✓) in Level 2 when tests pass
-5. **Modify implementation** when necessary to meet the specification
-   - Update code to address any issues found during testing
-6. **Update specification L2 → L1 → L0** if necessary, to ensure consistency
-   - If implementation details change, update Level 2 first
-   - If architectural changes are needed, update Level 1
-   - If requirements change, update Level 0
 
 ### Bottom-Up Approach (Existing Implementation)
 When code has been added without prior specification, follow this process:
@@ -82,6 +76,13 @@ When code has been added without prior specification, follow this process:
 5. **Check consistency** between implementation and specifications
    - Ensure the specifications accurately reflect the implementation
    - Update specifications if discrepancies are found
+
+### Post-Steps (for both cases)
+
+- Run all unit tests.
+- Check if the specification and the implementation are consistent, e.g., that the new feature doesn't affect old requirements or the implemented features don't contradict the specified tasks.
+- Run an integration test by executing the docker-compose stack.
+
 
 ## Specification Maintenance Guidelines
 

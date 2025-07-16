@@ -117,81 +117,26 @@ export class WhoamiService {
 ### IMPL-1.4: Router (COMP-4)
 **File**: `src/routes/root.route.ts`
 
-**Description**: Defines API endpoints and handles requests.
+**Description**: Defines API endpoints and routes requests to the controller.
 
 **Implementation Tasks**:
 - TASK-1.4.1: Create router factory function ✓
 - TASK-1.4.2: Implement root endpoint ✓
-- TASK-1.4.3: Implement content negotiation ✓
-- TASK-1.4.4: Implement error handling ✓
-- TASK-1.4.5: Implement HTML response format using Template Renderer ✓
+- TASK-1.4.3: Route requests to the controller ✓
 
 **Design Details**:
 ```typescript
-export function createRootRouter(whoamiService: WhoamiService, templateService: TemplateService, apiId: string): Router {
+import express, { Router } from 'express';
+import { WhoamiController } from '../controllers/whoami.controller';
+import logger from '../utils/logger';
+
+export function createRootRouter(whoamiController: WhoamiController): Router {
   const router = express.Router();
 
-  router.get('/', async (req: Request, res: Response) => {
-    try {
-      const whoamiInfo = whoamiService.getWhoamiInfo(req, apiId);
+  logger.info('Setting up root router');
 
-      // Content negotiation
-      const acceptHeader = req.headers.accept || '';
-      const userAgent = req.headers['user-agent'] || '';
-
-      // Determine response type based on Accept header and User-Agent
-      let responseType = 'text';
-      if (acceptHeader.includes('application/json')) {
-        responseType = 'json';
-      } else if (acceptHeader.includes('text/html') || userAgent.includes('Mozilla') || userAgent.includes('Chrome') || userAgent.includes('Safari')) {
-        responseType = 'html';
-      }
-
-      // Log the response type
-      logger.info('Processing whoami request', { 
-        ip: req.ip, 
-        method: req.method, 
-        path: req.path,
-        responseType
-      });
-
-      // Send response in appropriate format
-      if (responseType === 'json') {
-        res.json(whoamiInfo);
-        logger.debug('Sent JSON response');
-      } else if (responseType === 'html') {
-        // Render HTML using template
-        const html = await templateService.renderWhoamiInfo(whoamiInfo);
-        res.type('text/html').send(html);
-        logger.debug('Sent HTML response');
-      } else {
-        // Format as text
-        let textResponse = `Hostname: ${whoamiInfo.hostname}\n`;
-        textResponse += `IPs: ${whoamiInfo.ips.join(', ')}\n`;
-        textResponse += `Remote Address: ${whoamiInfo.remoteAddr}\n`;
-        textResponse += `App ID: ${whoamiInfo.apiId}\n\n`;
-        textResponse += `Headers:\n`;
-
-        Object.entries(whoamiInfo.headers).forEach(([key, value]) => {
-          textResponse += `  ${key}: ${value}\n`;
-        });
-
-        res.type('text/plain').send(textResponse);
-        logger.debug('Sent text response');
-      }
-    } catch (error) {
-      // Error handling
-      logger.error('Error handling request:', error);
-      const acceptHeader = req.headers.accept || '';
-      if (acceptHeader.includes('application/json')) {
-        res.status(500).json({ error: 'Internal server error' });
-      } else if (acceptHeader.includes('text/html')) {
-        res.status(500).type('text/html').send('<h1>Internal Server Error</h1><p>Something went wrong.</p>');
-      } else {
-        res.status(500).type('text/plain').send('Internal server error');
-      }
-    }
-  });
+  // Route requests to the controller
+  router.get('/', whoamiController.getWhoamiInfo);
 
   return router;
 }
@@ -253,39 +198,139 @@ if (process.env.NODE_ENV !== 'production') {
 - TASK-1.7.3: Create mustache template for whoami information ✓
 - TASK-1.7.4: Configure build process to copy template files to dist directory ✓
 
+### IMPL-1.8: Whoami Controller (COMP-8)
+**File**: `src/controllers/whoami.controller.ts`
+
+**Description**: Handles HTTP requests, content negotiation, and coordinates services.
+
+**Implementation Tasks**:
+- TASK-1.8.1: Create controller class ✓
+- TASK-1.8.2: Implement getWhoamiInfo method to handle requests ✓
+- TASK-1.8.3: Implement content negotiation logic ✓
+- TASK-1.8.4: Implement response formatting for different content types ✓
+- TASK-1.8.5: Implement error handling ✓
+
 **Design Details**:
 ```typescript
-import * as Mustache from 'mustache';
-import * as fs from 'fs';
-import * as path from 'path';
-import { WhoamiInfo } from './whoami.service';
+import { Request, Response } from 'express';
+import { WhoamiService, WhoamiInfo } from '../services/whoami.service';
+import { TemplateService } from '../services/template.service';
+import logger from '../utils/logger';
 
-export class TemplateService {
-  private readonly templatesDir: string;
+export class WhoamiController {
+  private apiId: string;
 
-  constructor(templatesDir: string = path.join(__dirname, '../templates')) {
-    this.templatesDir = templatesDir;
+  constructor(
+    private whoamiService: WhoamiService,
+    private templateService: TemplateService,
+    apiId: string
+  ) {
+    this.apiId = apiId;
+    logger.info('Whoami controller initialized');
   }
 
   /**
-   * Render HTML using a mustache template
-   * @param templateName Name of the template file (without extension)
-   * @param data Data to be rendered in the template
-   * @returns Rendered HTML string
+   * Handle whoami info request
+   * @param req Express request object
+   * @param res Express response object
    */
-  async renderHtml(templateName: string, data: any): Promise<string> {
-    const templatePath = path.join(this.templatesDir, `${templateName}.mustache`);
-    const template = await fs.promises.readFile(templatePath, 'utf-8');
-    return Mustache.render(template, data);
+  getWhoamiInfo = async (req: Request, res: Response): Promise<void> => {
+    try {
+      // Get whoami information from service
+      const whoamiInfo = this.whoamiService.getWhoamiInfo(req, this.apiId);
+
+      // Determine response type based on content negotiation
+      const responseType = this.determineResponseType(req);
+
+      // Send response in appropriate format
+      await this.sendResponse(res, whoamiInfo, responseType);
+    } catch (error) {
+      this.handleError(req, res, error);
+    }
   }
 
   /**
-   * Render whoami information as HTML
-   * @param whoamiInfo WhoamiInfo object
-   * @returns Rendered HTML string
+   * Determine response type based on Accept header and User-Agent
+   * @param req Express request object
+   * @returns Response type (json, html, or text)
    */
-  async renderWhoamiInfo(whoamiInfo: WhoamiInfo): Promise<string> {
-    return this.renderHtml('whoami', whoamiInfo);
+  private determineResponseType(req: Request): string {
+    const acceptHeader = req.headers.accept || '';
+    const userAgent = req.headers['user-agent'] || '';
+
+    if (acceptHeader.includes('application/json')) {
+      return 'json';
+    } else if (acceptHeader.includes('text/html') || 
+               userAgent.includes('Mozilla') || 
+               userAgent.includes('Chrome') || 
+               userAgent.includes('Safari')) {
+      return 'html';
+    }
+    return 'text';
+  }
+
+  /**
+   * Send response in appropriate format
+   * @param res Express response object
+   * @param whoamiInfo Whoami information
+   * @param responseType Response type (json, html, or text)
+   */
+  private async sendResponse(res: Response, whoamiInfo: WhoamiInfo, responseType: string): Promise<void> {
+    logger.info('Sending response', { responseType });
+
+    if (responseType === 'json') {
+      res.json(whoamiInfo);
+      logger.debug('Sent JSON response');
+    } else if (responseType === 'html') {
+      const html = await this.templateService.renderWhoamiInfo(whoamiInfo);
+      res.type('text/html').send(html);
+      logger.debug('Sent HTML response');
+    } else {
+      this.sendTextResponse(res, whoamiInfo);
+    }
+  }
+
+  /**
+   * Send text response
+   * @param res Express response object
+   * @param whoamiInfo Whoami information
+   */
+  private sendTextResponse(res: Response, whoamiInfo: WhoamiInfo): void {
+    let textResponse = `Hostname: ${whoamiInfo.hostname}\n`;
+    textResponse += `IPs: ${whoamiInfo.ips.join(', ')}\n`;
+    textResponse += `Remote Address: ${whoamiInfo.remoteAddr}\n`;
+    textResponse += `App ID: ${whoamiInfo.apiId}\n\n`;
+    textResponse += `Headers:\n`;
+
+    Object.entries(whoamiInfo.headers).forEach(([key, value]) => {
+      textResponse += `  ${key}: ${value}\n`;
+    });
+
+    res.type('text/plain').send(textResponse);
+    logger.debug('Sent text response');
+  }
+
+  /**
+   * Handle errors
+   * @param req Express request object
+   * @param res Express response object
+   * @param error Error object
+   */
+  private handleError(req: Request, res: Response, error: any): void {
+    logger.error('Error handling request:', error);
+    const acceptHeader = req.headers.accept || '';
+    const userAgent = req.headers['user-agent'] || '';
+
+    if (acceptHeader.includes('application/json')) {
+      res.status(500).json({ error: 'Internal server error' });
+    } else if (acceptHeader.includes('text/html') || 
+               userAgent.includes('Mozilla') || 
+               userAgent.includes('Chrome') || 
+               userAgent.includes('Safari')) {
+      res.status(500).type('text/html').send('<h1>Internal Server Error</h1><p>Something went wrong.</p>');
+    } else {
+      res.status(500).type('text/plain').send('Internal server error');
+    }
   }
 }
 ```
@@ -307,9 +352,9 @@ This is necessary because TypeScript's compiler only processes TypeScript files 
 **Description**: Centralized error handling strategy.
 
 **Implementation Tasks**:
-- TASK-2.1.1: Implement try-catch blocks in route handlers ✓
+- TASK-2.1.1: Implement try-catch blocks in controller methods ✓
 - TASK-2.1.2: Log errors with appropriate context ✓
-- TASK-2.1.3: Return appropriate error responses based on Accept header ✓
+- TASK-2.1.3: Return appropriate error responses based on Accept header and User-Agent ✓
 
 ### IMPL-2.2: Logging
 **Description**: Comprehensive logging strategy.
@@ -332,10 +377,11 @@ This is necessary because TypeScript's compiler only processes TypeScript files 
 
 | Component | Dependencies |
 |-----------|--------------|
-| Express Application | Database Service, Whoami Service, Template Renderer, Router, Logger |
+| Express Application | Database Service, Whoami Service, Template Renderer, Router, Whoami Controller, Logger |
 | Database Service | MongoDB, Logger, Data Models |
 | Whoami Service | Logger |
-| Router | Whoami Service, Template Renderer, Logger |
+| Router | Whoami Controller, Logger |
+| Whoami Controller | Whoami Service, Template Renderer, Logger |
 | Logger | None |
 | Data Models | MongoDB |
 | Template Renderer | Whoami Service |
@@ -345,9 +391,9 @@ This is necessary because TypeScript's compiler only processes TypeScript files 
 | Requirement | Component | Implementation Task |
 |-------------|-----------|---------------------|
 | PRD-3.1 | COMP-3 | TASK-1.3.1, TASK-1.3.2, TASK-1.3.3 |
-| PRD-3.2 | COMP-3, COMP-4 | TASK-1.3.4, TASK-1.3.5, TASK-1.4.2 |
-| PRD-3.3 | COMP-4, COMP-7 | TASK-1.4.3, TASK-1.4.5, TASK-1.7.1, TASK-1.7.2, TASK-1.7.3 |
+| PRD-3.2 | COMP-3, COMP-8 | TASK-1.3.4, TASK-1.3.5, TASK-1.8.2 |
+| PRD-3.3 | COMP-7, COMP-8 | TASK-1.7.1, TASK-1.7.2, TASK-1.7.3, TASK-1.8.3, TASK-1.8.4 |
 | PRD-4.1 | COMP-2, COMP-6 | TASK-1.2.3, TASK-1.6.1, TASK-1.6.2, TASK-1.6.3 |
 | PRD-4.2 | COMP-5 | TASK-1.5.1, TASK-1.5.2, TASK-1.5.3, TASK-1.5.4 |
-| PRD-4.3 | COMP-4 | TASK-1.4.4, TASK-2.1.1, TASK-2.1.2, TASK-2.1.3 |
+| PRD-4.3 | COMP-8 | TASK-1.8.5, TASK-2.1.1, TASK-2.1.2, TASK-2.1.3 |
 | PRD-4.4 | COMP-2 | TASK-1.2.2 |
