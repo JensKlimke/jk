@@ -34,6 +34,20 @@ services:
       NGINX_SERVICE: "nginx-reverse-proxy"
     restart: always
 
+  webhook-service:
+    build:
+      context: ./services/webhook-service
+      dockerfile: Dockerfile
+    container_name: webhook-service
+    environment:
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-defaultsecret}
+      VIRTUAL_HOST: "deploy.${DOMAIN:-localhost}"
+    volumes:
+      - www:/var/www
+    restart: always
+    expose:
+      - "3000"
+
   oauth2-proxy:
     image: quay.io/oauth2-proxy/oauth2-proxy:latest
     container_name: oauth2-proxy
@@ -64,3 +78,4 @@ volumes:
   letsencrypt:
   logs:
   nginx:
+  www:
