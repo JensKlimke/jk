@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hello World - Nerdy Edition</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --text-color: #58a6ff;
+            --accent-color: #7ee787;
+            --secondary-color: #f78166;
+            --terminal-color: #161b22;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .matrix-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            z-index: 0;
+            opacity: 0.1;
+        }
+        
+        .matrix-char {
+            position: absolute;
+            color: var(--accent-color);
+            font-size: 14px;
+            animation: fall linear infinite;
+        }
+        
+        @keyframes fall {
+            0% {
+                transform: translateY(-100%);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh);
+                opacity: 0.3;
+            }
+        }
+        
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            padding: 2rem;
+        }
+        
+        .terminal {
+            background-color: var(--terminal-color);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid #30363d;
+            position: relative;
+        }
+        
+        .terminal-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background-color: #21262d;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+        }
+        
+        .terminal-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .terminal-btn.red { background-color: #ff5f56; }
+        .terminal-btn.yellow { background-color: #ffbd2e; }
+        .terminal-btn.green { background-color: #27c93f; }
+        
+        .terminal-title {
+            position: absolute;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #8b949e;
+            font-size: 14px;
+        }
+        
+        .terminal-content {
+            margin-top: 30px;
+        }
+        
+        .prompt {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+        
+        .prompt::before {
+            content: "$ ";
+            color: var(--secondary-color);
+        }
+        
+        .typing {
+            border-right: 2px solid var(--text-color);
+            white-space: nowrap;
+            overflow: hidden;
+            animation: typing 3s steps(40, end), blink-caret 0.75s step-end infinite;
+        }
+        
+        @keyframes typing {
+            from { width: 0 }
+            to { width: 100% }
+        }
+        
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: var(--text-color) }
+        }
+        
+        .hello-world {
+            font-size: 2.5rem;
+            margin: 2rem 0;
+            text-align: center;
+            color: var(--accent-color);
+            text-shadow: 0 0 10px rgba(126, 231, 135, 0.5);
+        }
+        
+        .code-block {
+            background-color: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+        
+        .comment { color: #8b949e; }
+        .keyword { color: #ff7b72; }
+        .string { color: #a5d6ff; }
+        .function { color: #d2a8ff; }
+        
+        .binary {
+            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.3);
+            margin-top: 2rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="matrix-bg" id="matrix-bg"></div>
+    
+    <div class="container">
+        <div class="terminal">
+            <div class="terminal-header">
+                <div class="terminal-btn red"></div>
+                <div class="terminal-btn yellow"></div>
+                <div class="terminal-btn green"></div>
+                <div class="terminal-title">hello-world.sh</div>
+            </div>
+            <div class="terminal-content">
+                <p class="prompt typing">echo "Initializing Hello World sequence..."</p>
+                
+                <div class="hello-world">Hello World!</div>
+                
+                <div class="code-block">
+                    <pre><span class="comment">// The classic program in JavaScript</span>
+<span class="keyword">function</span> <span class="function">greet</span>() {
+    <span class="keyword">const</span> message = <span class="string">"Hello World!"</span>;
+    <span class="keyword">return</span> message;
+}
+
+<span class="comment">// Execute the function</span>
+console.log(greet());</pre>
+                </div>
+                
+                <p class="prompt">Running system diagnostics...</p>
+                <p class="prompt">All systems operational!</p>
+                
+                <div class="binary">
+                    01001000 01100101 01101100 01101100 01101111 00100000 01010111 01101111 01110010 01101100 01100100 00100001
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Create Matrix rain effect
+        const matrixBg = document.getElementById('matrix-bg');
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789$#@%&*(){}[]<>~`';
+        
+        function createMatrixRain() {
+            const width = window.innerWidth;
+            const columns = Math.floor(width / 20);
+            
+            for (let i = 0; i < columns; i++) {
+                const char = document.createElement('div');
+                char.className = 'matrix-char';
+                char.style.left = `${i * 20 + Math.random() * 10}px`;
+                char.style.animationDuration = `${5 + Math.random() * 10}s`;
+                char.style.animationDelay = `${Math.random() * 5}s`;
+                char.textContent = characters.charAt(Math.floor(Math.random() * characters.length));
+                matrixBg.appendChild(char);
+            }
+        }
+        
+        // Initialize matrix effect
+        createMatrixRain();
+        
+        // Add more characters periodically
+        setInterval(() => {
+            const char = document.createElement('div');
+            char.className = 'matrix-char';
+            char.style.left = `${Math.random() * window.innerWidth}px`;
+            char.style.animationDuration = `${5 + Math.random() * 10}s`;
+            char.textContent = characters.charAt(Math.floor(Math.random() * characters.length));
+            matrixBg.appendChild(char);
+            
+            // Remove excess elements to prevent memory issues
+            if (matrixBg.children.length > 300) {
+                matrixBg.removeChild(matrixBg.children[0]);
+            }
+        }, 500);
+    </script>
+</body>
+</html>
