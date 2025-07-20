@@ -12,14 +12,14 @@ services:
       - certbot:/var/www/html
       - letsencrypt:/etc/letsencrypt:ro
     depends_on:
-      - nginx-services-ts
+      - nginx-services
     restart: always
 
-  nginx-services-ts:
+  nginx-services:
     build:
       context: ./services/nginx-service
       dockerfile: Dockerfile
-    container_name: nginx-services-ts
+    container_name: nginx-services
     volumes:
       - certbot:/var/www/html
       - letsencrypt:/etc/letsencrypt
