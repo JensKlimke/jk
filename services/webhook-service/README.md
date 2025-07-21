@@ -6,7 +6,7 @@ The Webhook Service provides an endpoint for CI/CD systems to trigger deployment
 ## Features
 - Secure webhook endpoint with Bearer token authentication
 - Support for multiple web applications (configurable via URL path)
-- Automatic artifact download from GitHub Actions
+- Direct artifact download from any URL
 - Extraction of zip files to the appropriate web server directory
 - Logging of deployment activities
 
@@ -17,24 +17,19 @@ The service is built using Node.js, Express, and TypeScript, following the same 
 - **URL**: `https://deploy.{domain}.{tld}/{webapp}`
 - **Method**: POST
 - **Authentication**: Bearer token in Authorization header
-- **Payload**: JSON with deployment information
+- **Payload**: JSON with artifact URL
 
 ## Payload Example
 ```json
 {
-  "deployment_status": "success",
-  "repository": "owner/repo",
-  "commit": "commit-sha",
-  "ref": "refs/heads/main",
-  "event": "push",
-  "artifact_url": "https://github.com/owner/repo/actions/runs/run-id"
+  "artifact_url": "https://example.com/artifacts/webapp.zip"
 }
 ```
 
 ## Workflow
 1. CI/CD system sends a POST request to the webhook endpoint
 2. Service authenticates the request using the Bearer token
-3. Service downloads the artifact from the provided URL
+3. Service downloads the artifact zip file directly from the provided URL
 4. Service extracts the artifact to the appropriate directory (var/www/{webapp})
 5. Service returns a success response
 
@@ -43,6 +38,7 @@ The service is configured using environment variables:
 - `WEBHOOK_SECRET`: Secret token for authentication
 - `DOMAIN`: Domain for the webhook URL
 - `WEB_ROOT`: Root directory for web applications (default: /var/www)
+- `TEMP_DIR`: Directory for temporary files (default: ./temp)
 
 ## Deployment
 The service is deployed as a Docker container and integrated with the existing nginx reverse proxy.

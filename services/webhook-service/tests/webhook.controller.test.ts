@@ -1,6 +1,7 @@
 import request from 'supertest';
 import express from 'express';
-import { webhookRouter, artifactService } from '../src/controllers/webhook.controller';
+import webhookRouter from '../src/routes/webhook.routes';
+import { artifactService } from '../src/controllers/webhook.controller';
 import { ArtifactService } from '../src/services/artifact.service';
 import { errorHandler } from '../src/middleware/error.middleware';
 
@@ -32,12 +33,7 @@ describe('Webhook Controller', () => {
 
   describe('POST /:webapp', () => {
     const validPayload = {
-      deployment_status: 'success',
-      repository: 'owner/repo',
-      commit: 'commit-sha',
-      ref: 'refs/heads/main',
-      event: 'push',
-      artifact_url: 'https://github.com/owner/repo/actions/runs/run-id'
+      artifact_url: 'https://example.com/artifacts/sample.zip'
     };
 
     it('should return 401 if no authorization header is provided', async () => {
@@ -70,12 +66,7 @@ describe('Webhook Controller', () => {
 
     it('should return 400 if payload is missing required fields', async () => {
       const invalidPayload = {
-        deployment_status: 'success',
-        repository: 'owner/repo',
-        // Missing commit field
-        ref: 'refs/heads/main',
-        event: 'push',
-        artifact_url: 'https://github.com/owner/repo/actions/runs/run-id'
+        // Missing artifact_url field
       };
 
       const response = await request(app)
@@ -84,22 +75,7 @@ describe('Webhook Controller', () => {
         .send(invalidPayload);
 
       expect(response.status).toBe(400);
-      expect(response.body.message).toContain('Missing required field');
-    });
-
-    it('should return 400 if deployment_status is not success', async () => {
-      const invalidPayload = {
-        ...validPayload,
-        deployment_status: 'failed'
-      };
-
-      const response = await request(app)
-        .post('/test-app')
-        .set('Authorization', 'Bearer test-secret')
-        .send(invalidPayload);
-
-      expect(response.status).toBe(400);
-      expect(response.body.message).toContain('Deployment status is not');
+      expect(response.body.message).toContain('artifact_url is required');
     });
 
     it('should process the artifact and return 200 if request is valid', async () => {
@@ -111,15 +87,12 @@ describe('Webhook Controller', () => {
       expect(response.status).toBe(200);
       expect(response.body.status).toBe('success');
       expect(response.body.message).toContain('Deployment successful');
-      expect(response.body.details.repository).toBe(validPayload.repository);
-      expect(response.body.details.commit).toBe(validPayload.commit);
+      expect(response.body.details.artifact_url).toBe(validPayload.artifact_url);
       expect(response.body.details.extractPath).toBe('/var/www/test-app');
 
       // Verify that processArtifact was called with the correct arguments
       expect(artifactService.processArtifact).toHaveBeenCalledWith({
-        url: validPayload.artifact_url,
-        repository: validPayload.repository,
-        commit: validPayload.commit,
+        artifact_url: validPayload.artifact_url,
         webapp: 'test-app'
       });
     });

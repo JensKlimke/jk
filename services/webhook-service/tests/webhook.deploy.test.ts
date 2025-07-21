@@ -3,8 +3,9 @@ import express from 'express';
 import fs from 'fs-extra';
 import path from 'path';
 import axios from 'axios';
-import { webhookRouter } from '../src/controllers/webhook.controller';
+import webhookRouter from '../src/routes/webhook.routes';
 import { errorHandler } from '../src/middleware/error.middleware';
+import { v4 as uuidv4 } from 'uuid';
 
 // Mock environment variables
 process.env.WEBHOOK_SECRET = 'test-secret';
@@ -14,6 +15,7 @@ process.env.WEB_ROOT = process.env.WEB_ROOT || '/var/www';
 jest.mock('fs-extra');
 jest.mock('axios');
 jest.mock('extract-zip');
+jest.mock('uuid');
 
 // Sample index.html content
 const sampleHtml = `
@@ -35,10 +37,14 @@ describe('Webhook Deployment Test', () => {
   const webRoot = process.env.WEB_ROOT as string;
   const testDir = path.join(webRoot, testAppName);
   const indexHtmlPath = path.join(testDir, 'index.html');
+  const mockUuid = '123e4567-e89b-12d3-a456-426614174000';
 
   beforeEach(() => {
     // Reset mocks and setup
     jest.clearAllMocks();
+
+    // Mock uuid
+    (uuidv4 as jest.Mock).mockReturnValue(mockUuid);
 
     // Create a new Express app for each test
     app = express();
@@ -77,19 +83,22 @@ describe('Webhook Deployment Test', () => {
     const mockRemove = fs.remove as unknown as jest.Mock;
     mockRemove.mockResolvedValue(undefined);
 
-    // Setup axios mock
+    // Setup axios mock for download
     const mockAxios = axios as unknown as jest.Mock;
-    mockAxios.mockResolvedValue({
-      data: {
-        pipe: jest.fn((writeStream: any) => {
-          // Simulate successful download
-          setTimeout(() => {
-            if (writeStream.on && typeof writeStream.on === 'function') {
-              writeStream.on('finish', () => {});
-            }
-          }, 100);
-        })
-      }
+    mockAxios.mockImplementation((config: any) => {
+      // It's a download request
+      return Promise.resolve({
+        data: {
+          pipe: jest.fn((writeStream: any) => {
+            // Simulate successful download
+            setTimeout(() => {
+              if (writeStream.on && typeof writeStream.on === 'function') {
+                writeStream.on('finish', () => {});
+              }
+            }, 100);
+          })
+        }
+      });
     });
 
     // Setup extract-zip mock
@@ -109,12 +118,7 @@ describe('Webhook Deployment Test', () => {
   it('should deploy a sample index.html file via webhook', async () => {
     // Prepare the webhook payload
     const webhookPayload = {
-      deployment_status: 'success',
-      repository: 'owner/repo',
-      commit: 'commit-sha',
-      ref: 'refs/heads/main',
-      event: 'push',
-      artifact_url: 'https://github.com/owner/repo/actions/runs/run-id'
+      artifact_url: 'https://example.com/artifacts/sample.zip'
     };
 
     // Send the webhook request
@@ -127,8 +131,7 @@ describe('Webhook Deployment Test', () => {
     expect(response.status).toBe(200);
     expect(response.body.status).toBe('success');
     expect(response.body.message).toContain('Deployment successful');
-    expect(response.body.details.repository).toBe(webhookPayload.repository);
-    expect(response.body.details.commit).toBe(webhookPayload.commit);
+    expect(response.body.details.artifact_url).toBe(webhookPayload.artifact_url);
     expect(response.body.details.extractPath).toBe(testDir);
 
     // Verify that the index.html file exists

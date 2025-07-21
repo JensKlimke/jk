@@ -3,16 +3,19 @@ import path from 'path';
 import axios from 'axios';
 import extract from 'extract-zip';
 import { ArtifactService, ArtifactInfo } from '../src/services/artifact.service';
+import { v4 as uuidv4 } from 'uuid';
 
 // Mock dependencies
 jest.mock('fs-extra');
 jest.mock('axios');
 jest.mock('extract-zip');
+jest.mock('uuid');
 
 describe('ArtifactService', () => {
   let artifactService: ArtifactService;
   const mockTempDir = '/tmp';
   const mockWebRoot = '/var/www';
+  const mockUuid = '123e4567-e89b-12d3-a456-426614174000';
 
   beforeEach(() => {
     // Reset mocks
@@ -21,6 +24,9 @@ describe('ArtifactService', () => {
     // Mock environment variables
     process.env.TEMP_DIR = mockTempDir;
     process.env.WEB_ROOT = mockWebRoot;
+
+    // Mock uuid
+    (uuidv4 as jest.Mock).mockReturnValue(mockUuid);
 
     // Mock fs-extra methods
     (fs.ensureDirSync as jest.Mock).mockImplementation(() => {});
@@ -37,11 +43,23 @@ describe('ArtifactService', () => {
     (fs.createWriteStream as jest.Mock).mockReturnValue(mockWriteStream);
     (fs.remove as jest.Mock).mockResolvedValue(undefined);
 
-    // Mock axios
-    (axios as unknown as jest.Mock).mockResolvedValue({
-      data: {
-        pipe: jest.fn()
-      }
+    // Mock axios for download
+    (axios as unknown as jest.Mock).mockImplementation((config) => {
+      // It's a download request
+      return Promise.resolve({
+        data: {
+          pipe: jest.fn((writeStream) => {
+            // Simulate successful download by triggering the 'finish' event
+            setTimeout(() => {
+              if (writeStream.on && typeof writeStream.on === 'function') {
+                const finishCallback = writeStream.on.mock.calls.find((call: any[]) => call[0] === 'finish')?.[1];
+                if (finishCallback) finishCallback();
+              }
+            }, 10);
+            return writeStream;
+          })
+        }
+      });
     });
 
     // Mock extract-zip
@@ -55,9 +73,7 @@ describe('ArtifactService', () => {
     it('should download and extract the artifact', async () => {
       // Arrange
       const artifactInfo: ArtifactInfo = {
-        url: 'https://github.com/owner/repo/actions/runs/run-id',
-        repository: 'owner/repo',
-        commit: 'commit-sha',
+        artifact_url: 'https://example.com/artifacts/sample.zip',
         webapp: 'test-app'
       };
 
@@ -68,10 +84,10 @@ describe('ArtifactService', () => {
       // Check that temp directory was created
       expect(fs.ensureDirSync).toHaveBeenCalledWith(mockTempDir);
 
-      // Check that axios was called with the correct URL
+      // Check that axios was called for download
       expect(axios).toHaveBeenCalledWith({
         method: 'GET',
-        url: artifactInfo.url,
+        url: artifactInfo.artifact_url,
         responseType: 'stream'
       });
 
@@ -79,7 +95,7 @@ describe('ArtifactService', () => {
       expect(fs.ensureDir).toHaveBeenCalledWith(path.join(mockWebRoot, artifactInfo.webapp));
 
       // Check that extract-zip was called with the correct paths
-      const expectedZipPath = path.join(mockTempDir, `${artifactInfo.repository.replace('/', '-')}-${artifactInfo.commit}.zip`);
+      const expectedZipPath = path.join(mockTempDir, `artifact-${mockUuid}.zip`);
       expect(extract).toHaveBeenCalledWith(expectedZipPath, {
         dir: path.join(mockWebRoot, artifactInfo.webapp)
       });
@@ -94,13 +110,11 @@ describe('ArtifactService', () => {
     it('should handle download errors', async () => {
       // Arrange
       const artifactInfo: ArtifactInfo = {
-        url: 'https://github.com/owner/repo/actions/runs/run-id',
-        repository: 'owner/repo',
-        commit: 'commit-sha',
+        artifact_url: 'https://example.com/artifacts/sample.zip',
         webapp: 'test-app'
       };
 
-      // Mock axios to throw an error
+      // Mock axios to throw an error for download
       (axios as unknown as jest.Mock).mockRejectedValue(new Error('Download failed'));
 
       // Act & Assert
@@ -110,9 +124,7 @@ describe('ArtifactService', () => {
     it('should handle extraction errors', async () => {
       // Arrange
       const artifactInfo: ArtifactInfo = {
-        url: 'https://github.com/owner/repo/actions/runs/run-id',
-        repository: 'owner/repo',
-        commit: 'commit-sha',
+        artifact_url: 'https://example.com/artifacts/sample.zip',
         webapp: 'test-app'
       };
 

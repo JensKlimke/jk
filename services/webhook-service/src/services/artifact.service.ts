@@ -4,11 +4,10 @@ import path from 'path';
 import extract from 'extract-zip';
 import { logger } from '../utils/logger';
 import { AppError } from '../middleware/error.middleware';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface ArtifactInfo {
-  url: string;
-  repository: string;
-  commit: string;
+  artifact_url: string;
   webapp: string;
 }
 
@@ -19,7 +18,7 @@ export class ArtifactService {
   constructor() {
     this.tempDir = path.resolve(process.env.TEMP_DIR || './temp');
     this.webRoot = path.resolve(process.env.WEB_ROOT || '/var/www');
-    
+
     // Ensure temp directory exists
     fs.ensureDirSync(this.tempDir);
   }
@@ -29,14 +28,17 @@ export class ArtifactService {
    */
   public async processArtifact(artifactInfo: ArtifactInfo): Promise<string> {
     try {
-      logger.info(`Processing artifact for ${artifactInfo.webapp}`, { artifactInfo });
+      logger.info(`Processing artifact for ${artifactInfo.webapp}`, { 
+        artifact_url: artifactInfo.artifact_url,
+        webapp: artifactInfo.webapp
+      });
       
       // Create unique filename for the artifact
-      const filename = `${artifactInfo.repository.replace('/', '-')}-${artifactInfo.commit}.zip`;
+      const filename = `artifact-${uuidv4()}.zip`;
       const tempFilePath = path.join(this.tempDir, filename);
       
       // Download the artifact
-      await this.downloadArtifact(artifactInfo.url, tempFilePath);
+      await this.downloadArtifact(artifactInfo.artifact_url, tempFilePath);
       
       // Extract the artifact
       const extractPath = await this.extractArtifact(tempFilePath, artifactInfo.webapp);

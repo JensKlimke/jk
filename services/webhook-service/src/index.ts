@@ -1,6 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import { webhookRouter } from './controllers/webhook.controller';
+import webhookRouter from './routes/webhook.routes';
 import { errorHandler } from './middleware/error.middleware';
 import { setupLogger, logger } from './utils/logger';
 
