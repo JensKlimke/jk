@@ -23,5 +23,6 @@ services:
       - ./nginx/shorty.conf:/etc/nginx/conf.d/shorty.conf
     environment:
       VIRTUAL_HOST: "shorty.${DOMAIN:-localhost}"
+      WITH_AUTH: true
     expose:
       - "80"
