@@ -6,6 +6,7 @@ import axios from 'axios';
 import webhookRouter from '../src/routes/webhook.routes';
 import { errorHandler } from '../src/middleware/error.middleware';
 import { v4 as uuidv4 } from 'uuid';
+import {logger} from "../src/utils/logger";
 
 // Mock environment variables
 process.env.WEBHOOK_SECRET = 'test-secret';
@@ -42,6 +43,9 @@ describe('Webhook Deployment Test', () => {
   beforeEach(() => {
     // Reset mocks and setup
     jest.clearAllMocks();
+
+    // Mock environment variables
+    process.env.GITHUB_TOKEN = 'mock-github-token';
 
     // Mock uuid
     (uuidv4 as jest.Mock).mockReturnValue(mockUuid);
@@ -86,7 +90,17 @@ describe('Webhook Deployment Test', () => {
     // Setup axios mock for download
     const mockAxios = axios as unknown as jest.Mock;
     mockAxios.mockImplementation((config: any) => {
-      // It's a download request
+      // Check if it's a GitHub API request
+      if (config.url && config.url.includes('api.github.com')) {
+        // Verify the headers for GitHub API
+        expect(config.headers).toEqual({
+          'Accept': 'application/vnd.github+json',
+          'Authorization': 'Bearer mock-github-token',
+          'X-GitHub-Api-Version': '2022-11-28'
+        });
+      }
+      
+      // Return a response with a pipe method
       return Promise.resolve({
         data: {
           pipe: jest.fn((writeStream: any) => {
@@ -118,7 +132,10 @@ describe('Webhook Deployment Test', () => {
   it('should deploy a sample index.html file via webhook', async () => {
     // Prepare the webhook payload
     const webhookPayload = {
-      artifact_url: 'https://example.com/artifacts/sample.zip'
+      platform: 'github.com',
+      repository: 'owner/repo_name',
+      artifact_id: 'sample123',
+      digest: 'abc123'
     };
 
     // Send the webhook request
@@ -131,7 +148,10 @@ describe('Webhook Deployment Test', () => {
     expect(response.status).toBe(200);
     expect(response.body.status).toBe('success');
     expect(response.body.message).toContain('Deployment successful');
-    expect(response.body.details.artifact_url).toBe(webhookPayload.artifact_url);
+    expect(response.body.details.platform).toBe(webhookPayload.platform);
+    expect(response.body.details.repository).toBe(webhookPayload.repository);
+    expect(response.body.details.artifact_id).toBe(webhookPayload.artifact_id);
+    expect(response.body.details.digest).toBe(webhookPayload.digest);
     expect(response.body.details.extractPath).toBe(testDir);
 
     // Verify that the index.html file exists
@@ -142,6 +162,6 @@ describe('Webhook Deployment Test', () => {
     const fileContent = await fs.readFile(indexHtmlPath, 'utf8');
     expect(fileContent).toBe(sampleHtml);
 
-    console.log(`Successfully deployed index.html to ${indexHtmlPath}`);
+    logger.info(`Successfully deployed index.html to ${indexHtmlPath}`);
   });
 });

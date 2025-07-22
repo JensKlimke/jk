@@ -8,7 +8,10 @@ export const artifactService = new ArtifactService();
 
 // Define webhook payload interface
 interface WebhookPayload {
-  artifact_url: string;
+  platform: string;
+  repository: string;
+  artifact_id: string;
+  digest?: string;
 }
 
 // Webhook endpoint handler
@@ -29,14 +32,29 @@ export const handleWebhook = async (req: Request, res: Response, next: NextFunct
     // Log webhook details
     logger.info('Processing webhook', {
       webapp,
-      artifact_url: payload.artifact_url
+      platform: payload.platform,
+      repository: payload.repository,
+      artifact_id: payload.artifact_id
     });
 
-    // Create artifact info
-    const artifactInfo = {
-      artifact_url: payload.artifact_url,
+    // Create artifact info with optional digest
+    const artifactInfo: {
+      platform: string;
+      repository: string;
+      artifact_id: string;
+      webapp: string;
+      digest?: string;
+    } = {
+      platform: payload.platform,
+      repository: payload.repository,
+      artifact_id: payload.artifact_id,
       webapp
     };
+    
+    // Add digest if it exists
+    if (payload.digest) {
+      artifactInfo.digest = payload.digest;
+    }
 
     // Process the artifact
     const extractPath = await artifactService.processArtifact(artifactInfo);
@@ -46,7 +64,10 @@ export const handleWebhook = async (req: Request, res: Response, next: NextFunct
       status: 'success',
       message: `Deployment successful for ${webapp}`,
       details: {
-        artifact_url: payload.artifact_url,
+        platform: payload.platform,
+        repository: payload.repository,
+        artifact_id: payload.artifact_id,
+        digest: payload.digest,
         extractPath
       }
     });

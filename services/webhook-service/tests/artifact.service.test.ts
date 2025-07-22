@@ -24,6 +24,7 @@ describe('ArtifactService', () => {
     // Mock environment variables
     process.env.TEMP_DIR = mockTempDir;
     process.env.WEB_ROOT = mockWebRoot;
+    process.env.GITHUB_TOKEN = 'mock-github-token';
 
     // Mock uuid
     (uuidv4 as jest.Mock).mockReturnValue(mockUuid);
@@ -73,7 +74,10 @@ describe('ArtifactService', () => {
     it('should download and extract the artifact', async () => {
       // Arrange
       const artifactInfo: ArtifactInfo = {
-        artifact_url: 'https://example.com/artifacts/sample.zip',
+        platform: 'github.com',
+        repository: 'owner/repo',
+        artifact_id: 'sample123',
+        digest: 'abc123',
         webapp: 'test-app'
       };
 
@@ -84,11 +88,16 @@ describe('ArtifactService', () => {
       // Check that temp directory was created
       expect(fs.ensureDirSync).toHaveBeenCalledWith(mockTempDir);
 
-      // Check that axios was called for download
+      // Check that axios was called for download with correct GitHub API URL and headers
       expect(axios).toHaveBeenCalledWith({
         method: 'GET',
-        url: artifactInfo.artifact_url,
-        responseType: 'stream'
+        url: 'https://api.github.com/repos/owner/repo/actions/artifacts/sample123/zip',
+        responseType: 'stream',
+        headers: {
+          'Accept': 'application/vnd.github+json',
+          'Authorization': 'Bearer mock-github-token',
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
       });
 
       // Check that the target directory was created
@@ -110,7 +119,10 @@ describe('ArtifactService', () => {
     it('should handle download errors', async () => {
       // Arrange
       const artifactInfo: ArtifactInfo = {
-        artifact_url: 'https://example.com/artifacts/sample.zip',
+        platform: 'github.com',
+        repository: 'owner/repo',
+        artifact_id: 'sample123',
+        digest: 'abc123',
         webapp: 'test-app'
       };
 
@@ -124,7 +136,10 @@ describe('ArtifactService', () => {
     it('should handle extraction errors', async () => {
       // Arrange
       const artifactInfo: ArtifactInfo = {
-        artifact_url: 'https://example.com/artifacts/sample.zip',
+        platform: 'github.com',
+        repository: 'owner/repo',
+        artifact_id: 'sample123',
+        digest: 'abc123',
         webapp: 'test-app'
       };
 
@@ -133,6 +148,20 @@ describe('ArtifactService', () => {
 
       // Act & Assert
       await expect(artifactService.processArtifact(artifactInfo)).rejects.toThrow('Failed to extract artifact');
+    });
+    
+    it('should throw an error for unsupported platforms', async () => {
+      // Arrange
+      const artifactInfo: ArtifactInfo = {
+        platform: 'gitlab.com', // Unsupported platform
+        repository: 'owner/repo',
+        artifact_id: 'sample123',
+        digest: 'abc123',
+        webapp: 'test-app'
+      };
+
+      // Act & Assert
+      await expect(artifactService.processArtifact(artifactInfo)).rejects.toThrow('Unsupported platform');
     });
   });
 });

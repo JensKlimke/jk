@@ -17,33 +17,32 @@ describe('Validation Middleware', () => {
     nextFunction = jest.fn();
   });
 
-  it('should accept a valid https URL', () => {
+  it('should accept a valid payload with github.com platform', () => {
     mockRequest.body = {
-      artifact_url: 'https://example.com/artifacts/sample.zip'
+      platform: 'github.com',
+      repository: 'owner/repo_name',
+      artifact_id: 'sample123',
+      digest: 'abc123'
     };
 
     validateWebhookPayload(mockRequest as Request, mockResponse as Response, nextFunction);
 
     expect(nextFunction).toHaveBeenCalledTimes(1);
     expect(nextFunction).not.toHaveBeenCalledWith(expect.any(AppError));
-    expect(mockRequest.body).toEqual({ artifact_url: 'https://example.com/artifacts/sample.zip' });
+    expect(mockRequest.body).toEqual({
+      platform: 'github.com',
+      repository: 'owner/repo_name',
+      artifact_id: 'sample123',
+      digest: 'abc123'
+    });
   });
 
-  it('should accept a valid http URL', () => {
+  it('should reject a non-github.com platform', () => {
     mockRequest.body = {
-      artifact_url: 'http://example.com/artifacts/sample.zip'
-    };
-
-    validateWebhookPayload(mockRequest as Request, mockResponse as Response, nextFunction);
-
-    expect(nextFunction).toHaveBeenCalledTimes(1);
-    expect(nextFunction).not.toHaveBeenCalledWith(expect.any(AppError));
-    expect(mockRequest.body).toEqual({ artifact_url: 'http://example.com/artifacts/sample.zip' });
-  });
-
-  it('should reject an invalid URL', () => {
-    mockRequest.body = {
-      artifact_url: 'not-a-url'
+      platform: 'gitlab.com', // Not github.com
+      repository: 'owner/repo_name',
+      artifact_id: 'sample123',
+      digest: 'abc123'
     };
 
     validateWebhookPayload(mockRequest as Request, mockResponse as Response, nextFunction);
@@ -51,19 +50,74 @@ describe('Validation Middleware', () => {
     expect(nextFunction).toHaveBeenCalledTimes(1);
     expect(nextFunction).toHaveBeenCalledWith(expect.any(Error));
   });
-
-  it('should reject a missing artifact_url', () => {
-    mockRequest.body = {};
+  
+  it('should reject a missing platform', () => {
+    mockRequest.body = {
+      // Missing platform
+      repository: 'owner/repo_name',
+      artifact_id: 'sample123',
+      digest: 'abc123'
+    };
 
     validateWebhookPayload(mockRequest as Request, mockResponse as Response, nextFunction);
 
     expect(nextFunction).toHaveBeenCalledTimes(1);
     expect(nextFunction).toHaveBeenCalledWith(expect.any(Error));
+  });
+  
+  it('should reject a missing repository', () => {
+    mockRequest.body = {
+      platform: 'github.com',
+      // Missing repository
+      artifact_id: 'sample123',
+      digest: 'abc123'
+    };
+
+    validateWebhookPayload(mockRequest as Request, mockResponse as Response, nextFunction);
+
+    expect(nextFunction).toHaveBeenCalledTimes(1);
+    expect(nextFunction).toHaveBeenCalledWith(expect.any(Error));
+  });
+  
+  it('should reject a missing artifact_id', () => {
+    mockRequest.body = {
+      platform: 'github.com',
+      repository: 'owner/repo_name',
+      // Missing artifact_id
+      digest: 'abc123'
+    };
+
+    validateWebhookPayload(mockRequest as Request, mockResponse as Response, nextFunction);
+
+    expect(nextFunction).toHaveBeenCalledTimes(1);
+    expect(nextFunction).toHaveBeenCalledWith(expect.any(Error));
+  });
+  
+  it('should accept a missing digest (optional)', () => {
+    mockRequest.body = {
+      platform: 'github.com',
+      repository: 'owner/repo_name',
+      artifact_id: 'sample123'
+      // Missing digest (optional)
+    };
+
+    validateWebhookPayload(mockRequest as Request, mockResponse as Response, nextFunction);
+
+    expect(nextFunction).toHaveBeenCalledTimes(1);
+    expect(nextFunction).not.toHaveBeenCalledWith(expect.any(AppError));
+    expect(mockRequest.body).toEqual({
+      platform: 'github.com',
+      repository: 'owner/repo_name',
+      artifact_id: 'sample123'
+    });
   });
 
   it('should ignore additional fields in the payload', () => {
     mockRequest.body = {
-      artifact_url: 'https://example.com/artifacts/sample.zip',
+      platform: 'github.com',
+      repository: 'owner/repo_name',
+      artifact_id: 'sample123',
+      digest: 'abc123',
       extra_field: 'should be ignored'
     };
 
@@ -71,7 +125,12 @@ describe('Validation Middleware', () => {
 
     expect(nextFunction).toHaveBeenCalledTimes(1);
     expect(nextFunction).not.toHaveBeenCalledWith(expect.any(AppError));
-    expect(mockRequest.body).toEqual({ artifact_url: 'https://example.com/artifacts/sample.zip' });
+    expect(mockRequest.body).toEqual({
+      platform: 'github.com',
+      repository: 'owner/repo_name',
+      artifact_id: 'sample123',
+      digest: 'abc123'
+    });
     expect(mockRequest.body).not.toHaveProperty('extra_field');
   });
 });

@@ -41,6 +41,7 @@ services:
     container_name: webhook-service
     environment:
       WEBHOOK_SECRET: ${WEBHOOK_SECRET:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       VIRTUAL_HOST: "deploy.${DOMAIN:-localhost}"
     volumes:
       - www:/var/www

@@ -33,7 +33,10 @@ describe('Webhook Controller', () => {
 
   describe('POST /:webapp', () => {
     const validPayload = {
-      artifact_url: 'https://example.com/artifacts/sample.zip'
+      platform: 'github.com',
+      repository: 'owner/repo_name',
+      artifact_id: 'sample123',
+      digest: 'abc123'
     };
 
     it('should return 401 if no authorization header is provided', async () => {
@@ -66,7 +69,7 @@ describe('Webhook Controller', () => {
 
     it('should return 400 if payload is missing required fields', async () => {
       const invalidPayload = {
-        // Missing artifact_url field
+        // Missing all required fields
       };
 
       const response = await request(app)
@@ -75,7 +78,71 @@ describe('Webhook Controller', () => {
         .send(invalidPayload);
 
       expect(response.status).toBe(400);
-      expect(response.body.message).toContain('artifact_url is required');
+      expect(response.body.message).toContain('required');
+    });
+
+    it('should return 400 if payload is missing platform field', async () => {
+      const invalidPayload = {
+        // Missing platform field
+        repository: 'owner/repo_name',
+        artifact_id: 'sample123'
+      };
+
+      const response = await request(app)
+        .post('/test-app')
+        .set('Authorization', 'Bearer test-secret')
+        .send(invalidPayload);
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('platform is required');
+    });
+
+    it('should return 400 if payload is missing repository field', async () => {
+      const invalidPayload = {
+        platform: 'github.com',
+        // Missing repository field
+        artifact_id: 'sample123'
+      };
+
+      const response = await request(app)
+        .post('/test-app')
+        .set('Authorization', 'Bearer test-secret')
+        .send(invalidPayload);
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('repository is required');
+    });
+
+    it('should return 400 if payload is missing artifact_id field', async () => {
+      const invalidPayload = {
+        platform: 'github.com',
+        repository: 'owner/repo_name'
+        // Missing artifact_id field
+      };
+
+      const response = await request(app)
+        .post('/test-app')
+        .set('Authorization', 'Bearer test-secret')
+        .send(invalidPayload);
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('artifact_id is required');
+    });
+    
+    it('should return 400 if platform is not github.com', async () => {
+      const invalidPayload = {
+        platform: 'gitlab.com', // Not github.com
+        repository: 'owner/repo_name',
+        artifact_id: 'sample123'
+      };
+
+      const response = await request(app)
+        .post('/test-app')
+        .set('Authorization', 'Bearer test-secret')
+        .send(invalidPayload);
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('platform must be github.com');
     });
 
     it('should process the artifact and return 200 if request is valid', async () => {
@@ -87,12 +154,18 @@ describe('Webhook Controller', () => {
       expect(response.status).toBe(200);
       expect(response.body.status).toBe('success');
       expect(response.body.message).toContain('Deployment successful');
-      expect(response.body.details.artifact_url).toBe(validPayload.artifact_url);
+      expect(response.body.details.platform).toBe(validPayload.platform);
+      expect(response.body.details.repository).toBe(validPayload.repository);
+      expect(response.body.details.artifact_id).toBe(validPayload.artifact_id);
+      expect(response.body.details.digest).toBe(validPayload.digest);
       expect(response.body.details.extractPath).toBe('/var/www/test-app');
 
       // Verify that processArtifact was called with the correct arguments
       expect(artifactService.processArtifact).toHaveBeenCalledWith({
-        artifact_url: validPayload.artifact_url,
+        platform: validPayload.platform,
+        repository: validPayload.repository,
+        artifact_id: validPayload.artifact_id,
+        digest: validPayload.digest,
         webapp: 'test-app'
       });
     });
