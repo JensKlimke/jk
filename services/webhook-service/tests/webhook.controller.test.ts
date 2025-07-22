@@ -2,7 +2,6 @@ import request from 'supertest';
 import express from 'express';
 import webhookRouter from '../src/routes/webhook.routes';
 import { artifactService } from '../src/controllers/webhook.controller';
-import { ArtifactService } from '../src/services/artifact.service';
 import { errorHandler } from '../src/middleware/error.middleware';
 
 // Mock environment variables

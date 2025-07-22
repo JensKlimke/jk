@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { authMiddleware } from '../../src/middleware/auth.middleware';
 import { logger } from '../../src/utils/logger';
 import { maskSecret } from '../../src/utils/common';
