@@ -20,7 +20,7 @@ services:
     restart: always
     volumes:
       - www:/var/www
-      - ./nginx/shorty.conf:/etc/nginx/conf.d/shorty.conf
+      - ./nginx/shorty.conf:/etc/nginx/conf.d/default.conf
     environment:
       VIRTUAL_HOST: "shorty.${DOMAIN:-localhost}"
       WITH_AUTH: true
