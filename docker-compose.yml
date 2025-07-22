@@ -40,7 +40,7 @@ services:
       dockerfile: Dockerfile
     container_name: webhook-service
     environment:
-      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-defaultsecret}
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET:-}
       VIRTUAL_HOST: "deploy.${DOMAIN:-localhost}"
     volumes:
       - www:/var/www

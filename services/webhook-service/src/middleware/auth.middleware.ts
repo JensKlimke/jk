@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from './error.middleware';
 import { logger } from '../utils/logger';
+import { maskSecret } from '../utils/common';
 
 // Authentication middleware to verify Bearer token
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -27,7 +28,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     }
     
     // Get the expected token from environment variables
-    const expectedToken = process.env.WEBHOOK_SECRET;
+    const expectedToken = process.env.WEBHOOK_SECRET || null;
     
     // Check if expected token is configured
     if (!expectedToken) {
@@ -37,6 +38,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     
     // Verify the token
     if (token !== expectedToken) {
+      logger.warn(`Invalid token provided. Received: ${maskSecret(token)}, Expected: ${maskSecret(expectedToken)}`);
       throw new AppError('Invalid token', 401);
     }
     

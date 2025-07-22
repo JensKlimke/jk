@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import webhookRouter from './routes/webhook.routes';
 import { errorHandler } from './middleware/error.middleware';
 import { setupLogger, logger } from './utils/logger';
+import { maskSecret } from './utils/common';
 
 // Load environment variables
 dotenv.config();
@@ -31,6 +32,7 @@ app.use(errorHandler);
 // Start server
 app.listen(port, () => {
   logger.info(`Webhook service listening on port ${port}`);
+  logger.info(`Webhook secret configured: ${maskSecret(process.env.WEBHOOK_SECRET)}`);
 });
 
 export default app;
