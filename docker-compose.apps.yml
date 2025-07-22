@@ -13,3 +13,15 @@ services:
       - mongodb
     expose:
       - "3000"
+      
+  shorty-webserver:
+    image: nginx:latest
+    container_name: shorty-webserver
+    restart: always
+    volumes:
+      - www:/var/www
+      - ./nginx/shorty.conf:/etc/nginx/conf.d/shorty.conf
+    environment:
+      VIRTUAL_HOST: "shorty.${DOMAIN:-localhost}"
+    expose:
+      - "80"
