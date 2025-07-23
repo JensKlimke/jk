@@ -85,11 +85,50 @@ When code has been added without prior specification, follow this process:
 
 ### Feature Removal Guidelines
 
-When removing features, components, or functionality from the project:
+When removing features, components, or functionality from the project, follow this systematic process:
 
-- If a feature, component etc. shall be deleted, follow the same rules as with creating features (bottom-up or top-down)
-- Check all other components and features to be indipendent from the removed functionality and clean-up code, which was related and is not needed anymore. Refactor and simplify the remaining code, if this makes sense due to the removal.
-- Clean-up the code base and the documentation. Remove unused files and docs.
+1. **Analyze dependencies and impact**:
+   - Identify all components, services, and features that depend on the functionality to be removed
+   - Review Level 0 (PRD), Level 1 (Architecture), and Level 2 (Implementation) specifications to understand relationships
+   - Create a dependency map to visualize the impact of removal
+   - Assess potential breaking changes and their scope
+
+2. **Update specifications (L0-L3)**:
+   - Remove or update Level 0 (PRD) requirements that are no longer needed
+     - Remove obsolete PRD identifiers and their descriptions
+     - Update remaining requirements that reference the removed functionality
+   - Update Level 1 (Architecture) documentation
+     - Remove components and their references from architecture diagrams
+     - Update component interaction descriptions
+     - Remove obsolete ARCH identifiers
+   - Update Level 2 (Implementation) documentation
+     - Remove implementation tasks and their identifiers
+     - Update traceability matrices
+     - Remove obsolete IMPL and TASK identifiers
+
+3. **Remove implementation code**:
+   - Delete source files, classes, methods, and functions related to the removed feature
+   - Remove corresponding test files and test cases
+   - Update import statements and dependencies in remaining code
+   - Remove configuration entries and environment variables
+
+4. **Clean up dependencies**:
+   - Identify and remove unused dependencies from package.json or similar files
+   - Update build scripts and deployment configurations
+   - Remove database schemas, migrations, or data structures if applicable
+   - Clean up routing, middleware, or service registrations
+
+5. **Refactor and simplify remaining code**:
+   - Simplify code that was previously handling the removed functionality
+   - Remove conditional logic that is no longer needed
+   - Consolidate similar functionality where appropriate
+   - Update error handling and validation logic
+
+6. **Update documentation and examples**:
+   - Remove references to the deleted feature from README files
+   - Update API documentation and examples
+   - Remove or update configuration examples
+   - Update deployment guides and operational documentation
 
 
 ## Specification Maintenance Guidelines
