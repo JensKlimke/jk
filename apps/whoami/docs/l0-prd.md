@@ -18,14 +18,14 @@ Users need to view basic information about the server handling their request, in
 - IP addresses of the server
 - A persistent unique identifier for the application instance
 
-### PRD-3.5: Instance Identification
+### PRD-3.2: Instance Identification
 The service must support unique identification of each application instance when multiple instances are deployed:
 - Each instance must have a configurable instance key
 - The instance key should be configurable via an environment variable
 - If no environment variable is provided, the hostname should be used as the instance key
 - The instance key must be used as the unique identifier in the database
 
-### PRD-3.2: Request Information
+### PRD-3.3: Request Information
 Users need to inspect details about their HTTP request, including:
 - Client IP address (including X-Forwarded-For handling)
 - All HTTP headers sent with the request

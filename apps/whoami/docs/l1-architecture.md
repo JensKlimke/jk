@@ -10,14 +10,14 @@ The system consists of the following core components:
 
 | Component ID | Component Name | Description | References |
 |--------------|----------------|-------------|------------|
-| COMP-1 | Express Application | The main web server handling HTTP requests | PRD-3.2, PRD-3.3 |
+| COMP-1 | Express Application | The main web server handling HTTP requests | PRD-3.3 |
 | COMP-2 | Database Service | Manages MongoDB connections and API ID persistence | PRD-4.1, PRD-4.4 |
-| COMP-3 | Whoami Service | Provides server and request information | PRD-3.1, PRD-3.2 |
+| COMP-3 | Whoami Service | Provides server and request information | PRD-3.1, PRD-3.3 |
 | COMP-4 | Router | Defines API endpoints and routes requests to controllers | PRD-3.3 |
 | COMP-5 | Logger | Provides structured logging capabilities | PRD-4.2 |
 | COMP-6 | Data Models | Defines database schemas | PRD-4.1 |
 | COMP-7 | Template Renderer | Renders HTML templates for browser display | PRD-3.3 |
-| COMP-8 | Whoami Controller | Handles HTTP requests, content negotiation, and coordinates services | PRD-3.2, PRD-3.3 |
+| COMP-8 | Whoami Controller | Handles HTTP requests, content negotiation, and coordinates services | PRD-3.3 |
 | COMP-9 | File Storage Service | Manages file-based persistence for API ID when MongoDB is unavailable | PRD-4.1, PRD-5.1 |
 
 ### ARCH-2.2: Component Interactions
@@ -26,35 +26,35 @@ The system consists of the following core components:
 │   Client    │────▶│   Router    │────▶│   Whoami    │────▶│   Whoami    │
 │             │◀────│  (COMP-4)   │◀────│ Controller  │◀────│  Service    │
 └─────────────┘     └─────────────┘     │  (COMP-8)   │     │  (COMP-3)   │
-                                        └─────────────┘     └─────────────┘
-                                              │
-                                              │
-                                              ▼
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Logger    │◀────│   Express   │     │  Template   │
-│  (COMP-5)   │     │ Application │◀────│  Renderer   │
-└─────────────┘     │  (COMP-1)   │     │  (COMP-7)   │
-                    └─────────────┘     └─────────────┘
-                          │                    ▲
-                          │                    │
-                          ▼                    │
-                    ┌─────────────┐            │
-                    │  Database   │            │
-                    │   Service   │            │
-                    │  (COMP-2)   │            │
-                    └─────────────┘            │
-                          │                    │
-                          ▼                    │
-                    ┌─────────────┐            │
-                    │  MongoDB    │            │
-                    │  Database   │            │
-                    └─────────────┘            │
-                                               │
-                                               │
-                    ┌─────────────┐            │
-                    │ Data Models │────────────┘
-                    │  (COMP-6)   │
-                    └─────────────┘
+                          ▲             └─────────────┘     └─────────────┘
+                          │                     │                  ▲
+                          │                     │                  │
+                          │                     ▼                  │
+┌─────────────┐     ┌─────────────┐      ┌─────────────┐           │
+│   Logger    │◀────│   Express   │      │  Template   │◀──────────┘
+│  (COMP-5)   │     │ Application │◀─────│  Renderer   │
+└─────────────┘     │  (COMP-1)   │      │  (COMP-7)   │
+      ▲             └─────────────┘      └─────────────┘
+      │                    │                    ▲
+      │                    │                    │
+      │                    ▼                    │
+      │              ┌─────────────┐            │
+      │              │  Storage    │            │
+      │              │  Interface  │            │
+      │              └─────────────┘            │
+      │                 ↙       ↘               │
+      │                ↙         ↘              │
+┌─────────────┐ ┌─────────────┐  ┌─────────────┐│
+│  Database   │ │File Storage │  │ Data Models ├┘
+│  Service    │ │  Service    │  │  (COMP-6)   │
+│  (COMP-2)   │ │  (COMP-9)   │  └─────────────┘
+└─────────────┘ └─────────────┘
+      │               │
+      ▼               ▼
+┌─────────────┐ ┌─────────────┐
+│  MongoDB    │ │File System  │
+│  Database   │ │  Storage    │
+└─────────────┘ └─────────────┘
 ```
 
 ## ARCH-3: Technical Decisions
@@ -78,17 +78,17 @@ This separation of concerns improves maintainability, testability, and allows fo
 | TypeScript | Programming language | Adds static typing to JavaScript for improved code quality |
 | Mustache | Templating engine | Logic-less templates for HTML rendering with simple syntax |
 
-### ARCH-3.2: Data Storage
+### ARCH-3.3: Data Storage
 The application supports two storage mechanisms for persisting the API ID across application restarts:
 
-1. **MongoDB Storage**: When MongoDB credentials are available (MONGO_WEB_PASSWORD is set), the application uses MongoDB to store a single document containing the API ID. The data is stored in the "meta" database in the "api_identifiers" collection, with the instance key used as the document's _id.
+1. **MongoDB Storage**: When MongoDB credentials are available (MONGO_WEB_PASSWORD is set), the application uses MongoDB to store a single document containing the API ID. The data is stored in the "web" database in the "api_identifiers" collection, with the instance key used as the document's _id.
 
 2. **File-based Storage**: When MongoDB credentials are not available (MONGO_WEB_PASSWORD is not set), the application uses file-based storage to persist the API ID. The data is stored in a file named after the instance key in a configurable data folder (specified by DATA_FOLDER environment variable, defaulting to /var/data).
 
-### ARCH-3.3: Error Handling
+### ARCH-3.4: Error Handling
 The application implements centralized error handling in the controller component, with appropriate error responses based on the client's Accept header and User-Agent.
 
-### ARCH-3.4: Logging Strategy
+### ARCH-3.5: Logging Strategy
 The application uses Winston for structured logging with configurable output destinations (console, file, or both) and log levels based on the environment.
 
 ## ARCH-4: Deployment Architecture

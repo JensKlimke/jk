@@ -58,9 +58,9 @@ process.on('SIGINT', async () => {
 - TASK-1.2.2: Implement connection retry mechanism ✓
 - TASK-1.2.3: Implement API ID retrieval and creation ✓
 - TASK-1.2.4: Implement connection closing ✓
-- TASK-1.2.5: Update database name to "meta"
-- TASK-1.2.6: Implement instance key retrieval from environment variable or hostname
-- TASK-1.2.7: Use instance key as document _id in database
+- TASK-1.2.5: Use "web" database for storage ✓
+- TASK-1.2.6: Implement instance key retrieval from environment variable or hostname ✓
+- TASK-1.2.7: Use instance key as document _id in database ✓
 
 **Design Details**:
 ```typescript
@@ -349,6 +349,66 @@ To ensure template files are available in the production build, the build script
 
 This is necessary because TypeScript's compiler only processes TypeScript files and doesn't copy non-TypeScript files (like .mustache templates) to the output directory.
 
+### IMPL-1.9: File Storage Service (COMP-9)
+**File**: `src/services/file-storage.service.ts`
+
+**Description**: Manages file-based persistence for API ID when MongoDB is unavailable.
+
+**Implementation Tasks**:
+- TASK-1.9.1: Implement file storage initialization ✓
+- TASK-1.9.2: Implement data folder creation ✓
+- TASK-1.9.3: Implement API ID retrieval and creation ✓
+- TASK-1.9.4: Implement file reading and writing ✓
+- TASK-1.9.5: Implement instance key retrieval from environment variable or hostname ✓
+- TASK-1.9.6: Use instance key as filename for stored data ✓
+
+**Design Details**:
+```typescript
+export class FileStorageService implements StorageService {
+  private apiId: string | null = null;
+  private readonly instanceKey: string;
+  private readonly dataFolder: string;
+  private readonly filePath: string;
+
+  constructor() {
+    this.instanceKey = getInstanceKey('file storage');
+    
+    // Use a test-friendly path when running in test environment
+    if (process.env.NODE_ENV === 'test') {
+      this.dataFolder = process.env.DATA_FOLDER || './test-data';
+    } else {
+      this.dataFolder = process.env.DATA_FOLDER || '/var/data';
+    }
+    
+    this.filePath = path.join(this.dataFolder, `${this.instanceKey}.json`);
+    
+    // Ensure data folder exists
+    this.ensureDataFolderExists();
+  }
+
+  // Ensure data folder exists
+  private ensureDataFolderExists(): void { ... }
+
+  // Connect (no-op for file storage)
+  async connect(): Promise<void> { ... }
+
+  // Connect with retry
+  async connectWithRetry(maxRetries: number = 3, retryInterval: number = 1000): Promise<void> { ... }
+
+  // Get or create API ID
+  async getOrCreateApiId(): Promise<string> { ... }
+
+  // Read from file
+  private async readFromFile(): Promise<any> { ... }
+
+  // Write to file
+  private async writeToFile(data: any): Promise<void> { ... }
+
+  // Close (no-op for file storage)
+  async close(): Promise<void> { ... }
+}
+```
+
 ## IMPL-2: Cross-Cutting Concerns
 
 ### IMPL-2.1: Error Handling
@@ -394,9 +454,10 @@ This is necessary because TypeScript's compiler only processes TypeScript files 
 | Requirement | Component | Implementation Task |
 |-------------|-----------|---------------------|
 | PRD-3.1 | COMP-3 | TASK-1.3.1, TASK-1.3.2, TASK-1.3.3 |
-| PRD-3.2 | COMP-3, COMP-8 | TASK-1.3.4, TASK-1.3.5, TASK-1.8.2 |
-| PRD-3.3 | COMP-7, COMP-8 | TASK-1.7.1, TASK-1.7.2, TASK-1.7.3, TASK-1.8.3, TASK-1.8.4 |
-| PRD-4.1 | COMP-2, COMP-6 | TASK-1.2.3, TASK-1.6.1, TASK-1.6.2, TASK-1.6.3 |
+| PRD-3.2 | COMP-3 | TASK-1.2.6, TASK-1.2.7, TASK-1.9.5, TASK-1.9.6 |
+| PRD-3.3 | COMP-3, COMP-8 | TASK-1.3.4, TASK-1.3.5, TASK-1.8.2, TASK-1.7.1, TASK-1.7.2, TASK-1.7.3, TASK-1.8.3, TASK-1.8.4 |
+| PRD-4.1 | COMP-2, COMP-6, COMP-9 | TASK-1.2.3, TASK-1.6.1, TASK-1.6.2, TASK-1.6.3, TASK-1.9.3 |
 | PRD-4.2 | COMP-5 | TASK-1.5.1, TASK-1.5.2, TASK-1.5.3, TASK-1.5.4 |
 | PRD-4.3 | COMP-8 | TASK-1.8.5, TASK-2.1.1, TASK-2.1.2, TASK-2.1.3 |
-| PRD-4.4 | COMP-2 | TASK-1.2.2 |
+| PRD-4.4 | COMP-2, COMP-9 | TASK-1.2.2, TASK-1.9.2 |
+| PRD-5.1 | COMP-9 | TASK-1.9.1, TASK-1.9.2, TASK-1.9.3, TASK-1.9.4, TASK-1.9.5, TASK-1.9.6 |
