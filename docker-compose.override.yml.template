@@ -21,7 +21,8 @@ services:
       - ./services/api-service:/app
       # Exclude node_modules from mounting
       - /app/node_modules
-    command: npm run dev
+    # Only override command if NODE_ENV is development
+    command: ["/bin/sh", "-c", "if [ \"$$NODE_ENV\" = \"development\" ]; then npm run dev; else npm start; fi"]
 
   # Enable local adminer for database management
   adminer:

@@ -96,6 +96,18 @@ The Makefile provides shortcuts for common operations:
 - `make clean` - Clean up containers and volumes
 - `make generate-secrets` - Generate secure secrets
 
+## Development
+
+For development workflow and best practices, see the [Development Guide](docs/DEVELOPMENT.md).
+
+To enable development mode:
+
+1. Copy the development override file: `cp docker-compose.override.yml.template docker-compose.override.yml`
+2. Start the services: `make start`
+3. View logs: `make logs-api-service`
+
+This will enable hot reloading for the API service and other development-friendly settings.
+
 ## Adding New Services
 
 To add a new service to the infrastructure:

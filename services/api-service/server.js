@@ -177,7 +177,7 @@ app.use((err, req, res, next) => {
 
 // Start server
 app.listen(port, () => {
-  console.log(`API server running on port ${port}`);
+  console.log(`API server running on port ${port} in ${process.env.NODE_ENV || 'development'} mode`);
 });
 
 // Graceful shutdown
