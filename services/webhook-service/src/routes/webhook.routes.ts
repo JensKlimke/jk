@@ -8,6 +8,11 @@ const webhookRouter = Router();
 
 // Register routes
 // Added validateWebhookPayload middleware between authMiddleware and the controller handler
-webhookRouter.post('/:webapp', authMiddleware, validateWebhookPayload, webhookController.handleWebhook);
+webhookRouter.post(
+  '/:webapp',
+  authMiddleware,
+  validateWebhookPayload,
+  webhookController.handleWebhook,
+);
 
 export default webhookRouter;

@@ -39,27 +39,29 @@ describe('ArtifactService', () => {
           callback();
         }
         return mockWriteStream;
-      })
+      }),
     };
     (fs.createWriteStream as jest.Mock).mockReturnValue(mockWriteStream);
     (fs.remove as jest.Mock).mockResolvedValue(undefined);
 
     // Mock axios for download
-    (axios as unknown as jest.Mock).mockImplementation((config) => {
+    (axios as unknown as jest.Mock).mockImplementation(_config => {
       // It's a download request
       return Promise.resolve({
         data: {
-          pipe: jest.fn((writeStream) => {
+          pipe: jest.fn(writeStream => {
             // Simulate successful download by triggering the 'finish' event
             setTimeout(() => {
               if (writeStream.on && typeof writeStream.on === 'function') {
-                const finishCallback = writeStream.on.mock.calls.find((call: any[]) => call[0] === 'finish')?.[1];
+                const finishCallback = writeStream.on.mock.calls.find(
+                  (call: any[]) => call[0] === 'finish',
+                )?.[1];
                 if (finishCallback) finishCallback();
               }
             }, 10);
             return writeStream;
-          })
-        }
+          }),
+        },
       });
     });
 
@@ -78,7 +80,7 @@ describe('ArtifactService', () => {
         repository: 'owner/repo',
         artifact_id: 'sample123',
         digest: 'abc123',
-        webapp: 'test-app'
+        webapp: 'test-app',
       };
 
       // Act
@@ -94,10 +96,10 @@ describe('ArtifactService', () => {
         url: 'https://api.github.com/repos/owner/repo/actions/artifacts/sample123/zip',
         responseType: 'stream',
         headers: {
-          'Accept': 'application/vnd.github+json',
-          'Authorization': 'Bearer mock-github-token',
-          'X-GitHub-Api-Version': '2022-11-28'
-        }
+          Accept: 'application/vnd.github+json',
+          Authorization: 'Bearer mock-github-token',
+          'X-GitHub-Api-Version': '2022-11-28',
+        },
       });
 
       // Check that the target directory was created
@@ -106,7 +108,7 @@ describe('ArtifactService', () => {
       // Check that extract-zip was called with the correct paths
       const expectedZipPath = path.join(mockTempDir, `artifact-${mockUuid}.zip`);
       expect(extract).toHaveBeenCalledWith(expectedZipPath, {
-        dir: path.join(mockWebRoot, artifactInfo.webapp)
+        dir: path.join(mockWebRoot, artifactInfo.webapp),
       });
 
       // Check that the temp file was removed
@@ -123,14 +125,16 @@ describe('ArtifactService', () => {
         repository: 'owner/repo',
         artifact_id: 'sample123',
         digest: 'abc123',
-        webapp: 'test-app'
+        webapp: 'test-app',
       };
 
       // Mock axios to throw an error for download
       (axios as unknown as jest.Mock).mockRejectedValue(new Error('Download failed'));
 
       // Act & Assert
-      await expect(artifactService.processArtifact(artifactInfo)).rejects.toThrow('Failed to download artifact');
+      await expect(artifactService.processArtifact(artifactInfo)).rejects.toThrow(
+        'Failed to download artifact',
+      );
     });
 
     it('should handle extraction errors', async () => {
@@ -140,16 +144,18 @@ describe('ArtifactService', () => {
         repository: 'owner/repo',
         artifact_id: 'sample123',
         digest: 'abc123',
-        webapp: 'test-app'
+        webapp: 'test-app',
       };
 
       // Mock extract-zip to throw an error
       (extract as unknown as jest.Mock).mockRejectedValue(new Error('Extraction failed'));
 
       // Act & Assert
-      await expect(artifactService.processArtifact(artifactInfo)).rejects.toThrow('Failed to extract artifact');
+      await expect(artifactService.processArtifact(artifactInfo)).rejects.toThrow(
+        'Failed to extract artifact',
+      );
     });
-    
+
     it('should throw an error for unsupported platforms', async () => {
       // Arrange
       const artifactInfo: ArtifactInfo = {
@@ -157,11 +163,13 @@ describe('ArtifactService', () => {
         repository: 'owner/repo',
         artifact_id: 'sample123',
         digest: 'abc123',
-        webapp: 'test-app'
+        webapp: 'test-app',
       };
 
       // Act & Assert
-      await expect(artifactService.processArtifact(artifactInfo)).rejects.toThrow('Unsupported platform');
+      await expect(artifactService.processArtifact(artifactInfo)).rejects.toThrow(
+        'Unsupported platform',
+      );
     });
   });
 });

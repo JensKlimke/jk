@@ -11,8 +11,8 @@ process.env.WEBHOOK_SECRET = 'test-secret';
 jest.mock('../src/services/artifact.service', () => {
   return {
     ArtifactService: jest.fn().mockImplementation(() => ({
-      processArtifact: jest.fn().mockResolvedValue('/var/www/test-app')
-    }))
+      processArtifact: jest.fn().mockResolvedValue('/var/www/test-app'),
+    })),
   };
 });
 
@@ -35,13 +35,11 @@ describe('Webhook Controller', () => {
       platform: 'github.com',
       repository: 'owner/repo_name',
       artifact_id: 'sample123',
-      digest: 'abc123'
+      digest: 'abc123',
     };
 
     it('should return 401 if no authorization header is provided', async () => {
-      const response = await request(app)
-        .post('/test-app')
-        .send(validPayload);
+      const response = await request(app).post('/test-app').send(validPayload);
 
       expect(response.status).toBe(401);
       expect(response.body.message).toContain('Authorization header is missing');
@@ -84,7 +82,7 @@ describe('Webhook Controller', () => {
       const invalidPayload = {
         // Missing platform field
         repository: 'owner/repo_name',
-        artifact_id: 'sample123'
+        artifact_id: 'sample123',
       };
 
       const response = await request(app)
@@ -100,7 +98,7 @@ describe('Webhook Controller', () => {
       const invalidPayload = {
         platform: 'github.com',
         // Missing repository field
-        artifact_id: 'sample123'
+        artifact_id: 'sample123',
       };
 
       const response = await request(app)
@@ -115,7 +113,7 @@ describe('Webhook Controller', () => {
     it('should return 400 if payload is missing artifact_id field', async () => {
       const invalidPayload = {
         platform: 'github.com',
-        repository: 'owner/repo_name'
+        repository: 'owner/repo_name',
         // Missing artifact_id field
       };
 
@@ -127,12 +125,12 @@ describe('Webhook Controller', () => {
       expect(response.status).toBe(400);
       expect(response.body.message).toContain('artifact_id is required');
     });
-    
+
     it('should return 400 if platform is not github.com', async () => {
       const invalidPayload = {
         platform: 'gitlab.com', // Not github.com
         repository: 'owner/repo_name',
-        artifact_id: 'sample123'
+        artifact_id: 'sample123',
       };
 
       const response = await request(app)
@@ -165,7 +163,7 @@ describe('Webhook Controller', () => {
         repository: validPayload.repository,
         artifact_id: validPayload.artifact_id,
         digest: validPayload.digest,
-        webapp: 'test-app'
+        webapp: 'test-app',
       });
     });
   });

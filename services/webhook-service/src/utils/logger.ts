@@ -1,19 +1,13 @@
 import winston from 'winston';
 
 // Define logger
-export let logger = winston.createLogger({
+export const logger = winston.createLogger({
   level: 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
-  ),
+  format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
   defaultMeta: { service: 'webhook-service' },
   transports: [
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
+      format: winston.format.combine(winston.format.colorize(), winston.format.simple()),
     }),
   ],
 });
@@ -22,12 +16,8 @@ export let logger = winston.createLogger({
 export const setupLogger = () => {
   // If we're in production, log to a file as well
   if (process.env.NODE_ENV === 'production') {
-    logger.add(
-      new winston.transports.File({ filename: 'logs/error.log', level: 'error' })
-    );
-    logger.add(
-      new winston.transports.File({ filename: 'logs/combined.log' })
-    );
+    logger.add(new winston.transports.File({ filename: 'logs/error.log', level: 'error' }));
+    logger.add(new winston.transports.File({ filename: 'logs/combined.log' }));
   }
 
   // Set log level based on environment

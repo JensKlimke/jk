@@ -6,7 +6,7 @@ import axios from 'axios';
 import webhookRouter from '../src/routes/webhook.routes';
 import { errorHandler } from '../src/middleware/error.middleware';
 import { v4 as uuidv4 } from 'uuid';
-import {logger} from "../src/utils/logger";
+import { logger } from '../src/utils/logger';
 
 // Mock environment variables
 process.env.WEBHOOK_SECRET = 'test-secret';
@@ -78,7 +78,7 @@ describe('Webhook Deployment Test', () => {
           callback();
         }
         return mockWriteStream;
-      })
+      }),
     };
 
     const mockCreateWriteStream = fs.createWriteStream as unknown as jest.Mock;
@@ -94,12 +94,12 @@ describe('Webhook Deployment Test', () => {
       if (config.url && config.url.includes('api.github.com')) {
         // Verify the headers for GitHub API
         expect(config.headers).toEqual({
-          'Accept': 'application/vnd.github+json',
-          'Authorization': 'Bearer mock-github-token',
-          'X-GitHub-Api-Version': '2022-11-28'
+          Accept: 'application/vnd.github+json',
+          Authorization: 'Bearer mock-github-token',
+          'X-GitHub-Api-Version': '2022-11-28',
         });
       }
-      
+
       // Return a response with a pipe method
       return Promise.resolve({
         data: {
@@ -110,14 +110,15 @@ describe('Webhook Deployment Test', () => {
                 writeStream.on('finish', () => {});
               }
             }, 100);
-          })
-        }
+          }),
+        },
       });
     });
 
     // Setup extract-zip mock
-    const extractZip = require('extract-zip') as unknown as jest.Mock;
-    extractZip.mockImplementation(async (source: string, options: any) => {
+    // Use the mocked extract-zip from the jest.mock above
+    const extractZip = jest.requireMock('extract-zip') as unknown as jest.Mock;
+    extractZip.mockImplementation(async (_source: string, _options: any) => {
       // Simulate extraction by writing the sample index.html
       await fs.writeFile(indexHtmlPath, sampleHtml);
       return Promise.resolve();
@@ -135,7 +136,7 @@ describe('Webhook Deployment Test', () => {
       platform: 'github.com',
       repository: 'owner/repo_name',
       artifact_id: 'sample123',
-      digest: 'abc123'
+      digest: 'abc123',
     };
 
     // Send the webhook request

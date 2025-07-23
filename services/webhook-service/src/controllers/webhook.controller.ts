@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ArtifactService } from '../services/artifact.service';
 import { AppError } from '../middleware/error.middleware';
 import { logger } from '../utils/logger';
+import { catchAsync } from '../utils/common';
 
 // Create artifact service
 export const artifactService = new ArtifactService();
@@ -15,8 +16,8 @@ interface WebhookPayload {
 }
 
 // Webhook endpoint handler
-export const handleWebhook = async (req: Request, res: Response, next: NextFunction) => {
-  try {
+export const handleWebhook = catchAsync(
+  async (req: Request, res: Response, _next: NextFunction) => {
     // Get webapp from URL parameter
     const webapp = req.params.webapp;
 
@@ -34,27 +35,17 @@ export const handleWebhook = async (req: Request, res: Response, next: NextFunct
       webapp,
       platform: payload.platform,
       repository: payload.repository,
-      artifact_id: payload.artifact_id
+      artifact_id: payload.artifact_id,
     });
 
     // Create artifact info with optional digest
-    const artifactInfo: {
-      platform: string;
-      repository: string;
-      artifact_id: string;
-      webapp: string;
-      digest?: string;
-    } = {
+    const artifactInfo = {
       platform: payload.platform,
       repository: payload.repository,
       artifact_id: payload.artifact_id,
-      webapp
+      webapp,
+      ...(payload.digest && { digest: payload.digest }),
     };
-    
-    // Add digest if it exists
-    if (payload.digest) {
-      artifactInfo.digest = payload.digest;
-    }
 
     // Process the artifact
     const extractPath = await artifactService.processArtifact(artifactInfo);
@@ -68,10 +59,8 @@ export const handleWebhook = async (req: Request, res: Response, next: NextFunct
         repository: payload.repository,
         artifact_id: payload.artifact_id,
         digest: payload.digest,
-        extractPath
-      }
+        extractPath,
+      },
     });
-  } catch (error) {
-    next(error);
-  }
-};
+  },
+);

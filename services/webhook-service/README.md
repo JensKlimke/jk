@@ -42,3 +42,20 @@ The service is configured using environment variables:
 
 ## Deployment
 The service is deployed as a Docker container and integrated with the existing nginx reverse proxy.
+
+## Development
+
+### Linting and Formatting
+This project uses ESLint for linting and Prettier for code formatting to ensure consistent code style and quality.
+
+#### Available Commands
+- `npm run lint`: Run ESLint to check for linting issues
+- `npm run lint:fix`: Run ESLint and automatically fix issues when possible
+- `npm run format`: Run Prettier to automatically format all TypeScript files
+- `npm run format:check`: Check if all files are properly formatted without making changes
+
+#### Configuration Files
+- `.eslintrc.json`: ESLint configuration
+- `.prettierrc.json`: Prettier configuration
+- `.eslintignore`: Files and directories to be ignored by ESLint
+- `.prettierignore`: Files and directories to be ignored by Prettier
