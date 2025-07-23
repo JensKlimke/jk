@@ -15,4 +15,4 @@ const ApiInfoSchema: Schema = new Schema({
 });
 
 // Create and export the model
-export const ApiInfoModel = mongoose.model<IApiInfo>('ApiInfo', ApiInfoSchema, 'api_info');
+export const ApiInfoModel = mongoose.model<IApiInfo>('ApiInfo', ApiInfoSchema, 'api_identifiers');

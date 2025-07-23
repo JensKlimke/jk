@@ -1,5 +1,7 @@
 import express from 'express';
 import { DatabaseService } from './services/database.service';
+import { FileStorageService } from './services/file-storage.service';
+import { StorageService } from './services/storage.interface';
 import { WhoamiService } from './services/whoami.service';
 import { TemplateService } from './services/template.service';
 import { WhoamiController } from './controllers/whoami.controller';
@@ -10,19 +12,30 @@ import logger from './utils/logger';
 const app = express();
 const port = process.env.PORT || 3000;
 
-// Create services
-const databaseService = new DatabaseService();
+// Determine which storage service to use
+const useFileStorage = !process.env.MONGO_WEB_PASSWORD;
+let storageService: StorageService;
+
+if (useFileStorage) {
+  logger.info('MongoDB password not set, using file-based storage');
+  storageService = new FileStorageService();
+} else {
+  logger.info('Using MongoDB for storage');
+  storageService = new DatabaseService();
+}
+
+// Create other services
 const whoamiService = new WhoamiService();
 const templateService = new TemplateService();
 
 // Initialize app
 async function initializeApp() {
   try {
-    // Connect to database with retry
-    await databaseService.connectWithRetry();
+    // Connect to storage with retry
+    await storageService.connectWithRetry();
 
     // Get or create app ID
-    const apiId = await databaseService.getOrCreateApiId();
+    const apiId = await storageService.getOrCreateApiId();
 
     // Create controller
     const whoamiController = new WhoamiController(whoamiService, templateService, apiId);
@@ -38,13 +51,13 @@ async function initializeApp() {
     // Handle shutdown
     process.on('SIGINT', async () => {
       logger.info('Shutting down...');
-      await databaseService.close();
+      await storageService.close();
       process.exit(0);
     });
 
     process.on('SIGTERM', async () => {
       logger.info('Shutting down...');
-      await databaseService.close();
+      await storageService.close();
       process.exit(0);
     });
   } catch (error) {

@@ -18,6 +18,7 @@ The system consists of the following core components:
 | COMP-6 | Data Models | Defines database schemas | PRD-4.1 |
 | COMP-7 | Template Renderer | Renders HTML templates for browser display | PRD-3.3 |
 | COMP-8 | Whoami Controller | Handles HTTP requests, content negotiation, and coordinates services | PRD-3.2, PRD-3.3 |
+| COMP-9 | File Storage Service | Manages file-based persistence for API ID when MongoDB is unavailable | PRD-4.1, PRD-5.1 |
 
 ### ARCH-2.2: Component Interactions
 ```
@@ -78,7 +79,11 @@ This separation of concerns improves maintainability, testability, and allows fo
 | Mustache | Templating engine | Logic-less templates for HTML rendering with simple syntax |
 
 ### ARCH-3.2: Data Storage
-The application uses MongoDB to store a single document containing the API ID, which persists across application restarts.
+The application supports two storage mechanisms for persisting the API ID across application restarts:
+
+1. **MongoDB Storage**: When MongoDB credentials are available (MONGO_WEB_PASSWORD is set), the application uses MongoDB to store a single document containing the API ID. The data is stored in the "meta" database in the "api_identifiers" collection, with the instance key used as the document's _id.
+
+2. **File-based Storage**: When MongoDB credentials are not available (MONGO_WEB_PASSWORD is not set), the application uses file-based storage to persist the API ID. The data is stored in a file named after the instance key in a configurable data folder (specified by DATA_FOLDER environment variable, defaulting to /var/data).
 
 ### ARCH-3.3: Error Handling
 The application implements centralized error handling in the controller component, with appropriate error responses based on the client's Accept header and User-Agent.
@@ -98,9 +103,11 @@ The application connects to MongoDB using environment variables for configuratio
 The application is configured using environment variables:
 - PORT: The port on which the server listens
 - HOSTNAME: The hostname of the server
+- INSTANCE_KEY: The unique identifier for the application instance (defaults to hostname if not provided)
 - MONGO_WEB_USER: MongoDB username
-- MONGO_WEB_PASSWORD: MongoDB password
+- MONGO_WEB_PASSWORD: MongoDB password (if not set, file-based storage is used instead of MongoDB)
 - MONGO_UPSTREAM_URL: MongoDB connection URL
+- DATA_FOLDER: Directory path for file-based storage (defaults to /var/data if not provided)
 - LOG_LEVEL: Logging verbosity level
 - LOG_OUTPUT: Logging output destination (console, file, or both)
 - NODE_ENV: Environment type (production, development)

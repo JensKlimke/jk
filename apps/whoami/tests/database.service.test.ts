@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { DatabaseService } from '../src/services/database.service';
-import {ApiInfoModel} from "../src/models/apiInfo.model";
+import { ApiInfoModel } from "../src/models/apiInfo.model";
 
 // Mock mongoose
 jest.mock('mongoose', () => {
@@ -32,11 +32,19 @@ describe('DatabaseService', () => {
   let databaseService: DatabaseService;
   const testUri = 'mongodb://mock:27017/test_whoami';
 
+  // Save original process.env
+  const originalEnv = process.env;
+  
   // Reset mocks before each test
   beforeEach(() => {
     jest.clearAllMocks();
     // Create database service with test URI
     databaseService = new DatabaseService(testUri);
+  });
+  
+  // Restore original process.env after all tests
+  afterAll(() => {
+    process.env = originalEnv;
   });
 
   describe('constructor', () => {
@@ -61,6 +69,31 @@ describe('DatabaseService', () => {
 
       // Verify that the custom URI is used
       expect((customDbService as any).uri).toBe(customUri);
+    });
+
+    it('should initialize instanceKey from environment variable or hostname', () => {
+      // Save original process.env
+      const originalEnv = process.env;
+      
+      // Mock os.hostname
+      const os = require('os');
+      const originalHostname = os.hostname;
+      os.hostname = jest.fn().mockReturnValue('test-hostname');
+      
+      // Test with no environment variable (should use hostname)
+      process.env = { ...originalEnv };
+      delete process.env.INSTANCE_KEY;
+      const dbService1 = new DatabaseService();
+      expect((dbService1 as any).instanceKey).toBe('test-hostname');
+      
+      // Test with environment variable set
+      process.env = { ...originalEnv, INSTANCE_KEY: 'test-instance' };
+      const dbService2 = new DatabaseService();
+      expect((dbService2 as any).instanceKey).toBe('test-instance');
+      
+      // Restore original values
+      process.env = originalEnv;
+      os.hostname = originalHostname;
     });
   });
 
@@ -189,8 +222,9 @@ describe('DatabaseService', () => {
     it('should return existing app ID if found', async () => {
       // Mock finding an existing app ID
       const existingApiId = 'existing-app-id';
+      const instanceKey = (databaseService as any).instanceKey;
       const mockApiInfo = {
-        _id: 'app_id',
+        _id: instanceKey,
         apiId: existingApiId,
         createdAt: new Date()
       };
@@ -203,12 +237,13 @@ describe('DatabaseService', () => {
 
       // Verify it's the same
       expect(apiId).toBe(existingApiId);
-      expect(ApiInfoModel.findOne).toHaveBeenCalled();
+      expect(ApiInfoModel.findOne).toHaveBeenCalledWith({ _id: instanceKey });
       expect(ApiInfoModel.create).not.toHaveBeenCalled();
     });
 
     it('should create new app ID if none exists', async () => {
       // Mock no existing app ID
+      const instanceKey = (databaseService as any).instanceKey;
       (ApiInfoModel.findOne as jest.Mock).mockResolvedValueOnce(null);
 
       // Mock the create method
@@ -221,9 +256,9 @@ describe('DatabaseService', () => {
 
       // Verify it was created
       expect(apiId).toBeDefined();
-      expect(ApiInfoModel.findOne).toHaveBeenCalled();
+      expect(ApiInfoModel.findOne).toHaveBeenCalledWith({ _id: instanceKey });
       expect(ApiInfoModel.create).toHaveBeenCalledWith({
-        _id: 'app_id',
+        _id: instanceKey,
         apiId: expect.any(String),
         createdAt: expect.any(Date)
       });
@@ -232,8 +267,9 @@ describe('DatabaseService', () => {
     it('should return cached apiId without database query if already set', async () => {
       // First call to set the apiId
       const existingApiId = 'cached-app-id';
+      const instanceKey = (databaseService as any).instanceKey;
       const mockApiInfo = {
-        _id: 'app_id',
+        _id: instanceKey,
         apiId: existingApiId,
         createdAt: new Date()
       };
@@ -327,4 +363,5 @@ describe('DatabaseService', () => {
       errorSpy.mockRestore();
     });
   });
+
 });

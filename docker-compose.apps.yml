@@ -5,8 +5,9 @@ services:
       dockerfile: Dockerfile
     container_name: whoami
     restart: always
+    volumes:
+      - identity:/var/data
     environment:
-      MONGO_WEB_PASSWORD: ${MONGO_WEB_PASSWORD:-webpassword}
       VIRTUAL_HOST: "whoami.${DOMAIN:-localhost}"
       WITH_AUTH_HEADERS: true
     depends_on:
@@ -26,3 +27,6 @@ services:
       WITH_AUTH: true
     expose:
       - "80"
+
+volumes:
+  identity:

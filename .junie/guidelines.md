@@ -83,6 +83,14 @@ When code has been added without prior specification, follow this process:
 - Check if the specification and the implementation are consistent, e.g., that the new feature doesn't affect old requirements or the implemented features don't contradict the specified tasks.
 - Run an integration test by executing the docker-compose stack.
 
+### Feature Removal Guidelines
+
+When removing features, components, or functionality from the project:
+
+- If a feature, component etc. shall be deleted, follow the same rules as with creating features (bottom-up or top-down)
+- Check all other components and features to be indipendent from the removed functionality and clean-up code, which was related and is not needed anymore. Refactor and simplify the remaining code, if this makes sense due to the removal.
+- Clean-up the code base and the documentation. Remove unused files and docs.
+
 
 ## Specification Maintenance Guidelines
 

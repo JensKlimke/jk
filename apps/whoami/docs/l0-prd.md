@@ -18,6 +18,13 @@ Users need to view basic information about the server handling their request, in
 - IP addresses of the server
 - A persistent unique identifier for the application instance
 
+### PRD-3.5: Instance Identification
+The service must support unique identification of each application instance when multiple instances are deployed:
+- Each instance must have a configurable instance key
+- The instance key should be configurable via an environment variable
+- If no environment variable is provided, the hostname should be used as the instance key
+- The instance key must be used as the unique identifier in the database
+
 ### PRD-3.2: Request Information
 Users need to inspect details about their HTTP request, including:
 - Client IP address (including X-Forwarded-For handling)
@@ -46,5 +53,13 @@ The service must implement connection retry mechanisms to ensure database availa
 
 ## PRD-5: Constraints
 - The service must be implemented as a Node.js application using Express
-- The service must use MongoDB for persistence
+- The service must use MongoDB for persistence when MongoDB credentials are available
+- The service must use file-based storage for persistence when MongoDB credentials are not available
 - The service must be containerizable for deployment in orchestrated environments
+
+### PRD-5.1: File-based Storage
+When MongoDB credentials are not available (MONGO_WEB_PASSWORD is not set), the service must:
+- Store persistence data in files instead of MongoDB
+- Use the instance key as the filename for stored data
+- Store files in a configurable data folder (specified by DATA_FOLDER environment variable)
+- Default to /var/data if DATA_FOLDER is not specified

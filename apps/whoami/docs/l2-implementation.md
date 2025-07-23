@@ -58,6 +58,9 @@ process.on('SIGINT', async () => {
 - TASK-1.2.2: Implement connection retry mechanism ✓
 - TASK-1.2.3: Implement API ID retrieval and creation ✓
 - TASK-1.2.4: Implement connection closing ✓
+- TASK-1.2.5: Update database name to "meta"
+- TASK-1.2.6: Implement instance key retrieval from environment variable or hostname
+- TASK-1.2.7: Use instance key as document _id in database
 
 **Design Details**:
 ```typescript
