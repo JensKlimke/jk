@@ -10,6 +10,7 @@ services:
     environment:
       VIRTUAL_HOST: "whoami.${DOMAIN:-localhost}"
       WITH_AUTH_HEADERS: true
+      INSTANCE_KEY: root
     depends_on:
       - mongodb
     expose:

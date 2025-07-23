@@ -38,7 +38,7 @@ describe('FileStorageService', () => {
   let fileStorageService: FileStorageService;
   const testDataFolder = './test-data';
   const testInstanceKey = 'test-instance';
-  const testFilePath = `${testDataFolder}/${testInstanceKey}`;
+  const testFilePath = `${testDataFolder}/${testInstanceKey}.json`;
 
   // Save original process.env
   const originalEnv = process.env;
@@ -73,8 +73,8 @@ describe('FileStorageService', () => {
       // Create new instance
       fileStorageService = new FileStorageService();
 
-      // Verify path.join was called with custom data folder
-      expect(path.join).toHaveBeenCalledWith(customDataFolder, expect.any(String));
+      // Verify path.join was called with custom data folder and a string ending with .json
+      expect(path.join).toHaveBeenCalledWith(customDataFolder, expect.stringMatching(/.*\.json$/));
     });
 
     it('should use INSTANCE_KEY environment variable when set', () => {
@@ -87,8 +87,8 @@ describe('FileStorageService', () => {
       // Create new instance
       fileStorageService = new FileStorageService();
 
-      // Verify path.join was called with the instance key
-      expect(path.join).toHaveBeenCalledWith(expect.any(String), testInstanceKey);
+      // Verify path.join was called with the instance key and .json extension
+      expect(path.join).toHaveBeenCalledWith(expect.any(String), `${testInstanceKey}.json`);
     });
 
     it('should create data folder if it does not exist', () => {

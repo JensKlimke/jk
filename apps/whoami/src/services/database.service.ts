@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import {ApiInfoModel} from "../models/apiInfo.model";
 import logger from '../utils/logger';
 import { StorageService } from './storage.interface';
+import { getInstanceKey } from '../utils/instance.utils';
 
 const MONGO_ACCESS_URL = `mongodb://${process.env.MONGO_WEB_USER || 'web'}:${process.env.MONGO_WEB_PASSWORD || 'webpassword'}@${process.env.MONGO_UPSTREAM_URL || 'mongodb:27017'}/web?authSource=admin`
 
@@ -13,15 +14,8 @@ export class DatabaseService implements StorageService {
   constructor(
     private readonly uri: string = MONGO_ACCESS_URL
   ) {
-    this.instanceKey = this.getInstanceKey();
+    this.instanceKey = getInstanceKey('database storage');
     logger.info('Using MongoDB for storage');
-  }
-  
-  private getInstanceKey(): string {
-    // Use INSTANCE_KEY environment variable if provided, otherwise use hostname
-    const instanceKey = process.env.INSTANCE_KEY || require('os').hostname();
-    logger.info('Using instance key:', { instanceKey });
-    return instanceKey;
   }
 
   async connect(): Promise<void> {

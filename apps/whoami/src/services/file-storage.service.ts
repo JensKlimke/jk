@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import logger from '../utils/logger';
 import { StorageService } from './storage.interface';
+import { getInstanceKey } from '../utils/instance.utils';
 
 export class FileStorageService implements StorageService {
   private apiId: string | null = null;
@@ -11,7 +12,7 @@ export class FileStorageService implements StorageService {
   private readonly filePath: string;
 
   constructor() {
-    this.instanceKey = this.getInstanceKey();
+    this.instanceKey = getInstanceKey('file storage');
     
     // Use a test-friendly path when running in test environment
     if (process.env.NODE_ENV === 'test') {
@@ -20,17 +21,10 @@ export class FileStorageService implements StorageService {
       this.dataFolder = process.env.DATA_FOLDER || '/var/data';
     }
     
-    this.filePath = path.join(this.dataFolder, this.instanceKey);
+    this.filePath = path.join(this.dataFolder, `${this.instanceKey}.json`);
     
     // Ensure data folder exists
     this.ensureDataFolderExists();
-  }
-  
-  private getInstanceKey(): string {
-    // Use INSTANCE_KEY environment variable if provided, otherwise use hostname
-    const instanceKey = process.env.INSTANCE_KEY || require('os').hostname();
-    logger.info('Using instance key for file storage:', { instanceKey });
-    return instanceKey;
   }
 
   private ensureDataFolderExists(): void {
