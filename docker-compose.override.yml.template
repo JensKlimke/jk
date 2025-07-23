@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  # Development overrides
+
+  # Traefik - Enable debug logging
+  traefik:
+    command:
+      - --log.level=DEBUG
+    ports:
+      # Expose dashboard without TLS for local development
+      - "8080:8080"
+
+  # API Service - Development settings
+  api-service:
+    environment:
+      - NODE_ENV=development
+      - DEBUG=api:*
+    volumes:
+      # Mount source code for live reloading
+      - ./services/api-service:/app
+      # Exclude node_modules from mounting
+      - /app/node_modules
+    command: npm run dev
+
+  # Enable local adminer for database management
+  adminer:
+    image: adminer:latest
+    container_name: adminer
+    restart: unless-stopped
+    networks:
+      - ${TRAEFIK_NETWORK}
+      - ${INTERNAL_NETWORK}
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.adminer.rule=Host(`${ADMIN_SUBDOMAIN}.${DOMAIN}`)"
+      - "traefik.http.routers.adminer.entrypoints=websecure"
+      - "traefik.http.routers.adminer.tls.certresolver=letsencrypt"
+      - "traefik.http.services.adminer.loadbalancer.server.port=8080"
+      - "traefik.http.routers.adminer.middlewares=oauth2-auth@file,secure-headers@file"
+
+  # Redis Commander - UI for Redis
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: redis-commander
+    restart: unless-stopped
+    environment:
+      - REDIS_HOSTS=local:redis:6379:0:${REDIS_PASSWORD}
+    networks:
+      - ${TRAEFIK_NETWORK}
+      - ${INTERNAL_NETWORK}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.redis-commander.rule=Host(`redis.${DOMAIN}`)"
+      - "traefik.http.routers.redis-commander.entrypoints=websecure"
+      - "traefik.http.routers.redis-commander.tls.certresolver=letsencrypt"
+      - "traefik.http.services.redis-commander.loadbalancer.server.port=8081"
+      - "traefik.http.routers.redis-commander.middlewares=oauth2-auth@file,secure-headers@file"

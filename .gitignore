@@ -1,0 +1,11 @@
+.idea
+
+.env
+certificates/
+data/
+logs/
+backups/
+*.log
+.DS_Store
+node_modules/
+docker-compose.override.yml

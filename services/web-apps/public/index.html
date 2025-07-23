@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Public Application</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f9fc;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #e74c3c;
+            padding-bottom: 10px;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .info {
+            background-color: #f1c40f;
+            color: #333;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        a {
+            color: #e74c3c;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #c0392b;
+            text-decoration: none;
+        }
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>Public Application</h1>
+
+    <div class="card">
+        <div class="info">
+            This is a public page that doesn't require authentication.
+        </div>
+        <h2>Welcome to the Docker Infrastructure</h2>
+        <p>This is an example public application that's part of the Docker infrastructure setup with Traefik, OAuth2, and API services.</p>
+        <p>You can access this page without authentication, but the protected resources require OAuth2 login.</p>
+        <a href="https://protected.yourdomain.com" class="btn">Go to Protected App</a>
+    </div>
+
+    <div class="card">
+        <h2>Infrastructure Components</h2>
+        <ul>
+            <li><strong>Traefik:</strong> Handles routing, SSL, and middleware</li>
+            <li><strong>OAuth2 Proxy:</strong> Provides authentication for protected services</li>
+            <li><strong>API Service:</strong> Backend service with token authentication</li>
+            <li><strong>PostgreSQL:</strong> Database for persistent storage</li>
+            <li><strong>Redis:</strong> Cache for improved performance</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>API Health Check</h2>
+        <p>The API service provides a public health check endpoint that can be accessed without authentication:</p>
+        <a href="https://api.yourdomain.com/health" target="_blank">Check API Health</a>
+        <div id="healthStatus"></div>
+    </div>
+
+    <footer>
+        <p>Docker Infrastructure Demo | <a href="https://github.com/yourusername/docker-infrastructure">GitHub Repository</a></p>
+    </footer>
+
+    <script>
+        // Check API health when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const healthStatus = document.getElementById('healthStatus');
+            healthStatus.innerHTML = '<p>Checking API health...</p>';
+
+            // Replace with your actual API domain
+            fetch('https://api.yourdomain.com/health')
+                .then(response => response.json())
+                .then(data => {
+                    healthStatus.innerHTML = `
+                        <p style="margin-top: 10px;">
+                            Status: <strong style="color: ${data.status === 'healthy' ? '#27ae60' : '#e74c3c'};">
+                                ${data.status}
+                            </strong><br>
+                            Database: ${data.services.database}<br>
+                            Redis: ${data.services.redis}
+                        </p>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error checking API health:', error);
+                    healthStatus.innerHTML = '<p style="color: #e74c3c; margin-top: 10px;">Error connecting to API</p>';
+                });
+        });
+    </script>
+</body>
+</html>
