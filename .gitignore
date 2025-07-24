@@ -1,3 +1,7 @@
 .idea
 
+# Environment variables with sensitive data
 .env
+
+# Let's Encrypt certificates
+/letsencrypt/acme.json
