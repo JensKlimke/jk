@@ -97,7 +97,12 @@ services:
       - "traefik.http.routers.whoami.rule=Host(`whoami.marlene.cloud`)"
       - "traefik.http.routers.whoami.entrypoints=websecure"
       - "traefik.http.routers.whoami.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.whoami.middlewares=oauth2-auth"
       - "traefik.http.services.whoami.loadbalancer.server.port=80"
+      # OAuth2 Proxy middleware configuration
+      - "traefik.http.middlewares.oauth2-auth.forwardauth.address=http://auth:4180"
+      - "traefik.http.middlewares.oauth2-auth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.oauth2-auth.forwardauth.authResponseHeaders=X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"
     networks:
       - traefik
 
