@@ -12,7 +12,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik.yml:/traefik.yml:ro
-      - ./acme.json:/acme.json
     networks:
       - traefik
 
