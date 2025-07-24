@@ -46,10 +46,10 @@ services:
 #      - ./conf/oauth2-proxy/templates:/templates:ro
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.route-authproxy.rule=(Host(`auth.marlene.cloud`) && PathPrefix(`/oauth2/`)) || (PathPrefix(`/oauth2/`))"
-      - "traefik.http.routers.whoami.entrypoints=websecure"
-      - "traefik.http.routers.whoami.tls.certresolver=letsencrypt"
-      - "traefik.http.services.route-authproxy.loadbalancer.server.port=4180"
+      - "traefik.http.routers.oauth2-proxy.rule=(Host(`auth.marlene.cloud`) && PathPrefix(`/oauth2/`)) || (PathPrefix(`/oauth2/`))"
+      - "traefik.http.routers.oauth2-proxy.entrypoints=websecure"
+      - "traefik.http.routers.oauth2-proxy.tls.certresolver=letsencrypt"
+      - "traefik.http.services.oauth2-proxy.loadbalancer.server.port=4180"
     networks:
       - traefik
     restart: unless-stopped
