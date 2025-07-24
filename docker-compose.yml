@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   traefik:
@@ -16,44 +16,6 @@ services:
     networks:
       - traefik
 
-#  # OAuth2 Proxy
-#  oauth2-proxy:
-#    # internal: oauth2proxy on port 4180
-#    image: quay.io/oauth2-proxy/oauth2-proxy:latest
-#    container_name: oauth2-proxy
-#    environment:
-#      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
-#      # Cookie
-#      OAUTH2_PROXY_COOKIE_DOMAINS: '.marlene.cloud'
-#      OAUTH2_PROXY_COOKIE_SECURE: "true"
-#      OAUTH2_PROXY_COOKIE_REFRESH: 3600s
-#      OAUTH2_PROXY_COOKIE_NAME: auth
-#      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_COOKIE_SECRET}
-#      OAUTH2_PROXY_COOKIE_SAMESITE: lax
-#      # Github
-#      OAUTH2_PROXY_PROVIDER: github
-#      OAUTH2_PROXY_CLIENT_ID: ${GITHUB_CLIENT_ID}
-#      OAUTH2_PROXY_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
-#      OAUTH2_PROXY_EMAIL_DOMAINS: '*'
-#      # Redirect
-#      OAUTH2_PROXY_WHITELIST_DOMAINS: '.marlene.cloud'
-##      OAUTH2_PROXY_OIDC_ISSUER_URL: 'https://auth.marlene.com/realms/master'
-#      OAUTH2_PROXY_REDIRECT_URL: https://auth.marlene.cloud/oauth2/callback
-#      # Headers, access tokens
-#      OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
-#      OAUTH2_PROXY_PASS_ACCESS_TOKEN: "true"
-##    volumes:
-##      - ./conf/oauth2-proxy/templates:/templates:ro
-#    labels:
-#      - "traefik.enable=true"
-#      - "traefik.http.routers.oauth2-proxy.rule=(Host(`auth.marlene.cloud`) && PathPrefix(`/oauth2/`)) || (PathPrefix(`/oauth2/`))"
-#      - "traefik.http.routers.oauth2-proxy.entrypoints=websecure"
-#      - "traefik.http.routers.oauth2-proxy.tls.certresolver=letsencrypt"
-#      - "traefik.http.services.oauth2-proxy.loadbalancer.server.port=4180"
-#    networks:
-#      - traefik
-#    restart: unless-stopped
-
   # Example application
   auth:
     image: quay.io/oauth2-proxy/oauth2-proxy:latest
@@ -62,8 +24,8 @@ services:
     environment:
       OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
       # Cookie
-      OAUTH2_PROXY_COOKIE_DOMAINS: '.marlene.cloud'
-      OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_COOKIE_DOMAINS: .${DOMAIN:-localhost}
+      OAUTH2_PROXY_COOKIE_SECURE: "false"
       OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_COOKIE_SECRET}
       OAUTH2_PROXY_COOKIE_REFRESH: 3600s
       OAUTH2_PROXY_COOKIE_NAME: auth
@@ -72,18 +34,20 @@ services:
       OAUTH2_PROXY_PROVIDER: github
       OAUTH2_PROXY_CLIENT_ID: ${GITHUB_CLIENT_ID}
       OAUTH2_PROXY_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
-      OAUTH2_PROXY_EMAIL_DOMAINS: '*'
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
       # Redirect
-      OAUTH2_PROXY_WHITELIST_DOMAINS: '.marlene.cloud'
-      OAUTH2_PROXY_REDIRECT_URL: https://auth.marlene.cloud/oauth2/callback
+      OAUTH2_PROXY_REVERSE_PROXY: "true"
+      OAUTH2_PROXY_WHITELIST_DOMAINS: "*.${DOMAIN:-localhost}"
+      OAUTH2_PROXY_REDIRECT_URL: "http://auth.${DOMAIN:-localhost}/oauth2/callback"
       # Headers, access tokens
       OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
       OAUTH2_PROXY_PASS_ACCESS_TOKEN: "true"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.auth.rule=Host(`auth.marlene.cloud`) || PathPrefix(`/oauth2/`)"
-      - "traefik.http.routers.auth.entrypoints=websecure"
-      - "traefik.http.routers.auth.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.auth.rule=Host(`auth.${DOMAIN:-localhost}`) || PathPrefix(`/oauth2/`)"
+      - "traefik.http.routers.auth.entrypoints=web"
+#      - "traefik.http.routers.auth.entrypoints=websecure"
+#      - "traefik.http.routers.auth.tls.certresolver=letsencrypt"
       - "traefik.http.services.auth.loadbalancer.server.port=4180"
     networks:
       - traefik
@@ -94,12 +58,13 @@ services:
     container_name: whoami
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.whoami.rule=Host(`whoami.marlene.cloud`)"
-      - "traefik.http.routers.whoami.entrypoints=websecure"
-      - "traefik.http.routers.whoami.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.whoami.middlewares=oauth2-auth"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.whoami.entrypoints=web"
       - "traefik.http.services.whoami.loadbalancer.server.port=80"
+#      - "traefik.http.routers.whoami.entrypoints=websecure"
+#      - "traefik.http.routers.whoami.tls.certresolver=letsencrypt"
       # OAuth2 Proxy middleware configuration
+      - "traefik.http.routers.whoami.middlewares=oauth2-auth"
       - "traefik.http.middlewares.oauth2-auth.forwardauth.address=http://auth:4180"
       - "traefik.http.middlewares.oauth2-auth.forwardauth.trustForwardHeader=true"
       - "traefik.http.middlewares.oauth2-auth.forwardauth.authResponseHeaders=X-Auth-Request-User,X-Auth-Request-Email,X-Auth-Request-Access-Token"

@@ -1,7 +1,7 @@
 # traefik.yml
 api:
   dashboard: true
-  insecure: false
+  insecure: true # Change in production
 
 log:
   level: INFO
@@ -17,10 +17,10 @@ providers:
     endpoint: "unix:///var/run/docker.sock"
     exposedByDefault: false
 
-certificatesResolvers:
-  letsencrypt:
-    acme:
-      email: jens.klimke@rwth-aachen.de
-      storage: /letsencrypt/acme.json
-      httpChallenge:
-        entryPoint: web
+#certificatesResolvers:
+#  letsencrypt:
+#    acme:
+#      email: jens.klimke@rwth-aachen.de
+#      storage: /letsencrypt/acme.json
+#      httpChallenge:
+#        entryPoint: web
