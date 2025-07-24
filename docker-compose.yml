@@ -64,9 +64,9 @@ services:
       # Cookie
       OAUTH2_PROXY_COOKIE_DOMAINS: '.marlene.cloud'
       OAUTH2_PROXY_COOKIE_SECURE: "true"
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_COOKIE_SECRET}
       OAUTH2_PROXY_COOKIE_REFRESH: 3600s
       OAUTH2_PROXY_COOKIE_NAME: auth
-      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_COOKIE_SECRET}
       OAUTH2_PROXY_COOKIE_SAMESITE: lax
       # Github
       OAUTH2_PROXY_PROVIDER: github
@@ -75,7 +75,6 @@ services:
       OAUTH2_PROXY_EMAIL_DOMAINS: '*'
       # Redirect
       OAUTH2_PROXY_WHITELIST_DOMAINS: '.marlene.cloud'
-#      OAUTH2_PROXY_OIDC_ISSUER_URL: 'https://auth.marlene.com/realms/master'
       OAUTH2_PROXY_REDIRECT_URL: https://auth.marlene.cloud/oauth2/callback
       # Headers, access tokens
       OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
