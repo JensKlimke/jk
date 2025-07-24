@@ -60,10 +60,10 @@ services:
     container_name: auth
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.whoami.rule=Host(`auth.marlene.cloud`)"
-      - "traefik.http.routers.whoami.entrypoints=websecure"
-      - "traefik.http.routers.whoami.tls.certresolver=letsencrypt"
-      - "traefik.http.services.whoami.loadbalancer.server.port=80"
+      - "traefik.http.routers.auth.rule=Host(`auth.marlene.cloud`)"
+      - "traefik.http.routers.auth.entrypoints=websecure"
+      - "traefik.http.routers.auth.tls.certresolver=letsencrypt"
+      - "traefik.http.services.auth.loadbalancer.server.port=80"
     networks:
       - traefik
 
