@@ -56,14 +56,14 @@ services:
 
   # Example application
   auth:
-    image: traefik/whoami
+    image: quay.io/oauth2-proxy/oauth2-proxy:latest
     container_name: auth
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.auth.rule=Host(`auth.marlene.cloud`)"
+      - "traefik.http.routers.auth.rule=Host(`auth.marlene.cloud`) || PathPrefix(`/oauth2/`)"
       - "traefik.http.routers.auth.entrypoints=websecure"
       - "traefik.http.routers.auth.tls.certresolver=letsencrypt"
-      - "traefik.http.services.auth.loadbalancer.server.port=80"
+      - "traefik.http.services.auth.loadbalancer.server.port=4180"
     networks:
       - traefik
 
