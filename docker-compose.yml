@@ -48,6 +48,8 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.route-authproxy.rule=(Host(`auth.marlene.cloud.com`) && PathPrefix(`/oauth2/`)) || (PathPrefix(`/oauth2/`))"
       - "traefik.http.services.route-authproxy.loadbalancer.server.port=4180"
+    networks:
+      - traefik
     restart: unless-stopped
 
   # Example application
