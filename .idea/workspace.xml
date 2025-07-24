@@ -4,35 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3f785c90-aae4-43ae-94e2-0b177cbdf98a" name="Changes" comment="Basic traefik conf">
-      <change afterPath="$PROJECT_DIR$/traefik.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.env.example" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.env.local" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.env.template" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/INSTRUCTION.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Makefile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.override.yml.template" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/API_USAGE.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/DEVELOPMENT.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/OAUTH_PROVIDERS.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/docs/SETUP.md" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/monitoring/docker-compose.monitoring.yml.template" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/backup.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/generate-secrets.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/scripts/update.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/api-service/.dockerignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/api-service/Dockerfile" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/api-service/package-lock.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/api-service/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/api-service/server.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/web-apps/protected/index.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/services/web-apps/public/index.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/setup.sh" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/traefik/dynamic.yml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/traefik/traefik.yml" beforeDir="false" />
+    <list default="true" id="3f785c90-aae4-43ae-94e2-0b177cbdf98a" name="Changes" comment="Remove acme.json configuration file">
+      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -115,7 +88,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1753301984119</updated>
-      <workItem from="1753301985370" duration="5643000" />
+      <workItem from="1753301985370" duration="5962000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -149,7 +122,23 @@
       <option name="project" value="LOCAL" />
       <updated>1753338284642</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Remove outdated documentation, unused scripts, and unnecessary configuration files">
+      <option name="closed" value="true" />
+      <created>1753340384406</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1753340384407</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Remove acme.json configuration file">
+      <option name="closed" value="true" />
+      <created>1753340601355</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1753340601355</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -160,6 +149,9 @@
     <MESSAGE value="add package-lock.json for api-service dependencies" />
     <MESSAGE value="add development guide and environment setup instructions" />
     <MESSAGE value="Basic traefik conf" />
-    <option name="LAST_COMMIT_MESSAGE" value="Basic traefik conf" />
+    <MESSAGE value="Fix" />
+    <MESSAGE value="Remove outdated documentation, unused scripts, and unnecessary configuration files" />
+    <MESSAGE value="Remove acme.json configuration file" />
+    <option name="LAST_COMMIT_MESSAGE" value="Remove acme.json configuration file" />
   </component>
 </project>
