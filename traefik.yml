@@ -4,7 +4,7 @@ api:
   insecure: false
 
 log:
-  level: DEBUG
+  level: INFO
 
 entryPoints:
   web:
@@ -23,6 +23,5 @@ certificatesResolvers:
     acme:
       email: jens.klimke@rwth-aachen.de
       storage: /letsencrypt/acme.json
-      caServer: https://acme-staging-v02.api.letsencrypt.org/directory
       httpChallenge:
         entryPoint: web
