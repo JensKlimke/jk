@@ -46,7 +46,9 @@ services:
 #      - ./conf/oauth2-proxy/templates:/templates:ro
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.route-authproxy.rule=(Host(`auth.marlene.cloud.com`) && PathPrefix(`/oauth2/`)) || (PathPrefix(`/oauth2/`))"
+      - "traefik.http.routers.route-authproxy.rule=(Host(`auth.marlene.cloud`) && PathPrefix(`/oauth2/`)) || (PathPrefix(`/oauth2/`))"
+      - "traefik.http.routers.whoami.entrypoints=websecure"
+      - "traefik.http.routers.whoami.tls.certresolver=letsencrypt"
       - "traefik.http.services.route-authproxy.loadbalancer.server.port=4180"
     networks:
       - traefik
