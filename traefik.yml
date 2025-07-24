@@ -4,8 +4,6 @@ api:
   insecure: false
 
 log:
-  filePath: "/logs/traefik.log"
-  format: json
   level: DEBUG
 
 entryPoints:
