@@ -1,7 +1,7 @@
 # traefik.yml
 api:
   dashboard: true
-  insecure: true  # Set to false in production
+  insecure: false
 
 entryPoints:
   web:
@@ -19,6 +19,6 @@ certificatesResolvers:
   letsencrypt:
     acme:
       email: jens.klimke@rwth-aachen.de
-      storage: /acme.json
+      storage: /letsencrypt/acme.json
       httpChallenge:
         entryPoint: web
