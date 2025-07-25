@@ -35,7 +35,9 @@ export class AuthService {
     // User is not authenticated, prepare redirect URL
     const originUrl = this.buildOriginUrl(req);
     const state = encodeURIComponent(originUrl);
-    const redirectUrl = `http://auth.localhost/auth/callback?state=${state}`;
+    const domain = process.env.DOMAIN || 'localhost';
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    const redirectUrl = `${protocol}://auth.${domain}/auth/callback?state=${state}`;
 
     return {
       isAuthenticated: false,
@@ -53,12 +55,13 @@ export class AuthService {
   } {
     const originUrl = state ? decodeURIComponent(state) : '/';
     const sessionId = uuidv4();
+    const domain = process.env.DOMAIN || 'localhost';
 
     const cookieOptions: CookieOptions = {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      secure: false,
+      secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
-      domain: '.localhost',
+      domain: `.${domain}`,
       sameSite: 'lax',
     };
 

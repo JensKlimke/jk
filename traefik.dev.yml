@@ -1,7 +1,7 @@
-# traefik.yml
+# Traefik Development Configuration
 api:
   dashboard: true
-  insecure: true # Change in production
+  insecure: true
 
 log:
   level: INFO
@@ -19,11 +19,3 @@ providers:
   file:
     directory: "/etc/traefik/dynamic"
     watch: true
-
-#certificatesResolvers:
-#  letsencrypt:
-#    acme:
-#      email: jens.klimke@rwth-aachen.de
-#      storage: /letsencrypt/acme.json
-#      httpChallenge:
-#        entryPoint: web
