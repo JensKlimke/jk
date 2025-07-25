@@ -43,7 +43,11 @@ export class AuthController {
       const callbackResult = this.authService.handleAuthCallback(state);
 
       // Set authentication cookie
-      res.cookie('auth', callbackResult.sessionId, callbackResult.cookieOptions);
+      res.cookie(
+        'auth',
+        callbackResult.sessionId,
+        callbackResult.cookieOptions
+      );
 
       // Redirect back to the origin URL
       res.redirect(302, callbackResult.originUrl);

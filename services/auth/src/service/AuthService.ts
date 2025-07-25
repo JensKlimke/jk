@@ -22,13 +22,13 @@ export class AuthService {
    */
   checkAuthentication(req: Request): AuthResult {
     const authCookie = req.cookies['auth'];
-    
+
     if (authCookie) {
       // User is authenticated
       return {
         isAuthenticated: true,
         userId: 'user123', // Mock user ID
-        userRole: 'admin'   // Mock user role
+        userRole: 'admin', // Mock user role
       };
     }
 
@@ -39,29 +39,33 @@ export class AuthService {
 
     return {
       isAuthenticated: false,
-      redirectUrl
+      redirectUrl,
     };
   }
 
   /**
    * Handle authentication callback and generate session
    */
-  handleAuthCallback(state?: string): { sessionId: string; originUrl: string; cookieOptions: CookieOptions } {
+  handleAuthCallback(state?: string): {
+    sessionId: string;
+    originUrl: string;
+    cookieOptions: CookieOptions;
+  } {
     const originUrl = state ? decodeURIComponent(state) : '/';
     const sessionId = uuidv4();
-    
+
     const cookieOptions: CookieOptions = {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
       secure: false,
       httpOnly: true,
       domain: '.localhost',
-      sameSite: 'lax'
+      sameSite: 'lax',
     };
 
     return {
       sessionId,
       originUrl,
-      cookieOptions
+      cookieOptions,
     };
   }
 
@@ -72,7 +76,7 @@ export class AuthService {
     const protocol = req.get('X-Forwarded-Proto') || 'http';
     const host = req.get('X-Forwarded-Host') || req.get('host');
     const uri = req.get('X-Original-URI') || '/';
-    
+
     return `${protocol}://${host}${uri}`;
   }
 }
