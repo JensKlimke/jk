@@ -11,24 +11,21 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik.yml:/traefik.yml:ro
       - ./letsencrypt:/letsencrypt
+      - ./traefik/dynamic:/etc/traefik/dynamic
     networks:
       - traefik
 
-  # Cookie middleware application
-  cookie-middleware:
+  # Auth middleware
+  auth:
     build: ./services/auth
-    container_name: cookie-middleware
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
+    container_name: auth
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.cookie-middleware.rule=Host(`app.${DOMAIN:-localhost}`)"
-      - "traefik.http.routers.cookie-middleware.entrypoints=web"
-      - "traefik.http.services.cookie-middleware.loadbalancer.server.port=3000"
-      # For HTTPS (uncomment when ready)
-      # - "traefik.http.routers.cookie-middleware.entrypoints=websecure"
-      # - "traefik.http.routers.cookie-middleware.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.auth.rule=Host(`auth.${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.auth.entrypoints=web"
+      - "traefik.http.services.auth.loadbalancer.server.port=3000"
+    environment:
+      NODE_ENV: "development"
     networks:
       - traefik
 
@@ -41,6 +38,8 @@ services:
       - "traefik.http.routers.whoami.rule=Host(`whoami.${DOMAIN:-localhost}`)"
       - "traefik.http.routers.whoami.entrypoints=web"
       - "traefik.http.services.whoami.loadbalancer.server.port=80"
+      # Apply the auth middleware
+      - "traefik.http.routers.whoami.middlewares=auth@file"
       # For HTTPS (uncomment when ready)
       # - "traefik.http.routers.whoami.entrypoints=websecure"
       # - "traefik.http.routers.whoami.tls.certresolver=letsencrypt"
