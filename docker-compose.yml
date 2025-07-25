@@ -31,6 +31,7 @@ services:
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
     environment:
       NODE_ENV: "production"
+      DOMAIN: ${DOMAIN:-localhost}
     networks:
       - traefik
 
