@@ -1,5 +1,6 @@
 import { Request } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
 
 export interface AuthResult {
   isAuthenticated: boolean;
@@ -16,28 +17,53 @@ export interface CookieOptions {
   sameSite: 'lax' | 'strict' | 'none';
 }
 
+export interface GitHubUser {
+  id: number;
+  login: string;
+  name: string;
+  email: string;
+  avatar_url: string;
+}
+
+export interface GitHubTokenResponse {
+  access_token: string;
+  token_type: string;
+  scope: string;
+}
+
 export class AuthService {
+  private readonly githubClientId: string;
+  private readonly githubClientSecret: string;
+  private readonly sessions: Map<string, GitHubUser> = new Map();
+
+  constructor() {
+    this.githubClientId = process.env.GITHUB_AUTH_CLIENT_ID || '';
+    this.githubClientSecret = process.env.GITHUB_AUTH_SECRET || '';
+    
+    if (!this.githubClientId || !this.githubClientSecret) {
+      throw new Error('GitHub OAuth credentials not configured');
+    }
+  }
+
   /**
    * Check if user is authenticated based on auth cookie
    */
   checkAuthentication(req: Request): AuthResult {
     const authCookie = req.cookies['auth'];
 
-    if (authCookie) {
-      // User is authenticated
+    if (authCookie && this.sessions.has(authCookie)) {
+      const user = this.sessions.get(authCookie)!;
       return {
         isAuthenticated: true,
-        userId: 'user123', // Mock user ID
-        userRole: 'admin', // Mock user role
+        userId: user.login,
+        userRole: 'user',
       };
     }
 
-    // User is not authenticated, prepare redirect URL
+    // User is not authenticated, prepare redirect URL for GitHub OAuth
     const originUrl = this.buildOriginUrl(req);
     const state = encodeURIComponent(originUrl);
-    const domain = process.env.DOMAIN || 'localhost';
-    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-    const redirectUrl = `${protocol}://auth.${domain}/auth/callback?state=${state}`;
+    const redirectUrl = this.getGitHubAuthUrl(state);
 
     return {
       isAuthenticated: false,
@@ -46,30 +72,96 @@ export class AuthService {
   }
 
   /**
+   * Generate GitHub OAuth authorization URL
+   */
+  getGitHubAuthUrl(state: string): string {
+    const domain = process.env.DOMAIN || 'localhost';
+    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
+    const redirectUri = `${protocol}://auth.${domain}/auth/callback`;
+    
+    const params = new URLSearchParams({
+      client_id: this.githubClientId,
+      redirect_uri: redirectUri,
+      scope: 'user:email',
+      state: state,
+    });
+
+    return `https://github.com/login/oauth/authorize?${params.toString()}`;
+  }
+
+  /**
+   * Exchange authorization code for access token
+   */
+  async exchangeCodeForToken(code: string): Promise<string> {
+    const response = await axios.post<GitHubTokenResponse>(
+      'https://github.com/login/oauth/access_token',
+      {
+        client_id: this.githubClientId,
+        client_secret: this.githubClientSecret,
+        code: code,
+      },
+      {
+        headers: {
+          Accept: 'application/json',
+        },
+      }
+    );
+
+    return response.data.access_token;
+  }
+
+  /**
+   * Fetch user information from GitHub
+   */
+  async fetchGitHubUser(accessToken: string): Promise<GitHubUser> {
+    const response = await axios.get<GitHubUser>('https://api.github.com/user', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    return response.data;
+  }
+
+  /**
    * Handle authentication callback and generate session
    */
-  handleAuthCallback(state?: string): {
+  async handleAuthCallback(code: string, state?: string): Promise<{
     sessionId: string;
     originUrl: string;
     cookieOptions: CookieOptions;
-  } {
-    const originUrl = state ? decodeURIComponent(state) : '/';
-    const sessionId = uuidv4();
-    const domain = process.env.DOMAIN || 'localhost';
+  }> {
+    try {
+      // Exchange code for access token
+      const accessToken = await this.exchangeCodeForToken(code);
+      
+      // Fetch user information
+      const user = await this.fetchGitHubUser(accessToken);
+      
+      // Generate session
+      const sessionId = uuidv4();
+      this.sessions.set(sessionId, user);
+      
+      const originUrl = state ? decodeURIComponent(state) : '/';
+      const domain = process.env.DOMAIN || 'localhost';
 
-    const cookieOptions: CookieOptions = {
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: true,
-      domain: `.${domain}`,
-      sameSite: 'lax',
-    };
+      const cookieOptions: CookieOptions = {
+        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        domain: `.${domain}`,
+        sameSite: 'lax',
+      };
 
-    return {
-      sessionId,
-      originUrl,
-      cookieOptions,
-    };
+      return {
+        sessionId,
+        originUrl,
+        cookieOptions,
+      };
+    } catch (error) {
+      console.error('Error in GitHub OAuth callback:', error);
+      throw new Error('Failed to authenticate with GitHub');
+    }
   }
 
   /**

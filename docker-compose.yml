@@ -32,6 +32,9 @@ services:
     environment:
       NODE_ENV: "production"
       DOMAIN: ${DOMAIN:-localhost}
+      GITHUB_AUTH_CLIENT_ID: ${GITHUB_AUTH_CLIENT_ID}
+      GITHUB_AUTH_SECRET: ${GITHUB_AUTH_SECRET}
+      COOKIE_SECRET: ${COOKIE_SECRET}
     networks:
       - traefik
 

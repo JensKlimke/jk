@@ -37,10 +37,17 @@ export class AuthController {
    * Handle authentication callback
    * GET /auth/callback
    */
-  handleCallback = (req: Request, res: Response): void => {
+  handleCallback = async (req: Request, res: Response): Promise<void> => {
     try {
+      const code = req.query.code as string;
       const state = req.query.state as string;
-      const callbackResult = this.authService.handleAuthCallback(state);
+
+      if (!code) {
+        res.status(400).send('Authorization code not provided');
+        return;
+      }
+
+      const callbackResult = await this.authService.handleAuthCallback(code, state);
 
       // Set authentication cookie
       res.cookie(
@@ -49,11 +56,12 @@ export class AuthController {
         callbackResult.cookieOptions
       );
 
+      console.log('GitHub OAuth authentication successful');
       // Redirect back to the origin URL
       res.redirect(302, callbackResult.originUrl);
     } catch (error) {
       console.error('Error in handleCallback:', error);
-      res.status(500).send('Internal Server Error');
+      res.status(500).send('GitHub authentication failed');
     }
   };
 }

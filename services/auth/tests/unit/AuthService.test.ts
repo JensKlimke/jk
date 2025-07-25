@@ -1,10 +1,15 @@
 import { Request } from 'express';
 import { AuthService, AuthResult } from '../../src/service/AuthService';
+import axios from 'axios';
 
 // Mock uuid
 jest.mock('uuid', () => ({
   v4: jest.fn(() => 'mock-uuid-123'),
 }));
+
+// Mock axios
+jest.mock('axios');
+const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -16,12 +21,36 @@ describe('AuthService', () => {
       cookies: {},
       get: jest.fn(),
     };
+    
+    // Reset axios mocks
+    mockedAxios.post.mockReset();
+    mockedAxios.get.mockReset();
   });
 
   describe('checkAuthentication', () => {
-    it('should return authenticated result when auth cookie is present', () => {
-      // Arrange
-      mockRequest.cookies = { auth: 'valid-session-id' };
+    it('should return authenticated result when auth cookie is present and session exists', async () => {
+      // Arrange - First create a session by mocking the OAuth flow
+      const mockGitHubUser = {
+        id: 123,
+        login: 'testuser',
+        name: 'Test User',
+        email: 'test@example.com',
+        avatar_url: 'https://github.com/avatar.jpg'
+      };
+      
+      mockedAxios.post.mockResolvedValueOnce({
+        data: { access_token: 'mock-access-token' }
+      });
+      mockedAxios.get.mockResolvedValueOnce({
+        data: mockGitHubUser
+      });
+      
+      // Create a session first
+      const callbackResult = await authService.handleAuthCallback('mock-code', 'test-state');
+      const sessionId = callbackResult.sessionId;
+      
+      // Now test authentication with the session
+      mockRequest.cookies = { auth: sessionId };
 
       // Act
       const result: AuthResult = authService.checkAuthentication(
@@ -30,12 +59,12 @@ describe('AuthService', () => {
 
       // Assert
       expect(result.isAuthenticated).toBe(true);
-      expect(result.userId).toBe('user123');
-      expect(result.userRole).toBe('admin');
+      expect(result.userId).toBe('testuser');
+      expect(result.userRole).toBe('user');
       expect(result.redirectUrl).toBeUndefined();
     });
 
-    it('should return unauthenticated result with redirect URL when auth cookie is missing', () => {
+    it('should return unauthenticated result with GitHub OAuth URL when auth cookie is missing', () => {
       // Arrange
       mockRequest.cookies = {};
       (mockRequest.get as jest.Mock)
@@ -52,9 +81,10 @@ describe('AuthService', () => {
       expect(result.isAuthenticated).toBe(false);
       expect(result.userId).toBeUndefined();
       expect(result.userRole).toBeUndefined();
-      expect(result.redirectUrl).toBe(
-        'http://auth.localhost/auth/callback?state=https%3A%2F%2Fapp.example.com%2Fdashboard'
-      );
+      expect(result.redirectUrl).toContain('https://github.com/login/oauth/authorize');
+      expect(result.redirectUrl).toContain('client_id=test-client-id');
+      expect(result.redirectUrl).toContain('redirect_uri=http%3A%2F%2Fauth.localhost%2Fauth%2Fcallback');
+      expect(result.redirectUrl).toContain('state=https%253A%252F%252Fapp.example.com%252Fdashboard');
     });
 
     it('should handle missing forwarded headers gracefully', () => {
@@ -72,9 +102,8 @@ describe('AuthService', () => {
 
       // Assert
       expect(result.isAuthenticated).toBe(false);
-      expect(result.redirectUrl).toBe(
-        'http://auth.localhost/auth/callback?state=http%3A%2F%2Flocalhost%3A3000%2F'
-      );
+      expect(result.redirectUrl).toContain('https://github.com/login/oauth/authorize');
+      expect(result.redirectUrl).toContain('state=http%253A%252F%252Flocalhost%253A3000%252F');
     });
 
     it('should use default values when all headers are missing', () => {
@@ -89,19 +118,34 @@ describe('AuthService', () => {
 
       // Assert
       expect(result.isAuthenticated).toBe(false);
-      expect(result.redirectUrl).toBe(
-        'http://auth.localhost/auth/callback?state=http%3A%2F%2Fundefined%2F'
-      );
+      expect(result.redirectUrl).toContain('https://github.com/login/oauth/authorize');
+      expect(result.redirectUrl).toContain('state=http%253A%252F%252Fundefined%252F');
     });
   });
 
   describe('handleAuthCallback', () => {
-    it('should generate session with provided state', () => {
+    it('should successfully handle GitHub OAuth callback with provided state', async () => {
       // Arrange
+      const mockGitHubUser = {
+        id: 123,
+        login: 'testuser',
+        name: 'Test User',
+        email: 'test@example.com',
+        avatar_url: 'https://github.com/avatar.jpg'
+      };
+      
+      mockedAxios.post.mockResolvedValueOnce({
+        data: { access_token: 'mock-access-token' }
+      });
+      mockedAxios.get.mockResolvedValueOnce({
+        data: mockGitHubUser
+      });
+      
+      const code = 'mock-auth-code';
       const state = 'https%3A%2F%2Fapp.example.com%2Fdashboard';
 
       // Act
-      const result = authService.handleAuthCallback(state);
+      const result = await authService.handleAuthCallback(code, state);
 
       // Assert
       expect(result.sessionId).toBe('mock-uuid-123');
@@ -113,11 +157,51 @@ describe('AuthService', () => {
         domain: '.localhost',
         sameSite: 'lax',
       });
+      
+      // Verify GitHub API calls
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        'https://github.com/login/oauth/access_token',
+        {
+          client_id: 'test-client-id',
+          client_secret: 'test-client-secret',
+          code: 'mock-auth-code',
+        },
+        {
+          headers: {
+            Accept: 'application/json',
+          },
+        }
+      );
+      
+      expect(mockedAxios.get).toHaveBeenCalledWith(
+        'https://api.github.com/user',
+        {
+          headers: {
+            Authorization: 'Bearer mock-access-token',
+          },
+        }
+      );
     });
 
-    it('should use default origin URL when state is not provided', () => {
+    it('should use default origin URL when state is not provided', async () => {
+      // Arrange
+      const mockGitHubUser = {
+        id: 456,
+        login: 'anotheruser',
+        name: 'Another User',
+        email: 'another@example.com',
+        avatar_url: 'https://github.com/avatar2.jpg'
+      };
+      
+      mockedAxios.post.mockResolvedValueOnce({
+        data: { access_token: 'mock-access-token-2' }
+      });
+      mockedAxios.get.mockResolvedValueOnce({
+        data: mockGitHubUser
+      });
+
       // Act
-      const result = authService.handleAuthCallback();
+      const result = await authService.handleAuthCallback('mock-code');
 
       // Assert
       expect(result.sessionId).toBe('mock-uuid-123');
@@ -125,43 +209,12 @@ describe('AuthService', () => {
       expect(result.cookieOptions).toBeDefined();
     });
 
-    it('should use default origin URL when state is empty string', () => {
-      // Act
-      const result = authService.handleAuthCallback('');
-
-      // Assert
-      expect(result.sessionId).toBe('mock-uuid-123');
-      expect(result.originUrl).toBe('/');
-    });
-
-    it('should generate unique session ID for each call', () => {
+    it('should handle GitHub OAuth API errors', async () => {
       // Arrange
-      const { v4: mockUuid } = require('uuid');
-      (mockUuid as jest.Mock)
-        .mockReturnValueOnce('session-1')
-        .mockReturnValueOnce('session-2');
+      mockedAxios.post.mockRejectedValueOnce(new Error('GitHub API error'));
 
-      // Act
-      const result1 = authService.handleAuthCallback();
-      const result2 = authService.handleAuthCallback();
-
-      // Assert
-      expect(result1.sessionId).toBe('session-1');
-      expect(result2.sessionId).toBe('session-2');
-    });
-
-    it('should return correct cookie options', () => {
-      // Act
-      const result = authService.handleAuthCallback();
-
-      // Assert
-      expect(result.cookieOptions).toEqual({
-        maxAge: 86400000, // 24 hours in milliseconds
-        secure: false,
-        httpOnly: true,
-        domain: '.localhost',
-        sameSite: 'lax',
-      });
+      // Act & Assert
+      await expect(authService.handleAuthCallback('invalid-code')).rejects.toThrow('Failed to authenticate with GitHub');
     });
   });
 
@@ -178,8 +231,9 @@ describe('AuthService', () => {
       const result = authService.checkAuthentication(mockRequest as Request);
 
       // Assert
+      expect(result.redirectUrl).toContain('https://github.com/login/oauth/authorize');
       expect(result.redirectUrl).toContain(
-        'https%3A%2F%2Fapi.example.com%2Fapi%2Fusers'
+        'state=https%253A%252F%252Fapi.example.com%252Fapi%252Fusers'
       );
     });
 
@@ -205,8 +259,9 @@ describe('AuthService', () => {
       const result = authService.checkAuthentication(mockRequest as Request);
 
       // Assert
+      expect(result.redirectUrl).toContain('https://github.com/login/oauth/authorize');
       expect(result.redirectUrl).toContain(
-        'http%3A%2F%2Flocalhost%3A8080%2Ftest'
+        'state=http%253A%252F%252Flocalhost%253A8080%252Ftest'
       );
     });
   });

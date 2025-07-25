@@ -13,6 +13,9 @@ global.console = {
 // Set test environment variables
 process.env.NODE_ENV = 'test';
 process.env.PORT = '3001';
+process.env.GITHUB_AUTH_CLIENT_ID = 'test-client-id';
+process.env.GITHUB_AUTH_SECRET = 'test-client-secret';
+process.env.COOKIE_SECRET = 'test-cookie-secret';
 
 // Global test timeout
 jest.setTimeout(10000);

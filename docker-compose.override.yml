@@ -25,6 +25,8 @@ services:
       - "traefik.http.routers.auth.entrypoints=web"
       - "traefik.http.services.auth.loadbalancer.server.port=3000"
     environment:
+      GITHUB_AUTH_CLIENT_ID: ${GITHUB_AUTH_CLIENT_ID}
+      GITHUB_AUTH_SECRET: ${GITHUB_AUTH_SECRET}
       NODE_ENV: "development"
     networks:
       - traefik

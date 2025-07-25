@@ -161,10 +161,11 @@ describe('AuthController', () => {
   });
 
   describe('handleCallback', () => {
-    it('should set cookie and redirect to origin URL', () => {
+    it('should set cookie and redirect to origin URL', async () => {
       // Arrange
+      const code = 'github-auth-code';
       const state = 'https%3A%2F%2Fapp.example.com%2Fdashboard';
-      mockRequest.query = { state };
+      mockRequest.query = { code, state };
 
       const callbackResult = {
         sessionId: 'session-123',
@@ -177,16 +178,16 @@ describe('AuthController', () => {
           sameSite: 'lax' as const,
         },
       };
-      mockAuthService.handleAuthCallback.mockReturnValue(callbackResult);
+      mockAuthService.handleAuthCallback.mockResolvedValue(callbackResult);
 
       // Act
-      authController.handleCallback(
+      await authController.handleCallback(
         mockRequest as Request,
         mockResponse as Response
       );
 
       // Assert
-      expect(mockAuthService.handleAuthCallback).toHaveBeenCalledWith(state);
+      expect(mockAuthService.handleAuthCallback).toHaveBeenCalledWith(code, state);
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         'auth',
         'session-123',
@@ -198,9 +199,10 @@ describe('AuthController', () => {
       );
     });
 
-    it('should handle missing state parameter', () => {
+    it('should handle missing state parameter', async () => {
       // Arrange
-      mockRequest.query = {};
+      const code = 'github-auth-code';
+      mockRequest.query = { code };
 
       const callbackResult = {
         sessionId: 'session-456',
@@ -213,16 +215,17 @@ describe('AuthController', () => {
           sameSite: 'lax' as const,
         },
       };
-      mockAuthService.handleAuthCallback.mockReturnValue(callbackResult);
+      mockAuthService.handleAuthCallback.mockResolvedValue(callbackResult);
 
       // Act
-      authController.handleCallback(
+      await authController.handleCallback(
         mockRequest as Request,
         mockResponse as Response
       );
 
       // Assert
       expect(mockAuthService.handleAuthCallback).toHaveBeenCalledWith(
+        code,
         undefined
       );
       expect(mockResponse.cookie).toHaveBeenCalledWith(
@@ -233,70 +236,49 @@ describe('AuthController', () => {
       expect(mockResponse.redirect).toHaveBeenCalledWith(302, '/');
     });
 
-    it('should handle state as array (edge case)', () => {
+    it('should return 400 when code parameter is missing', async () => {
       // Arrange
-      mockRequest.query = { state: ['first', 'second'] };
-
-      const callbackResult = {
-        sessionId: 'session-789',
-        originUrl: '/',
-        cookieOptions: {
-          maxAge: 86400000,
-          secure: false,
-          httpOnly: true,
-          domain: '.localhost',
-          sameSite: 'lax' as const,
-        },
-      };
-      mockAuthService.handleAuthCallback.mockReturnValue(callbackResult);
+      mockRequest.query = { state: 'some-state' };
 
       // Act
-      authController.handleCallback(
+      await authController.handleCallback(
         mockRequest as Request,
         mockResponse as Response
       );
 
       // Assert
-      // The controller passes the array as-is to the service, which handles it
-      expect(mockAuthService.handleAuthCallback).toHaveBeenCalledWith([
-        'first',
-        'second',
-      ]);
-      expect(mockResponse.cookie).toHaveBeenCalledWith(
-        'auth',
-        'session-789',
-        callbackResult.cookieOptions
-      );
-      expect(mockResponse.redirect).toHaveBeenCalledWith(302, '/');
+      expect(mockAuthService.handleAuthCallback).not.toHaveBeenCalled();
+      expect(mockResponse.status).toHaveBeenCalledWith(400);
+      expect(mockResponse.send).toHaveBeenCalledWith('Authorization code not provided');
     });
 
-    it('should handle errors and return 500', () => {
+    it('should handle errors and return 500', async () => {
       // Arrange
+      const code = 'github-auth-code';
       const state = 'valid-state';
-      mockRequest.query = { state };
+      mockRequest.query = { code, state };
 
-      const error = new Error('Callback service error');
-      mockAuthService.handleAuthCallback.mockImplementation(() => {
-        throw error;
-      });
+      const error = new Error('GitHub authentication failed');
+      mockAuthService.handleAuthCallback.mockRejectedValue(error);
 
       // Act
-      authController.handleCallback(
+      await authController.handleCallback(
         mockRequest as Request,
         mockResponse as Response
       );
 
       // Assert
-      expect(mockAuthService.handleAuthCallback).toHaveBeenCalledWith(state);
+      expect(mockAuthService.handleAuthCallback).toHaveBeenCalledWith(code, state);
       expect(mockResponse.status).toHaveBeenCalledWith(500);
-      expect(mockResponse.send).toHaveBeenCalledWith('Internal Server Error');
+      expect(mockResponse.send).toHaveBeenCalledWith('GitHub authentication failed');
       expect(mockResponse.cookie).not.toHaveBeenCalled();
       expect(mockResponse.redirect).not.toHaveBeenCalled();
     });
 
-    it('should handle empty string state', () => {
+    it('should handle empty string state', async () => {
       // Arrange
-      mockRequest.query = { state: '' };
+      const code = 'github-auth-code';
+      mockRequest.query = { code, state: '' };
 
       const callbackResult = {
         sessionId: 'session-empty',
@@ -309,16 +291,16 @@ describe('AuthController', () => {
           sameSite: 'lax' as const,
         },
       };
-      mockAuthService.handleAuthCallback.mockReturnValue(callbackResult);
+      mockAuthService.handleAuthCallback.mockResolvedValue(callbackResult);
 
       // Act
-      authController.handleCallback(
+      await authController.handleCallback(
         mockRequest as Request,
         mockResponse as Response
       );
 
       // Assert
-      expect(mockAuthService.handleAuthCallback).toHaveBeenCalledWith('');
+      expect(mockAuthService.handleAuthCallback).toHaveBeenCalledWith(code, '');
       expect(mockResponse.cookie).toHaveBeenCalledWith(
         'auth',
         'session-empty',

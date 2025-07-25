@@ -39,22 +39,24 @@ describe('Routes', () => {
     });
 
     describe('GET /auth/callback', () => {
-      it('should respond to /auth/callback endpoint', async () => {
+      it('should return 400 when code parameter is missing', async () => {
         // Act
         const response = await request(app).get('/auth/callback');
 
-        // Assert - Should redirect (302) or handle the callback
-        expect([200, 302]).toContain(response.status);
+        // Assert - Should return 400 when code is missing
+        expect(response.status).toBe(400);
+        expect(response.text).toBe('Authorization code not provided');
       });
 
-      it('should handle query parameters', async () => {
+      it('should return 400 when only state parameter is provided', async () => {
         // Act
         const response = await request(app).get(
           '/auth/callback?state=test-state'
         );
 
-        // Assert - Should handle the request without errors
-        expect([200, 302]).toContain(response.status);
+        // Assert - Should return 400 when code is missing
+        expect(response.status).toBe(400);
+        expect(response.text).toBe('Authorization code not provided');
       });
     });
   });
@@ -110,9 +112,9 @@ describe('Routes', () => {
       const authResponse = await request(app).get('/auth');
       expect([200, 302]).toContain(authResponse.status);
 
-      // Act & Assert - Test callback route
+      // Act & Assert - Test callback route (should return 400 without code)
       const callbackResponse = await request(app).get('/auth/callback');
-      expect([200, 302]).toContain(callbackResponse.status);
+      expect(callbackResponse.status).toBe(400);
 
       // Act & Assert - Test health route
       const healthResponse = await request(app).get('/health');
