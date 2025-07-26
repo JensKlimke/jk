@@ -27,6 +27,56 @@ describe('AuthService', () => {
     mockedAxios.get.mockReset();
   });
 
+  describe('constructor', () => {
+    it('should throw error when GitHub client ID is missing', () => {
+      // Arrange
+      const originalClientId = process.env.GITHUB_AUTH_CLIENT_ID;
+      delete process.env.GITHUB_AUTH_CLIENT_ID;
+
+      // Act & Assert
+      expect(() => new AuthService()).toThrow('GitHub OAuth credentials not configured');
+
+      // Cleanup
+      process.env.GITHUB_AUTH_CLIENT_ID = originalClientId;
+    });
+
+    it('should throw error when GitHub client secret is missing', () => {
+      // Arrange
+      const originalClientSecret = process.env.GITHUB_AUTH_SECRET;
+      delete process.env.GITHUB_AUTH_SECRET;
+
+      // Act & Assert
+      expect(() => new AuthService()).toThrow('GitHub OAuth credentials not configured');
+
+      // Cleanup
+      process.env.GITHUB_AUTH_SECRET = originalClientSecret;
+    });
+
+    it('should throw error when GitHub client ID is empty string', () => {
+      // Arrange
+      const originalClientId = process.env.GITHUB_AUTH_CLIENT_ID;
+      process.env.GITHUB_AUTH_CLIENT_ID = '';
+
+      // Act & Assert
+      expect(() => new AuthService()).toThrow('GitHub OAuth credentials not configured');
+
+      // Cleanup
+      process.env.GITHUB_AUTH_CLIENT_ID = originalClientId;
+    });
+
+    it('should throw error when GitHub client secret is empty string', () => {
+      // Arrange
+      const originalClientSecret = process.env.GITHUB_AUTH_SECRET;
+      process.env.GITHUB_AUTH_SECRET = '';
+
+      // Act & Assert
+      expect(() => new AuthService()).toThrow('GitHub OAuth credentials not configured');
+
+      // Cleanup
+      process.env.GITHUB_AUTH_SECRET = originalClientSecret;
+    });
+  });
+
   describe('checkAuthentication', () => {
     it('should return authenticated result when auth cookie is present and session exists', async () => {
       // Arrange - First create a session by mocking the OAuth flow
