@@ -1,6 +1,7 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import routes from './routes';
+import logger from './utils/logger';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,6 +13,6 @@ app.use(cookieParser());
 app.use('/', routes);
 
 app.listen(PORT, () => {
-  console.log(`Cookie middleware server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  logger.info(`Cookie middleware server running on port ${PORT}`);
+  logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });

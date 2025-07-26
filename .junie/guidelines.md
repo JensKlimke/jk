@@ -32,3 +32,4 @@ A production-ready Traefik reverse proxy setup with GitHub OAuth authentication 
 ## Instructions
 
 - Do not run ```make install```. The service shall not be installed locally.
+- Do not implement TODOs from TODO files by yourself. These files shall not be direct input for you but for the admin of the project. 

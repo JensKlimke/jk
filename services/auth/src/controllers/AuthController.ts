@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../service/AuthService';
+import logger from '../utils/logger';
 
 export class AuthController {
   private authService: AuthService;
@@ -21,14 +22,14 @@ export class AuthController {
         res.set('X-User-Id', authResult.userId!);
         res.set('X-User-Role', authResult.userRole!);
 
-        console.log('Authenticated user found in cookie');
+        logger.info('Authenticated user found in cookie');
         res.status(200).send('Authenticated');
       } else {
         // Redirect to auth callback with origin URL in state
         res.redirect(302, authResult.redirectUrl!);
       }
     } catch (error) {
-      console.error('Error in checkAuth:', error);
+      logger.error('Error in checkAuth:', error);
       res.status(500).send('Internal Server Error');
     }
   };
@@ -56,11 +57,11 @@ export class AuthController {
         callbackResult.cookieOptions
       );
 
-      console.log('GitHub OAuth authentication successful');
+      logger.info('GitHub OAuth authentication successful');
       // Redirect back to the origin URL
       res.redirect(302, callbackResult.originUrl);
     } catch (error) {
-      console.error('Error in handleCallback:', error);
+      logger.error('Error in handleCallback:', error);
       res.status(500).send('GitHub authentication failed');
     }
   };

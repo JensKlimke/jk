@@ -25,6 +25,9 @@ RUN npm run build
 # Remove dev dependencies to reduce image size
 RUN npm prune --production
 
+# Create logs directory for winston file logging
+RUN mkdir -p logs
+
 # Expose port
 EXPOSE 3000
 

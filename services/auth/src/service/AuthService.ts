@@ -1,6 +1,7 @@
 import { Request } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
+import logger from '../utils/logger';
 
 export interface AuthResult {
   isAuthenticated: boolean;
@@ -159,7 +160,7 @@ export class AuthService {
         cookieOptions,
       };
     } catch (error) {
-      console.error('Error in GitHub OAuth callback:', error);
+      logger.error('Error in GitHub OAuth callback:', error);
       throw new Error('Failed to authenticate with GitHub');
     }
   }

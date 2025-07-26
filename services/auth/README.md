@@ -19,6 +19,7 @@ GITHUB_CLIENT_ID=your_github_oauth_app_id
 GITHUB_CLIENT_SECRET=your_github_oauth_app_secret
 DOMAIN=yourdomain.com                    # localhost for development
 NODE_ENV=production                      # or development
+LOG_LEVEL=info                           # error, warn, info, debug (optional)
 ```
 
 ### GitHub OAuth App Setup
@@ -90,6 +91,39 @@ docker-compose up -d auth
 - **Environment Flexibility**: Automatic HTTP/HTTPS detection based on environment
 - **Error Handling**: Comprehensive error handling with proper HTTP status codes
 - **Health Monitoring**: Built-in health check endpoint for service monitoring
+
+### Logging
+
+The service uses **Winston** for structured logging with multiple log levels and environment-aware configuration:
+
+#### Log Levels
+
+- **error**: Error messages and exceptions
+- **warn**: Warning messages for potential issues
+- **info**: General informational messages (default in production)
+- **debug**: Detailed debugging information (default in development)
+
+#### Configuration
+
+- **Development**: Colorized console output with timestamps
+- **Production**: JSON-formatted logs with file output
+- **Log Level**: Configurable via `LOG_LEVEL` environment variable
+- **File Logging**: In production, logs are written to:
+  - `logs/error.log` - Error level logs only
+  - `logs/combined.log` - All log levels
+  - `logs/exceptions.log` - Uncaught exceptions
+  - `logs/rejections.log` - Unhandled promise rejections
+
+#### Usage Examples
+
+```typescript
+import logger from './utils/logger';
+
+logger.error('Authentication failed', { userId: 'user123', error: 'Invalid token' });
+logger.warn('Rate limit approaching', { requests: 95, limit: 100 });
+logger.info('User authenticated successfully', { userId: 'user123' });
+logger.debug('Processing OAuth callback', { code: 'abc123', state: 'xyz789' });
+```
 
 ### Security Features
 
