@@ -37,8 +37,8 @@ export class AuthService {
   private readonly sessions: Map<string, GitHubUser> = new Map();
 
   constructor() {
-    this.githubClientId = process.env.GITHUB_AUTH_CLIENT_ID || '';
-    this.githubClientSecret = process.env.GITHUB_AUTH_SECRET || '';
+    this.githubClientId = process.env.GITHUB_CLIENT_ID || '';
+    this.githubClientSecret = process.env.GITHUB_CLIENT_SECRET || '';
     
     if (!this.githubClientId || !this.githubClientSecret) {
       throw new Error('GitHub OAuth credentials not configured');

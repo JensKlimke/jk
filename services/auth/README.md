@@ -15,8 +15,8 @@ A TypeScript-based GitHub OAuth authentication middleware service for Traefik re
 The service requires the following environment variables:
 
 ```bash
-GITHUB_AUTH_CLIENT_ID=your_github_oauth_app_id
-GITHUB_AUTH_SECRET=your_github_oauth_app_secret
+GITHUB_CLIENT_ID=your_github_oauth_app_id
+GITHUB_CLIENT_SECRET=your_github_oauth_app_secret
 DOMAIN=yourdomain.com                    # localhost for development
 NODE_ENV=production                      # or development
 ```

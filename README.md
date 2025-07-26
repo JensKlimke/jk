@@ -49,8 +49,8 @@ Copy `.env` and configure:
 ```bash
 DOMAIN=yourdomain.com              # Your domain (localhost for dev)
 EMAIL=your-email@example.com       # For Let's Encrypt certificates
-GITHUB_AUTH_CLIENT_ID=your_id      # GitHub OAuth App ID
-GITHUB_AUTH_SECRET=your_secret     # GitHub OAuth App Secret
+GITHUB_CLIENT_ID=your_id      # GitHub OAuth App ID
+GITHUB_CLIENT_SECRET=your_secret     # GitHub OAuth App Secret
 COOKIE_SECRET=random_secret_key    # Session cookie secret
 ```
 
