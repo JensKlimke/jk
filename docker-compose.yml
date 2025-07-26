@@ -9,7 +9,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik.prod.yml:/traefik.yml:ro
-      - ./letsencrypt:/letsencrypt
+      - letsencrypt:/letsencrypt
       - ./traefik/dynamic:/etc/traefik/dynamic
     networks:
       - traefik
@@ -54,6 +54,9 @@ services:
       - "traefik.http.routers.whoami-http.middlewares=redirect-to-https"
     networks:
       - traefik
+
+volumes:
+  letsencrypt:
 
 networks:
   traefik:

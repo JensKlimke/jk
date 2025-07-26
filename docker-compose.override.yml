@@ -10,7 +10,6 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./traefik.dev.yml:/traefik.yml:ro
-      - ./letsencrypt:/letsencrypt
       - ./traefik/dynamic:/etc/traefik/dynamic
     networks:
       - traefik
