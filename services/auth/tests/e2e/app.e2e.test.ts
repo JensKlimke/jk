@@ -21,7 +21,7 @@ describe('Authentication Service E2E Tests', () => {
   beforeAll(() => {
     // Create the complete application
     app = express();
-    app.use(cookieParser());
+    app.use(cookieParser(process.env.COOKIE_SECRET));
     app.use('/', routes);
   });
 
@@ -171,7 +171,7 @@ describe('Authentication Service E2E Tests', () => {
 
         // Parse the set-cookie header
         const setCookieHeader = response.headers['set-cookie'][0];
-        expect(setCookieHeader).toContain(`auth=${ TEST_UUID }`);
+        expect(setCookieHeader).toContain(`auth=s%3A${ TEST_UUID }`);
         expect(setCookieHeader).toContain('HttpOnly');
         expect(setCookieHeader).toContain('Domain=.localhost');
         expect(setCookieHeader).toContain('SameSite=Lax');
@@ -209,7 +209,7 @@ describe('Authentication Service E2E Tests', () => {
         expect(response.headers['set-cookie']).toBeDefined();
 
         const setCookieHeader = response.headers['set-cookie'][0];
-        expect(setCookieHeader).toContain(`auth=${ TEST_UUID }`);
+        expect(setCookieHeader).toContain(`auth=s%3A${ TEST_UUID }`);
       });
 
       it('should handle complex encoded URLs', async () => {

@@ -16,6 +16,7 @@ export interface CookieOptions {
   httpOnly: boolean;
   domain: string;
   sameSite: 'lax' | 'strict' | 'none';
+  signed: boolean;
 }
 
 export interface GitHubUser {
@@ -50,7 +51,7 @@ export class AuthService {
    * Check if user is authenticated based on auth cookie
    */
   checkAuthentication(req: Request): AuthResult {
-    const authCookie = req.cookies['auth'];
+    const authCookie = req.signedCookies['auth'];
 
     if (authCookie && this.sessions.has(authCookie)) {
       const user = this.sessions.get(authCookie)!;
@@ -152,6 +153,7 @@ export class AuthService {
         httpOnly: true,
         domain: `.${domain}`,
         sameSite: 'lax',
+        signed: true,
       };
 
       return {

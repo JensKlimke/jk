@@ -19,6 +19,7 @@ describe('AuthService', () => {
     authService = new AuthService();
     mockRequest = {
       cookies: {},
+      signedCookies: {},
       get: jest.fn(),
     };
     
@@ -100,7 +101,7 @@ describe('AuthService', () => {
       const sessionId = callbackResult.sessionId;
       
       // Now test authentication with the session
-      mockRequest.cookies = { auth: sessionId };
+      mockRequest.signedCookies = { auth: sessionId };
 
       // Act
       const result: AuthResult = authService.checkAuthentication(
@@ -116,7 +117,7 @@ describe('AuthService', () => {
 
     it('should return unauthenticated result with GitHub OAuth URL when auth cookie is missing', () => {
       // Arrange
-      mockRequest.cookies = {};
+      mockRequest.signedCookies = {};
       (mockRequest.get as jest.Mock)
         .mockReturnValueOnce('https') // X-Forwarded-Proto
         .mockReturnValueOnce('app.example.com') // X-Forwarded-Host
@@ -139,7 +140,7 @@ describe('AuthService', () => {
 
     it('should handle missing forwarded headers gracefully', () => {
       // Arrange
-      mockRequest.cookies = {};
+      mockRequest.signedCookies = {};
       (mockRequest.get as jest.Mock)
         .mockReturnValueOnce(undefined) // X-Forwarded-Proto
         .mockReturnValueOnce('localhost:3000') // host header fallback
@@ -158,7 +159,7 @@ describe('AuthService', () => {
 
     it('should use default values when all headers are missing', () => {
       // Arrange
-      mockRequest.cookies = {};
+      mockRequest.signedCookies = {};
       (mockRequest.get as jest.Mock).mockReturnValue(undefined);
 
       // Act
@@ -206,6 +207,7 @@ describe('AuthService', () => {
         httpOnly: true,
         domain: '.localhost',
         sameSite: 'lax',
+        signed: true,
       });
       
       // Verify GitHub API calls

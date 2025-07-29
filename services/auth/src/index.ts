@@ -6,8 +6,8 @@ import logger from './utils/logger';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Add cookie parser middleware
-app.use(cookieParser());
+// Add cookie parser middleware with secret for signed cookies
+app.use(cookieParser(process.env.COOKIE_SECRET));
 
 // Mount routes
 app.use('/', routes);

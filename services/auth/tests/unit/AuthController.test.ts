@@ -176,6 +176,7 @@ describe('AuthController', () => {
           httpOnly: true,
           domain: '.localhost',
           sameSite: 'lax' as const,
+          signed: true,
         },
       };
       mockAuthService.handleAuthCallback.mockResolvedValue(callbackResult);
@@ -213,6 +214,7 @@ describe('AuthController', () => {
           httpOnly: true,
           domain: '.localhost',
           sameSite: 'lax' as const,
+          signed: true,
         },
       };
       mockAuthService.handleAuthCallback.mockResolvedValue(callbackResult);
@@ -289,6 +291,7 @@ describe('AuthController', () => {
           httpOnly: true,
           domain: '.localhost',
           sameSite: 'lax' as const,
+          signed: true,
         },
       };
       mockAuthService.handleAuthCallback.mockResolvedValue(callbackResult);

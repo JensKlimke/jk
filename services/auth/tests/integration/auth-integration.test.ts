@@ -24,6 +24,7 @@ describe('Auth Integration Tests', () => {
     // Setup mock request
     mockRequest = {
       cookies: {},
+      signedCookies: {},
       query: {},
       get: jest.fn(),
     };
@@ -79,7 +80,7 @@ describe('Auth Integration Tests', () => {
         };
         
         // Now test authentication with the session
-        mockRequest.cookies = { auth: 'integration-test-uuid-123' };
+        mockRequest.signedCookies = { auth: 'integration-test-uuid-123' };
 
         // Act
         authController.checkAuth(
@@ -97,7 +98,7 @@ describe('Auth Integration Tests', () => {
 
       it('should redirect unauthenticated user to GitHub OAuth', () => {
         // Arrange
-        mockRequest.cookies = {};
+        mockRequest.signedCookies = {};
         (mockRequest.get as jest.Mock)
           .mockReturnValueOnce('https') // X-Forwarded-Proto
           .mockReturnValueOnce('app.example.com') // X-Forwarded-Host
@@ -124,7 +125,7 @@ describe('Auth Integration Tests', () => {
 
       it('should handle complex URL encoding in GitHub OAuth redirect', () => {
         // Arrange
-        mockRequest.cookies = {};
+        mockRequest.signedCookies = {};
         (mockRequest.get as jest.Mock)
           .mockReturnValueOnce('https') // X-Forwarded-Proto
           .mockReturnValueOnce('api.example.com') // X-Forwarded-Host
@@ -182,6 +183,7 @@ describe('Auth Integration Tests', () => {
             httpOnly: true,
             domain: '.localhost',
             sameSite: 'lax',
+            signed: true,
           }
         );
         expect(mockResponse.redirect).toHaveBeenCalledWith(
@@ -248,6 +250,7 @@ describe('Auth Integration Tests', () => {
             httpOnly: true,
             domain: '.localhost',
             sameSite: 'lax',
+            signed: true,
           })
         );
         expect(mockResponse.redirect).toHaveBeenCalledWith(302, '/');
@@ -291,7 +294,7 @@ describe('Auth Integration Tests', () => {
     describe('Full Authentication Cycle', () => {
       it('should complete full GitHub OAuth cycle: unauthenticated -> callback -> authenticated', async () => {
         // Step 1: Initial auth check (unauthenticated)
-        mockRequest.cookies = {};
+        mockRequest.signedCookies = {};
         (mockRequest.get as jest.Mock)
           .mockReturnValueOnce('https') // X-Forwarded-Proto
           .mockReturnValueOnce('app.example.com') // X-Forwarded-Host
@@ -366,7 +369,7 @@ describe('Auth Integration Tests', () => {
         };
 
         // Step 3: Subsequent auth check (now authenticated)
-        mockRequest.cookies = { auth: 'integration-test-uuid-123' };
+        mockRequest.signedCookies = { auth: 'integration-test-uuid-123' };
         authController.checkAuth(
           mockRequest as Request,
           mockResponse as Response
@@ -383,7 +386,7 @@ describe('Auth Integration Tests', () => {
     describe('Error Handling Integration', () => {
       it('should handle service errors gracefully in checkAuth', () => {
         // Arrange - Create a scenario that might cause service errors
-        mockRequest.cookies = {};
+        mockRequest.signedCookies = {};
         (mockRequest.get as jest.Mock).mockImplementation(() => {
           throw new Error('Header parsing error');
         });
@@ -432,7 +435,7 @@ describe('Auth Integration Tests', () => {
       // Test that buildOriginUrl and handleAuthCallback work together consistently
 
       // Step 1: Service generates GitHub OAuth redirect URL
-      mockRequest.cookies = {};
+      mockRequest.signedCookies = {};
       (mockRequest.get as jest.Mock)
         .mockReturnValueOnce('https')
         .mockReturnValueOnce('app.example.com')
@@ -475,7 +478,7 @@ describe('Auth Integration Tests', () => {
 
     it('should handle edge cases consistently across methods', async () => {
       // Test with missing headers
-      mockRequest.cookies = {};
+      mockRequest.signedCookies = {};
       (mockRequest.get as jest.Mock).mockReturnValue(undefined);
 
       const authResult = authService.checkAuthentication(
