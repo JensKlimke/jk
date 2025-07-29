@@ -4,9 +4,11 @@ import cookieParser from 'cookie-parser';
 import routes from '../../src/routes';
 import axios from 'axios';
 
+const TEST_UUID = 'e2e-test-session-uuid';
+
 // Mock uuid for consistent testing
 jest.mock('uuid', () => ({
-  v4: jest.fn(() => 'e2e-test-session-uuid'),
+  v4: jest.fn(() => TEST_UUID),
 }));
 
 // Mock axios for GitHub API calls
@@ -169,7 +171,7 @@ describe('Authentication Service E2E Tests', () => {
 
         // Parse the set-cookie header
         const setCookieHeader = response.headers['set-cookie'][0];
-        expect(setCookieHeader).toContain('auth=e2e-test-session-uuid');
+        expect(setCookieHeader).toContain(`auth=${ TEST_UUID }`);
         expect(setCookieHeader).toContain('HttpOnly');
         expect(setCookieHeader).toContain('Domain=.localhost');
         expect(setCookieHeader).toContain('SameSite=Lax');
@@ -207,7 +209,7 @@ describe('Authentication Service E2E Tests', () => {
         expect(response.headers['set-cookie']).toBeDefined();
 
         const setCookieHeader = response.headers['set-cookie'][0];
-        expect(setCookieHeader).toContain('auth=e2e-test-session-uuid');
+        expect(setCookieHeader).toContain(`auth=${ TEST_UUID }`);
       });
 
       it('should handle complex encoded URLs', async () => {
