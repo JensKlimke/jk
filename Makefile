@@ -7,8 +7,8 @@
 help:
 	@echo "Available targets:"
 	@echo "  build      - Build all services"
-	@echo "  start-prod - Start services in production mode"
-	@echo "  start-dev  - Start services in development mode"
+	@echo "  start-prod - Start services in production mode (TLS enabled)"
+	@echo "  start-dev  - Start services in local/development mode (non-TLS, with dashboard)"
 	@echo "  stop       - Stop all services"
 	@echo "  restart    - Restart all services"
 	@echo "  clean      - Clean up all Docker artifacts"
@@ -20,18 +20,18 @@ build:
 	@echo "Building all services..."
 	docker-compose build
 
-# Start services in production mode (without override file)
+# Start services in production mode (with production override file)
 start-prod:
 	@echo "Creating Docker network if it doesn't exist..."
 	docker network create traefik 2>/dev/null || true
 	@echo "Starting services in production mode..."
-	docker-compose -f docker-compose.yml up -d
+	docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
-# Start services in development mode (with override file)
+# Start services in local/development mode (with override file, includes mongo-express)
 start-dev:
 	@echo "Creating Docker network if it doesn't exist..."
 	docker network create traefik 2>/dev/null || true
-	@echo "Starting services in development mode..."
+	@echo "Starting services in local/development mode..."
 	docker-compose up -d
 
 # Stop all services

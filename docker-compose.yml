@@ -8,8 +8,6 @@ services:
       - "443:443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./traefik.prod.yml:/traefik.yml:ro
-      - letsencrypt:/letsencrypt
       - ./traefik/dynamic:/etc/traefik/dynamic
     networks:
       - traefik
@@ -20,17 +18,8 @@ services:
     container_name: auth
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.auth.rule=Host(`auth.${DOMAIN}`)"
-      - "traefik.http.routers.auth.entrypoints=websecure"
-      - "traefik.http.routers.auth.tls.certresolver=letsencrypt"
       - "traefik.http.services.auth.loadbalancer.server.port=3000"
-      - "traefik.http.routers.auth-http.rule=Host(`auth.${DOMAIN}`)"
-      - "traefik.http.routers.auth-http.entrypoints=web"
-      - "traefik.http.routers.auth-http.middlewares=redirect-to-https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
     environment:
-      NODE_ENV: "production"
       DOMAIN: ${DOMAIN:-localhost}
       GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
       GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
@@ -38,25 +27,37 @@ services:
     networks:
       - traefik
 
+  # MongoDB database
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+    volumes:
+      - mongodb_data:/data/db
+      - mongodb_config:/data/configdb
+    networks:
+      - traefik
+    ports:
+      - "27017:27017"
+
   # Example application
   whoami:
     image: traefik/whoami
     container_name: whoami
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.whoami.rule=Host(`whoami.${DOMAIN}`)"
-      - "traefik.http.routers.whoami.entrypoints=websecure"
-      - "traefik.http.routers.whoami.tls.certresolver=letsencrypt"
       - "traefik.http.services.whoami.loadbalancer.server.port=80"
       - "traefik.http.routers.whoami.middlewares=auth@file"
-      - "traefik.http.routers.whoami-http.rule=Host(`whoami.${DOMAIN}`)"
-      - "traefik.http.routers.whoami-http.entrypoints=web"
-      - "traefik.http.routers.whoami-http.middlewares=redirect-to-https"
     networks:
       - traefik
 
 volumes:
-  letsencrypt:
+  mongodb_data:
+  mongodb_config:
 
 networks:
   traefik:
